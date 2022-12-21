@@ -135,7 +135,7 @@ public class Backsnap {
          command.add(cmd);
          try (BufferedReader br=new BufferedReader(
                   new InputStreamReader(pb.command(command).redirectErrorStream(true).start().getInputStream()))) {
-            return br.lines().toList();
+            return br.lines().toList(); // collect al Lines
          }
       } catch (final IOException e) {
          e.printStackTrace();
@@ -203,16 +203,16 @@ public class Backsnap {
     * @param mountpoint
     * @return
     */
-   private static boolean isMounted(String mountpoint) {
-      List<String> erg=execute("mount |grep -E btrfs");
-      if (erg == null)
-         return false;
-      String mp=" " + mountpoint + " ";
-      for (String s:erg)
-         if (s.contains(mp))
-            return true;
-      return false;
-   }
+   // private static boolean isMounted(String mountpoint) {
+   // List<String> erg=execute("mount |grep -E btrfs");
+   // if (erg == null)
+   // return false;
+   // String mp=" " + mountpoint + " ";
+   // for (String s:erg)
+   // if (s.contains(mp))
+   // return true;
+   // return false;
+   // }
    /**
     * Mountet das Backup-Volume per fstab oder per UUID
     * 
@@ -220,18 +220,18 @@ public class Backsnap {
     * @param mountpoint
     * @return
     */
-   private static boolean mount(String uuid, String mountpoint) {
-      if (isMounted(mountpoint))
-         return true;
-      if (uuid.length() < 20)
-         execute("mount " + mountpoint); // per fstab mounten
-      else { // mount UUID=03417033-3745-4ae7-9451-efafcbb9124e -o noatime,subvol=/,compress=zstd:9 /mnt/BACKUP
-         String btrfs  ="-t btrfs";
-         String options="-o noatime,subvol=/,compress=zstd:9";
-         execute("mount " + btrfs + " " + options + " UUID=" + uuid + " " + mountpoint);
-      }
-      if (!isMounted(mountpoint))
-         throw new UnsupportedOperationException("Mount failed for UUID='" + uuid + "' at '" + mountpoint + "'");
-      return false;
-   }
+   // private static boolean mount(String uuid, String mountpoint) {
+   // if (isMounted(mountpoint))
+   // return true;
+   // if (uuid.length() < 20)
+   // execute("mount " + mountpoint); // per fstab mounten
+   // else { // mount UUID=03417033-3745-4ae7-9451-efafcbb9124e -o noatime,subvol=/,compress=zstd:9 /mnt/BACKUP
+   // String btrfs ="-t btrfs";
+   // String options="-o noatime,subvol=/,compress=zstd:9";
+   // execute("mount " + btrfs + " " + options + " UUID=" + uuid + " " + mountpoint);
+   // }
+   // if (!isMounted(mountpoint))
+   // throw new UnsupportedOperationException("Mount failed for UUID='" + uuid + "' at '" + mountpoint + "'");
+   // return false;
+   // }
 }
