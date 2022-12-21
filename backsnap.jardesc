@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<jardesc>
+    <jar path="backsnap/backsnap.jar"/>
+    <options buildIfNeeded="true" compress="true" descriptionLocation="/backsnap/backsnap.jardesc" exportErrors="false" exportWarnings="true" includeDirectoryEntries="false" overwrite="true" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
+    <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
+    <selectedProjects/>
+    <manifest generateManifest="true" mainClassHandleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap{Backsnap.java[Backsnap" manifestLocation="" manifestVersion="1.0" reuseManifest="false" saveManifest="false" usesManifest="true">
+        <sealing sealJar="false">
+            <packagesToSeal/>
+            <packagesToUnSeal/>
+        </sealing>
+    </manifest>
+    <selectedElements exportClassFiles="true" exportJavaFiles="true" exportOutputFolder="false">
+        <file path="/backsnap/fstab.txt"/>
+        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap{Backsnap.java"/>
+        <file path="/backsnap/backsnap.md"/>
+        <file path="/backsnap/readme.md"/>
+        <file path="/backsnap/backsnap.jardesc"/>
+    </selectedElements>
+</jardesc>
