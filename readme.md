@@ -93,6 +93,10 @@ Since `backsnap` must also be started locally as `root`, the ssh connection must
 * root@192.168.1.23:/.snapshots
 * root@192.168.1.23:/home/.snapshots
 
+I will not give any help with SSH problems. As long as the program works locally, but not over SSH,
+SSH doesn't seem to be fully set up. SSH isn't for everyone, but there are a lot of
+good guides on this if you look for it.
+
 ### Preparations
 
 ###### external hard drive

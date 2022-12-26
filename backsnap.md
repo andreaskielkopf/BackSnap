@@ -2,7 +2,7 @@
 
 ## Prolog
 
-Ein Snapshot ist kein Backup !
+###### Ein Snapshot ist kein Backup !
 
 Das hab ich schon öfters gelesen. Im Prinzip richtig, aber ein btrfs-snapshot ist so gut wie jedes andere 
 In-System-Backup. Btrfs kann für Privatanwender ein hohes Maß an Sicherheit vor Datenverlust bringen. 
@@ -93,6 +93,9 @@ Da `backsnap` auch lokal als `root` gestartet werden muß, muß die ssh-verbindu
 * root@192.168.1.23:/.snapshots
 * root@192.168.1.23:/home/.snapshots
 
+Ich werde bei SSH-Problemen keine Hilfe geben. Solange das Programm lokal funktioniert, über SSH aber nicht, 
+scheint SSH nicht vollständig eingerichtet zu sein. SSH ist nicht jedermanns Stärke, aber es gibt eine Menge 
+gute Anleitungen dazu wenn man danach sucht.
 
 ### Vorbereitungen
 
