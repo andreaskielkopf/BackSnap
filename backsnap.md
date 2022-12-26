@@ -133,45 +133,44 @@ Darin werden dann die gewünschten Subvolumes / Rechner gesichert.
 Btrfs braucht root-zugriff. Das Script muß also ausführbar sein und mit sudo gestartet werden!
 
 ###### Beispiel:
-
-   `#!/bin/zsh`
-   `# Sichern aller aufgelisteten Rechner auf ein angestecktes Laufwerk`
-   `# BS_UUID=03417033-3745-4ae7-9451-efafcbb9124e`
-   `BS_MOUNT=/mnt/BACKUP`
-   `BS_JAR=/usr/local/bin/backsnap.jar`
-   ``
-   `# mount aus fstab ;-)`
-   ``
-   `[ -d $BS_MOUNT/@snapshots ] || mount $BS_MOUNT`
-   `#sudo mount -o noatime,subvol=/,compress=zstd:9 UUID=$BS_UUID $BS_MOUNT`
-   `# wenn das mounten nicht geklappt hat, ABBRECHEN `
-   `[ -d $BS_MOUNT/@snapshots ] || { echo "Das mounten war nicht erfolgreich"; exit; }`
-   `[ -d $BS_MOUNT/@snapshots/$BS_HOST ] || { echo "Für $BS_HOST gibt es keinen mountpoint"; exit; }`
-   ``
-   `function backup {`
-   `    BS_SOURCE="$1/.snapshots"`
-   `    BS_DEST="$BS_MOUNT/@snapshots/$2"`
-   `#    echo "java -jar $BS_JAR $BS_SOURCE $BS_DEST"`
-   `    java -jar $BS_JAR $BS_SOURCE $BS_DEST`
-   `    echo -n " Y" `
-   `}`
-   ``
-   `# lokal sichern`
-   `backup "" "manjaro18"`
-   `backup "/home" "manjaro18.home"`
-   ``
-   `# server sichern`
-   `backup "root@server:" "server"`
-   `backup "root@server:/home" "server.home"`
-   ``
-   `# laptop sichern `
-   `backup "root@notebook:" "notebook"`
-   `backup "root@notebook:/home" "notebook.home"`
-   ``
-   `# gast sichern`
-   `backup "root@gast:" "gast"`
-   `backup "root@gast:/home" "gast"`
-   `umount $BS_MOUNT`
-   `echo "fertig"`
+```
+   #!/bin/zsh
+   # Sichern aller aufgelisteten Rechner auf ein angestecktes Laufwerk
+   # BS_UUID=03417033-3745-4ae7-9451-efafcbb9124e
+   BS_MOUNT=/mnt/BACKUP
+   BS_JAR=/usr/local/bin/backsnap.jar
    
- 
+   # mount aus fstab ;-)
+   
+   [ -d $BS_MOUNT/@snapshots ] || mount $BS_MOUNT
+   #sudo mount -o noatime,subvol=/,compress=zstd:9 UUID=$BS_UUID $BS_MOUNT
+   # wenn das mounten nicht geklappt hat, ABBRECHEN 
+   [ -d $BS_MOUNT/@snapshots ] || { echo "Das mounten war nicht erfolgreich"; exit; }
+   [ -d $BS_MOUNT/@snapshots/$BS_HOST ] || { echo "Für $BS_HOST gibt es keinen mountpoint"; exit; }
+   
+   function backup {
+       BS_SOURCE="$1/.snapshots"
+       BS_DEST="$BS_MOUNT/@snapshots/$2"
+   #    echo "java -jar $BS_JAR $BS_SOURCE $BS_DEST"
+       java -jar $BS_JAR $BS_SOURCE $BS_DEST
+       echo -n " Y" 
+   }
+   
+   # lokal sichern
+   backup "" "manjaro18"
+   backup "/home" "manjaro18.home"
+   
+   # server sichern
+   backup "root@server:" "server"
+   backup "root@server:/home" "server.home"
+   
+   # laptop sichern 
+   backup "root@notebook:" "notebook"
+   backup "root@notebook:/home" "notebook.home"
+   
+   # gast sichern
+   backup "root@gast:" "gast"
+   backup "root@gast:/home" "gast"
+   umount $BS_MOUNT
+   echo "fertig"
+```
