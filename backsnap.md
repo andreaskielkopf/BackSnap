@@ -43,10 +43,14 @@ Einfaches externes Backup eines kompletten (btrfs-)Subvolumes
 * Kommandozeilenprogramm ohne GUI
 * KISS
 
-##### Keine Ziele:
+##### Nicht Ziel:
 * Automatische Verwaltung der Backups nach Alter
 * Automatisches löschen alter Backups bei Platznot
 * Sicherung des aktuellen Zustands eines Subvolumes
+
+##### Erwünschte Nebeneffekte
+* Die **Backup-Strategie** ist bereits in snapper/Timeshift festgelegt, und wirkt hier mit
+* Das Backup ist zwar komprimiert, aber gleichzeitig sind alle Snapshots im Backup **voll readonly zugreifbar**
 
 ## Vorraussetzungen:
 * Java 17 oder neuer auf dem Computer
