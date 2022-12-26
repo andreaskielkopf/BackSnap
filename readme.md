@@ -93,9 +93,13 @@ Since `backsnap` must also be started locally as `root`, the ssh connection must
 * root@192.168.1.23:/.snapshots
 * root@192.168.1.23:/home/.snapshots
 
-I will not give any help with SSH problems. As long as the program works locally, but not over SSH,
-SSH doesn't seem to be fully set up. SSH isn't for everyone, but there are a lot of
-good guides on this if you look for it.
+###### Warnings:
+SSH doesn't work miracles. It can (despite compression and differential backup) only be as fast as your network.
+ (1GB/s / 100MB/s / WLAN ??? )
+
+I will not give any help with SSH problems!
+As long as the program works locally but not over SSH, SSH doesn't seem to be fully set up.
+SSH isn't for everyone, but there are plenty of good guides out there if you look for it.
 
 ### Preparations
 
