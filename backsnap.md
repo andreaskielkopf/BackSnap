@@ -6,12 +6,12 @@ Ein Snapshot ist kein Backup !
 
 Das hab ich schon öfters gelesen. Im Prinzip richtig, aber ein btrfs-snapshot ist so gut wie jedes andere 
 In-System-Backup. Btrfs kann für Privatanwender ein hohes Maß an Sicherheit vor Datenverlust bringen. 
-Mit etwas zusätzlicher Arbeit kann auch das externe Backup für btrfs nachgerüstet werden.
+Mit etwas zusätzlicher Arbeit kann auch das externe Backup für btrfs erreicht werden.
 
 # Die Verantwortung für Backups liegt nie bei einem Programm, sondern immer beim Nutzer !
 
 ##### In-System Backup
-Btrfs mit RAID0 und readonly snapshots per snapper sind wie ein im selben System untergebrachtes Backup der Original-Dateien. Es schützt vor:
+Btrfs mit RAID0 und readonly snapshots durch snapper sind wie ein im selben System untergebrachtes Backup der Original-Dateien. Es schützt vor:
 * kleineren Problemen, wie dem versehentlichen Löschen einer Datei 
 * löschen eines ganzen Dateibaums (z.B. /home/hans/** )
 * vor dem ungewollten Ändern von Dateirechten vieler Dateien
@@ -24,7 +24,7 @@ Wird btrfs mit `RAID1` auf mindestens 2 verschiedenen Devices betrieben, ist das
 * überschreiben eines Device mit dd ;-)
 
 ##### Out-Of-System Backup 
-Werden die snapshots zusätzlich auf einer externen Platte kopiert, ist das ein ECHTES Backup. Am besten sollte diese 
+Werden die snapshots zusätzlich auf einer externen Platte kopiert, ist das ein ECHTES Backup. Bestenfalls sollte diese 
 externe Platte nur kurzzeitig am Rechner angeschlossen werden. Das schützt zusätzlich vor:
 * Komplettausfall des Rechners
 * Verlust vergangener Backups bis zur Kapazitätsgrenze der extenen Platte
@@ -87,7 +87,7 @@ EINER Konfiguration von Snapper entspricht.
 
 ##### SSH
 Als Quellpfad kann auch ein per `ssh` erreichbarer Rechner angegeben werden. Dazu ist `ssh`, `ssh-keys` und ein 
-`ssh-agent` erforderlich. Der ssh-Agent, die keys sowie die ssh-Verbindung sollten vorher **unbedingt separat getestet**  werden. 
+`ssh-agent` erforderlich. Der ssh-Agent, die keys sowie die ssh-Verbindung sollten **vorher separat getestet** werden. 
 Da `backsnap` auch lokal als `root` gestartet werden muß, muß die ssh-verbindung für `root` eingerichtet sein (lokal und entfernt) 
 
 * root@192.168.1.23:/.snapshots
@@ -107,7 +107,7 @@ Da `backsnap` auch lokal als `root` gestartet werden muß, muß die ssh-verbindu
 
 > UUID=03417033-3745-4ae7-9451-efafcbb9124e /mnt/BACKUP    btrfs noauto,rw,noatime,compress=zstd:9,subvol=/         0 0
 
-Die uid bekommt man z.B. mit `lsblk -o name,uuid` 
+Die uuid bekommt man z.B. mit `lsblk -o name,uuid` 
 
 ##### Installieren
 Die datei backsnap.jar muß "irgendwo" abgelegt werden. (Empfohlen: /usr/local/bin/backsnap.jar). Der Aufruf erfolgt dann als root.
@@ -116,7 +116,7 @@ Die datei backsnap.jar muß "irgendwo" abgelegt werden. (Empfohlen: /usr/local/b
 
 ##### Test
  * root werden `sudo su -`
- * Backupmedium mounten `mount /mnt/BACUP`
+ * Backupmedium mounten `mount /mnt/BACKUP`
  * subvolume anlegen `btrfs subvolume create /mnt/BACKUP/@snapshots`
  * Zielpfad anlegen `mkdir /mnt/BACKUP/@snapshots/manjaro21`
  * Zielpfad anlegen `mkdir /mnt/BACKUP/@snapshots/manjaro21.home`
@@ -131,6 +131,8 @@ Die datei backsnap.jar muß "irgendwo" abgelegt werden. (Empfohlen: /usr/local/b
 Nach ersten manuellen Experimenten sollte ein backup-script angelegt werden (z.B. in `/usr/local/bin/backup` ). 
 Darin werden dann die gewünschten Subvolumes / Rechner gesichert. 
 Btrfs braucht root-zugriff. Das Script muß also ausführbar sein und mit sudo gestartet werden!
+
+###### Beispiel:
 
    `#!/bin/zsh`
    `# Sichern aller aufgelisteten Rechner auf ein angestecktes Laufwerk`

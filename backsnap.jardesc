@@ -12,7 +12,7 @@
     </manifest>
     <selectedElements exportClassFiles="true" exportJavaFiles="true" exportOutputFolder="false">
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap{Backsnap.java"/>
-        <file path="/backsnap/fstab.txt"/>
+        <file path="/backsnap/backup"/>
         <file path="/backsnap/backsnap.md"/>
         <file path="/backsnap/readme.md"/>
         <file path="/backsnap/backsnap.jardesc"/>
