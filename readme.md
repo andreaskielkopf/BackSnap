@@ -24,7 +24,7 @@ If btrfs is operated with `RAID1` on at least 2 different devices, this is as go
 * overwrite a device with dd ;-)
 
 ##### Out-Of-System Backup
-If the snapshots are also copied to an external disk, this is a REAL backup. At best this
+If the snapshots are also copied to an external disk, this is `a REAL backup`. At best this
 external disk should be connected to the computer only for a short time. This also protects against:
 * Complete failure of the computer
 * Loss of past backups up to capacity of external disk
@@ -35,34 +35,34 @@ external disk should be connected to the computer only for a short time. This al
 ## Goals of backsnap:
 Simple external backup of a complete (btrfs) subvolume
 
-* Back up all snapshots
-* Differential backup of each snapshot (fast)
-* Use as little storage space on the backup medium as possible
-* Differential backup (when repeating the backup after a few days/weeks/months)
-* The backup medium can be used for backups of different computers
+* Back up **all snapshots**
+* Differential backup of each snapshot (**fast**)
+* Use as little storage space on the backup medium as possible (**compressed**)
+* **Differential** backup (when repeating the backup after a few days/weeks/months)
+* The backup medium can be used for backups of **different computers**
 * Command line program without GUI
-* KISS
+* **Keep It Simple Superuser**
 
 ##### No Goal:
 * Automatic management of backups by age
 * Automatically delete old backups when there is not enough space
 * Backup of the current state of a subvolume     
 
-##### Desirable side effects
+##### Desirable side effects:
 * The **backup strategy** is already defined in snapper/Timeshift, and is involved here
-* The backup is compressed, but at the same time all snapshots in the backup are **fully read-only accessible**
+* The backup is compressed, but at the same time all snapshots in the backup are read-only, but **fully accessible**
 
 ## Requirements:
-* Java 17 or newer on the computer
+* **Java 17** or newer on the computer
+* **BTRFS** both on the computer (recommended as RAID1 with 2 devices) and on the backup medium (single)
+* The snapshots must be **read-only**, and they are **numbered sequentially** (gaps are allowed)
 * Recommended: pv installed
-* BTRFS both on the computer (recommended as RAID1 with 2 devices) and on the backup medium (single)
-* snapper layout of snapshots
-* The snapshots must be readonly, and they are numbered sequentially (gaps are allowed)
+* Recommended: snapper layout of snapshots
 * Recommended: external backup medium e.g. USB3 hard drive
 * Recommended: your own bash script to start the backup
 
 # Backsnap:
-The Java program Backsnap backs up ALL snapshots from a specified directory to another directory on a
+The Java program `backsnap` backs up ALL snapshots from a specified directory to another directory on a
 backup medium. To do this, it uses **btrfs send** and **btrfs receive**.
 
 ##### Source
@@ -73,8 +73,8 @@ The actual snapshot there is simply called "snapshot".
 * /.snapshots
 * /home/.snapshots
 
-##### Target
-The 2nd parameter points to the point at which the snapshots are to be saved. To do this, the backup medium needs to 
+##### Destination
+The 2nd parameter points to the **DESTINATION path** at which the snapshots are to be saved. To do this, the backup medium needs to 
 be mounted "special (subvol=/)". It needs a subvolume called **@snapshots** and a directory
 with an individual name for each subvolume.
 The path to this directory will be specified as the **TARGET path** for the backup.

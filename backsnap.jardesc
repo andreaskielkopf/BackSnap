@@ -11,10 +11,12 @@
         </sealing>
     </manifest>
     <selectedElements exportClassFiles="true" exportJavaFiles="true" exportOutputFolder="false">
-        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap{Backsnap.java"/>
         <file path="/backsnap/backup"/>
+        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap{Backsnap.java"/>
         <file path="/backsnap/backsnap.md"/>
         <file path="/backsnap/readme.md"/>
+        <file path="/backsnap/WieEsFunktioniert.md"/>
+        <file path="/backsnap/HowItWorks.md"/>
         <file path="/backsnap/backsnap.jardesc"/>
     </selectedElements>
 </jardesc>
