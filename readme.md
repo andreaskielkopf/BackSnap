@@ -1,5 +1,5 @@
 # [HowTo] Backup btrfs snapshots with send/receive
-[How it works](./HowItWorks.md)  [deutsch](./backsnap.md) 
+[How it works](./HowItWorks.md),  [deutsch](./backsnap.md) 
 ## Prologue
 A snapshot is not a backup!
 
