@@ -1,5 +1,5 @@
 # [HowTo] Backup btrfs snapshots mit send/recieve
-
+[english](./readme.md) [Wie es funktioniert](./WieEsFunktioniert.md) 
 ## Prolog
 
 ###### Ein Snapshot ist kein Backup !

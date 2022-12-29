@@ -1,7 +1,6 @@
 # [HowTo] Backup btrfs snapshots with send/receive
-
+[How it works](./HowItWorks.md)  [deutsch](./backsnap.md) 
 ## Prologue
-
 A snapshot is not a backup!
 
 I've read that before. Correct in principle, but a btrfs snapshot is as good as any other

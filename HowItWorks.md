@@ -1,5 +1,5 @@
 # How it works:
-
+[ReadMe](./readme.md) [deutsch](./WieEsFunktioniert.md) 
 `java -jar /usr/local/bin/backsnap.jar /.snapshots /mnt/BACKUP/manjaro21`
 
 1. starts java
