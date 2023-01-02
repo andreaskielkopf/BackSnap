@@ -21,15 +21,21 @@ import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 public record SubVolumeList(String extern, TreeMap<String, Subvolume> subvTree) {
    /**
     * @param string
+    *           mit Zugang zum PC
+    * @param snapTree
+    *           Liste mit Snapshots dieses PCs
     */
-   public SubVolumeList(String extern) {
+   public SubVolumeList(String extern, SnapTree snapTree) {
       this(extern, new TreeMap<>());
-      populate();
+      populate(snapTree);
    }
+
    /**
     * Ermittle alle Subvolumes die Snapshots enthalten indem "mount" gefragt wird
+    * 
+    * @param snapTree
     */
-   private void populate() {
+   private void populate(SnapTree snapTree) {
       StringBuilder mountCmd=new StringBuilder("mount|grep btrfs");
       if ((extern instanceof String x) && (!x.isBlank()))
          mountCmd.insert(0, "ssh " + x + " '").append("'");
@@ -43,8 +49,8 @@ public record SubVolumeList(String extern, TreeMap<String, Subvolume> subvTree) 
             return "";
          });
          subvolumeList.erg().forEachOrdered(line -> {
-            Subvolume subvolume=new Subvolume(line, extern);
-            if (!subvolume.snapshotTree().isEmpty())// interessant sind nur die Subvolumes mit snapshots
+            Subvolume subvolume=new Subvolume(line, extern, snapTree);
+            if (!subvolume.snapshotTree().isEmpty()) // interessant sind nur die Subvolumes mit snapshots
                subvTree.put(subvolume.key(), subvolume);
          });
          errorHandling.get();

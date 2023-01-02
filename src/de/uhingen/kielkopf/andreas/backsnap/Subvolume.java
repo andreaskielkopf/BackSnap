@@ -37,16 +37,19 @@ public record Subvolume(String device, String mountPoint, String subvol, String 
     * @param extern
     *           um den Zugriff über ssh zu ermöglichen
     */
-   public Subvolume(String line, String extern) {
+   public Subvolume(String line, String extern, SnapTree snapTree) {
       this(getString(DEVICE.matcher(line)), getString(MOUNTPOINT.matcher(line)), getString(SUBVOLUME.matcher(line)),
                getString(OPTIONS.matcher(line)), extern, new TreeMap<>());
-      populate();
+      populate(snapTree);
    }
    /**
     * Nachschauen, ob dieses Subvolume snapshots hat
+    * 
+    * @param snapTree
     */
-   private void populate() {
-      StringBuilder btrfsCmd=new StringBuilder("btrfs subvolume show ");
+   private void populate(SnapTree snapTree) {
+      boolean       snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.fileMap().isEmpty() : false;
+      StringBuilder btrfsCmd         =new StringBuilder("btrfs subvolume show ");
       btrfsCmd.append(mountPoint);
       if ((extern instanceof String x) && (!x.isBlank()))
          btrfsCmd.insert(0, "ssh " + x + " '").append("'");
@@ -61,9 +64,12 @@ public record Subvolume(String device, String mountPoint, String subvol, String 
          });
          snapshotList.erg().forEach(line -> {
             Matcher m=SNAPSHOT.matcher(line);
-            if (m.find()) {// System.out.println(m.group(1));
-               snapshotTree.put(m.group(1), null);
-            } // else System.err.println(line + ":");
+            if (m.find()) {
+               Snapshot zeiger=null;
+               if (snapTreeVorhanden)
+                  zeiger=snapTree.fileMap().get(m.group(1));
+               snapshotTree.put(m.group(1), zeiger);
+            }
          });
          errorHandling.get();
       } catch (IOException | ExecutionException | InterruptedException e) {

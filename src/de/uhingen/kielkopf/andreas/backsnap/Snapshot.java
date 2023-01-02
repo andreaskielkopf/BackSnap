@@ -5,7 +5,8 @@ package de.uhingen.kielkopf.andreas.backsnap;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -96,39 +97,22 @@ public record Snapshot(Integer id, Integer gen, Integer cgen, Integer parent, In
       try {
          Flag.setArgs(args, "/mnt/BACKUP");
          String        backupDir=Flag.getParameter(0);
-         SubVolumeList sv       =new SubVolumeList("root@localhost");
+         String        extern   ="root@localhost";
+         SnapTree      snapTree =new SnapTree("/", extern);
+         SubVolumeList sv       =new SubVolumeList(extern, snapTree);
          if (!sv.subvTree().isEmpty()) {
-            Entry<String, Subvolume> d =sv.subvTree().firstEntry();
-            SnapTree                 st=new SnapTree("/", d.getValue().extern());
+            // Entry<String, Subvolume> d=sv.subvTree().firstEntry();
             for (Entry<String, Subvolume> e:sv.subvTree().entrySet()) {
                Subvolume subv=e.getValue();
                System.out.println("Found snapshots for: " + e.getKey());
-               // for (Entry<String, Snapshot> e2:subv.snapshotTree().entrySet())
-               // System.out.println(" -> " + e2.getKey());
-               // String mp=subv.mountPoint();
-               // for (Entry<String, Snapshot> e3:st.fileMap().entrySet())
-               // System.out.println(e3);
-               @SuppressWarnings("unchecked")
-               Set<Entry<String, Snapshot>> c=((TreeMap<String, Snapshot>) subv.snapshotTree().clone()).entrySet();
-               for (Entry<String, Snapshot> e4:c) {
-                  String mp1=e4.getKey();
-                  System.out.print(" -> " + mp1);
-                  for (Entry<String, Snapshot> e5:st.fileMap().entrySet()) {
-                     Snapshot v  =e5.getValue();
-                     String   mp2=v.path.toString();
-                     if (mp1.equals(mp2)) {
-                        System.out.print(" -> " + v.key());
-                        subv.snapshotTree().put(mp1, v);
-                        break;
-                     }
-                  }
-                  System.out.println();
+               // @SuppressWarnings("unchecked")
+               // Set<Entry<String, Snapshot>> c=((TreeMap<String, Snapshot>) subv.snapshotTree().clone()).entrySet();
+               for (Entry<String, Snapshot> e4:subv.snapshotTree().entrySet()) {
+                  System.out.println(" -> " + e4.getKey() + " -> " + e4.getValue().key()); // System.out.println();
                }
             }
          }
          System.exit(-9);
-         // System.out.println(st);
-         // Path path =Paths.get(backupDir);
          StringBuilder cmd=new StringBuilder("ssh root@localhost 'btrfs subvolume list -spuqR ");
          cmd.append(backupDir);
          cmd.append("'");

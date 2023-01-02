@@ -47,7 +47,7 @@ public record SnapTree(String dirName, String extern, TreeMap<String, Snapshot> 
          snapshotList.erg().forEachOrdered(line -> { // if (file.isDirectory()) {// später prüfen
             Snapshot snapshot=new Snapshot(line);
             // if (snapshot.key().startsWith("§")) System.err.print("\n" + snapshot.key() + " -> " + line); else
-            fileMap.put(snapshot.key(), snapshot);
+            fileMap.put(snapshot.path().toString(), snapshot);
          });
          task.get(); // ende("");// T
          out.println();

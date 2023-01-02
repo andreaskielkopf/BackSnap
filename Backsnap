@@ -1,0 +1,88 @@
+#!/bin/java --source 11
+// © 2022 Andreas Kielkopf --> License GPL
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.TreeMap;
+
+public class Backsnap {
+   static String               parent=null;
+   static String               dest;
+   final static ProcessBuilder pb    =new ProcessBuilder();
+   public static void main(String[] args) {
+      String source=(args.length > 0) ? args[0] : "/.snapshots";
+      dest=(args.length > 1) ? args[1] : "/mnt/BACKUP/@snapshots/manjaro";
+      System.out.println("Backup Snapshots from " + source + " to " + dest + " ");
+      try {
+         TreeMap<String, File> sfMap=getMap(source);
+         TreeMap<String, File> dfMap=getMap(dest);
+         for (String sourceName:sfMap.keySet())
+            try {
+               backup(sourceName, sfMap, dfMap);
+            } catch (NullPointerException n) {
+               n.printStackTrace();
+            }
+      } catch (FileNotFoundException e) {
+         e.printStackTrace();
+      }
+   }
+   static void backup(String sourceName, TreeMap<String, File> sfMap, TreeMap<String, File> dfMap)
+            throws FileNotFoundException {
+      String name=sfMap.get(sourceName).getName();
+      if (dfMap.containsKey(sourceName) && dfMap.get(sourceName).toPath().resolve("snapshot").toFile().exists()) {
+         parent=sourceName;
+         return;
+      } else
+         if (!Paths.get(dest, name).toFile().mkdirs())
+            throw new FileNotFoundException("Could not create dir: " + name);
+      System.out.print("Backup of " + name);
+      StringBuilder cmd=new StringBuilder("/bin/btrfs send ");
+      if (parent != null) {
+         System.out.print(" based on " + parent);
+         cmd.append("-p ");
+         cmd.append(sfMap.get(parent).getPath());
+         cmd.append("/snapshot ");
+      }
+      System.out.println();
+      cmd.append(sfMap.get(sourceName).getPath());
+      cmd.append("/snapshot ");
+      if (Paths.get("/bin/pv").toFile().canExecute())
+         cmd.append("| /bin/pv -f ");
+      cmd.append("| /bin/btrfs receive ");
+      cmd.append(Paths.get(dest, name).toFile().getPath());
+      execute(cmd.toString());
+      parent=sourceName;
+   }
+   static void execute(String cmd) {
+      try {
+         final ArrayList<String> command=new ArrayList<>();
+         command.add("/bin/bash");
+         command.add("-c");
+         command.add(cmd);
+         try (BufferedReader br=new BufferedReader(
+                  new InputStreamReader(pb.command(command).redirectErrorStream(true).start().getInputStream()))) {
+            br.lines().forEach(System.out::println);          
+         }
+      } catch (final IOException e) {
+         e.printStackTrace();
+      }
+   }
+   final static TreeMap<String, File> getMap(String name) throws FileNotFoundException {
+      File dir=Paths.get(name).toFile();
+      if (!dir.isDirectory())
+         throw new FileNotFoundException(name);
+      TreeMap<String, File> fileMap=new TreeMap<>();
+      for (File file:dir.listFiles())
+         if (file.isDirectory()) {
+            System.out.print(file.getName() + " ");
+            String s=".".repeat(10).concat(file.getName());
+            fileMap.put(s.substring(s.length() - 10), file);
+         }
+      System.out.println();
+      return fileMap;
+   }
+}
