@@ -97,7 +97,7 @@ public record Snapshot(Integer id, Integer gen, Integer cgen, Integer parent, In
       try {
          Flag.setArgs(args, "/mnt/BACKUP");
          String        backupDir=Flag.getParameter(0);
-         String        extern   ="root@localhost";
+         String        extern   ="sudo ";
          SnapTree      snapTree =new SnapTree("/", extern);
          SubVolumeList sv       =new SubVolumeList(extern, snapTree);
          if (!sv.subvTree().isEmpty()) {
@@ -113,11 +113,14 @@ public record Snapshot(Integer id, Integer gen, Integer cgen, Integer parent, In
             }
          }
          System.exit(-9);
-         StringBuilder cmd=new StringBuilder("ssh root@localhost 'btrfs subvolume list -spuqR ");
-         cmd.append(backupDir);
-         cmd.append("'");
-         System.out.println(cmd);
          List<Snapshot> snapshots=new ArrayList<>();
+         StringBuilder cmd=new StringBuilder("btrfs subvolume list -spuqR ").append(backupDir);
+         if ((extern instanceof String x) && (!x.isBlank()))
+            if (x.startsWith("sudo "))
+               cmd.insert(0, x);
+            else
+               cmd.insert(0, "ssh " + x + " '").append("'");
+         System.out.println(cmd);
          try (CmdStream std=Commandline.execute(cmd)) {
             std.backgroundErr();
             std.erg().forEach(line -> {

@@ -29,11 +29,13 @@ public record SnapTree(String dirName, String extern, TreeMap<String, Snapshot> 
       populate();
    }
    // private fileMap=new TreeMap<>();
-   private void populate() {
-      StringBuilder btrfsCmd=new StringBuilder("btrfs subvolume list -spcguqR ");// otime kommt nur bei snapshots
-      btrfsCmd.append(dirName);
+   private void populate() {// otime kommt nur bei snapshots
+      StringBuilder btrfsCmd=new StringBuilder("btrfs subvolume list -spcguqR ").append(dirName);
       if ((extern instanceof String x) && (!x.isBlank()))
-         btrfsCmd.insert(0, "ssh " + x + " '").append("'");
+         if (x.startsWith("sudo "))
+            btrfsCmd.insert(0, x);
+         else
+            btrfsCmd.insert(0, "ssh " + x + " '").append("'");
       System.out.println(btrfsCmd);
       // cmd.append("/bin/ls "); // cmd.append(dirName); // if (!extern.isBlank())
       try (CmdStream snapshotList=Commandline.execute(btrfsCmd)) {

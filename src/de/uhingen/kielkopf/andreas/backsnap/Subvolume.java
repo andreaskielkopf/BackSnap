@@ -49,10 +49,12 @@ public record Subvolume(String device, String mountPoint, String subvol, String 
     */
    private void populate(SnapTree snapTree) {
       boolean       snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.fileMap().isEmpty() : false;
-      StringBuilder btrfsCmd         =new StringBuilder("btrfs subvolume show ");
-      btrfsCmd.append(mountPoint);
+      StringBuilder btrfsCmd         =new StringBuilder("btrfs subvolume show ").append(mountPoint);
       if ((extern instanceof String x) && (!x.isBlank()))
-         btrfsCmd.insert(0, "ssh " + x + " '").append("'");
+         if (x.startsWith("sudo "))
+            btrfsCmd.insert(0, x);
+         else
+            btrfsCmd.insert(0, "ssh " + x + " '").append("'");
       System.out.println(btrfsCmd);
       try (CmdStream snapshotList=Commandline.execute(btrfsCmd)) {
          Future<?> errorHandling=Commandline.background.submit(() -> {// Some Error handling in background

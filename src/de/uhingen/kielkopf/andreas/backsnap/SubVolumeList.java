@@ -29,7 +29,6 @@ public record SubVolumeList(String extern, TreeMap<String, Subvolume> subvTree) 
       this(extern, new TreeMap<>());
       populate(snapTree);
    }
-
    /**
     * Ermittle alle Subvolumes die Snapshots enthalten indem "mount" gefragt wird
     * 
@@ -38,7 +37,10 @@ public record SubVolumeList(String extern, TreeMap<String, Subvolume> subvTree) 
    private void populate(SnapTree snapTree) {
       StringBuilder mountCmd=new StringBuilder("mount|grep btrfs");
       if ((extern instanceof String x) && (!x.isBlank()))
-         mountCmd.insert(0, "ssh " + x + " '").append("'");
+         if (x.startsWith("sudo"))
+            mountCmd.insert(0, x);
+         else
+            mountCmd.insert(0, "ssh " + x + " '").append("'");
       System.out.println(mountCmd);
       try (CmdStream subvolumeList=Commandline.execute(mountCmd)) {
          Future<?> errorHandling=Commandline.background.submit(() -> {// Some Error handling in background
