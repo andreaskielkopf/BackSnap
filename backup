@@ -35,12 +35,12 @@ backup "root@jitsim1:/opt/hst" "jitsim1.hst"
 backup "root@jitsim1:/opt/hugo" "jitsim1.hugo"
 
 # laptop sichern 
-backup "root@notebook:" "notebook"
-backup "root@notebook:/home" "notebook.home"
+#backup "root@notebook:" "notebook"
+#backup "root@notebook:/home" "notebook.home"
 
 # gast sichern
-backup "root@gast:" "gast"
-backup "root@gast:/home" "gast"
+#backup "root@gast:" "gast"
+#backup "root@gast:/home" "gast"
 
 umount $BS_MOUNT
 echo "fertig"

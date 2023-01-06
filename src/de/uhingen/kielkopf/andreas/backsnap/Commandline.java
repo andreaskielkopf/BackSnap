@@ -4,6 +4,7 @@
 package de.uhingen.kielkopf.andreas.backsnap;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -13,12 +14,8 @@ import java.util.stream.Stream;
  * @author Andreas Kielkopf
  */
 public class Commandline {
-   /**
-    * 
-    */
-   final static ProcessBuilder  processBuilder=new ProcessBuilder();
-   // final static List<Process> processList =new CopyOnWriteArrayList<>();
-   public final static String   UTF_8         ="UTF-8";
+   final static ProcessBuilder         processBuilder=new ProcessBuilder();
+   public final static String          UTF_8         ="UTF-8";
    /**
     * ExecutorService um den Errorstream im Hintergrund zu lesen
     */
@@ -43,7 +40,7 @@ public class Commandline {
       Process process=processBuilder.command(List.of("/bin/bash", "-c", cmd)).start();
       // processList.add(process); // collect all Lines into streams
       return new CmdStream(process, new BufferedReader(new InputStreamReader(process.getInputStream(), UTF_8)).lines(),
-               new BufferedReader(new InputStreamReader(process.getErrorStream(), UTF_8)).lines());
+               new BufferedReader(new InputStreamReader(process.getErrorStream(), UTF_8)).lines(), new ArrayList<>());
    }
    // public static void cleanup() {
    // for (Process process:new CopyOnWriteArrayList<>(processList))
@@ -61,20 +58,15 @@ public class Commandline {
     * 
     * @author Andreas Kielkopf
     */
-   record CmdStream(Process process, Stream<String> erg, Stream<String> err) implements Closeable {
-      public void backgroundErr() { // Fehler im Hintergrund ausgeben
+   public record CmdStream(Process process, Stream<String> erg, Stream<String> err, List<String> errList)
+            implements Closeable {
+      public void backgroundErr() { // Fehler im Hintergrund ausgeben und ablegen
          background.submit(() -> bE());// err().forEach(System.err::println));
       }
       private void bE() {
          try (err) {
-            err().forEach(System.err::println);
+            errList.addAll(err().peek(System.err::println).toList());
          }
-      }
-      /**
-       * Wenn die Errorstreams nicht mehr gebraucht werden, aufräumen
-       */
-      public static void cleanup() {
-         background.shutdownNow();
       }
       @Override
       public void close() {
@@ -82,5 +74,11 @@ public class Commandline {
          erg.close();
          process.destroy();
       }
+   }
+   /**
+    * Wenn die Errorstreams nicht mehr gebraucht werden, aufräumen
+    */
+   public static void cleanup() {
+      background.shutdownNow();
    }
 }

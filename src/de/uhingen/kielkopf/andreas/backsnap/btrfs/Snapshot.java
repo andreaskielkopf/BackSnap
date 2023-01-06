@@ -1,7 +1,10 @@
 /**
  * 
  */
-package de.uhingen.kielkopf.andreas.backsnap;
+package de.uhingen.kielkopf.andreas.backsnap.btrfs;
+
+import static de.uhingen.kielkopf.andreas.backsnap.Backsnap.AT_SNAPSHOTS;
+import static de.uhingen.kielkopf.andreas.backsnap.Backsnap.DOT_SNAPSHOTS;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -11,6 +14,7 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 import de.uhingen.kielkopf.andreas.beans.cli.Flag;
 
@@ -32,6 +36,7 @@ public record Snapshot(Integer id, Integer gen, Integer cgen, Integer parent, In
    final static Pattern UUID=createPatternFor("uuid");
    final static Pattern PATH=createPatternFor("path");
    final static Pattern NUMERIC_DIRNAME=Pattern.compile("([0-9]+)/snapshot$");
+   final static Pattern DIRNAME=Pattern.compile("([^/]+)/snapshot$");
    final static Pattern SUBVOLUME=Pattern.compile("^(@[0-9a-zA-Z.]+)/.*[0-9]+/snapshot$");
    public Snapshot(String from_btrfs) {
       this(getInt(ID.matcher(from_btrfs)), getInt(GEN.matcher(from_btrfs)), getInt(CGEN.matcher(from_btrfs)),
@@ -44,7 +49,7 @@ public record Snapshot(Integer id, Integer gen, Integer cgen, Integer parent, In
     * @param Matcher
     * @return String
     */
-   static String getString(Matcher m) {
+   public static String getString(Matcher m) {
       if (!m.find())
          return null;
       return m.group(1);
@@ -54,7 +59,7 @@ public record Snapshot(Integer id, Integer gen, Integer cgen, Integer parent, In
     * @return Integer
     */
    @SuppressWarnings("boxing")
-   static Integer getInt(Matcher m) {
+   public static Integer getInt(Matcher m) {
       if (!m.find())
          return null;
       return Integer.parseUnsignedInt(m.group(1));
@@ -63,7 +68,7 @@ public record Snapshot(Integer id, Integer gen, Integer cgen, Integer parent, In
     * @param Matcher
     * @return Path
     */
-   static Path getPath(Matcher m) {
+   public static Path getPath(Matcher m) {
       if (!m.find())
          return null;
       return Path.of(m.group(1));
@@ -84,6 +89,12 @@ public record Snapshot(Integer id, Integer gen, Integer cgen, Integer parent, In
          return name;
       return ".".repeat(SORT_LEN - name.length()).concat(name); // ??? numerisch sortieren ;-)
    }
+   public String dirName() {
+      Matcher m=DIRNAME.matcher(path.toString());
+      if (!m.find())
+         return null;
+      return m.group(1);
+   }
    /**
     * @return Subvolume dieses Snapshots sofern im Pfad enthalten
     */
@@ -95,27 +106,60 @@ public record Snapshot(Integer id, Integer gen, Integer cgen, Integer parent, In
    }
    public static void main(String[] args) {
       try {
-         Flag.setArgs(args, "/mnt/BACKUP");
-         String        backupDir=Flag.getParameter(0);
-         String        extern   ="sudo ";
-         SnapTree      snapTree =new SnapTree("/", extern);
-         SubVolumeList sv       =new SubVolumeList(extern, snapTree);
-         if (!sv.subvTree().isEmpty()) {
-            // Entry<String, Subvolume> d=sv.subvTree().firstEntry();
-            for (Entry<String, Subvolume> e:sv.subvTree().entrySet()) {
+         Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " /mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro");// Parameter
+                                                                                                    // sammeln
+         String backupDir=Flag.getParameterOrDefault(1, "@BackSnap");
+         // List<Subvolume> quellen =new ArrayList<>();
+         String source   =Flag.getParameter(0);
+         String externSsh=source.contains(":") ? source.substring(0, source.indexOf(":")) : "";
+         String sourceDir=externSsh.isBlank() ? source : source.substring(externSsh.length() + 1);
+         if (externSsh.startsWith("sudo"))
+            externSsh="sudo ";
+         if (externSsh.isBlank())
+            externSsh="root@localhost";
+         // SnapTree snapTree=new SnapTree("/", externSsh);
+         if (sourceDir.endsWith(DOT_SNAPSHOTS))
+            sourceDir=sourceDir.substring(0, sourceDir.length() - DOT_SNAPSHOTS.length());
+         if (sourceDir.endsWith("//"))
+            sourceDir=sourceDir.substring(0, sourceDir.length() - 2);
+         // SrcVolume ermitteln
+         SubVolumeList subVolumes=new SubVolumeList(externSsh);
+         Subvolume     srcVolume =subVolumes.subvTree().get(sourceDir);
+         if (srcVolume == null)
+            throw new RuntimeException("Could not find srcDir: " + sourceDir);
+         if (srcVolume.snapshotTree().isEmpty())
+            throw new RuntimeException("Ingnoring, because there are no snapshots in: " + sourceDir);
+         System.out.println("backup snapshots from: " + srcVolume.key());
+         // BackupVolume ermitteln
+         Subvolume backupVolume=subVolumes.getBackupVolume(backupDir);
+         if (backupVolume == null)
+            throw new RuntimeException("Could not find backupDir: " + backupDir);
+         System.out.println("Will try to use backupDir: " + backupVolume.key());
+         // Subdir ermitteln
+         Path pbd =Path.of(backupDir);
+         Path pbv =Path.of(backupVolume.key());
+         Path pbsd=pbv.relativize(pbd);
+         System.out.println(pbsd);
+         // Verifizieren !#
+         //
+         if (!subVolumes.subvTree().isEmpty()) {
+            for (Entry<String, Subvolume> e:subVolumes.subvTree().entrySet()) {
                Subvolume subv=e.getValue();
-               System.out.println("Found snapshots for: " + e.getKey());
-               // @SuppressWarnings("unchecked")
-               // Set<Entry<String, Snapshot>> c=((TreeMap<String, Snapshot>) subv.snapshotTree().clone()).entrySet();
-               for (Entry<String, Snapshot> e4:subv.snapshotTree().entrySet()) {
-                  System.out.println(" -> " + e4.getKey() + " -> " + e4.getValue().key()); // System.out.println();
-               }
+               if (!subv.snapshotTree().isEmpty()) {// interessant sind nur die Subvolumes mit snapshots
+                  String commonName=subv.getCommonName();
+                  System.out.println("Found snapshots for: " + e.getKey() + " at (" + commonName + ")");
+                  for (Entry<String, Snapshot> e4:subv.snapshotTree().entrySet())
+                     System.out.println(" -> " + e4.getKey() + " -> " + e4.getValue().key()); // System.out.println();
+               } else
+                  System.out.println("NO snapshots of: " + e.getKey());
             }
          }
+         Subvolume bbv=subVolumes.getBackupVolume(null);
+         System.out.println(bbv);
          System.exit(-9);
          List<Snapshot> snapshots=new ArrayList<>();
-         StringBuilder cmd=new StringBuilder("btrfs subvolume list -spuqR ").append(backupDir);
-         if ((extern instanceof String x) && (!x.isBlank()))
+         StringBuilder  cmd      =new StringBuilder("btrfs subvolume list -spuqR ").append(backupDir);
+         if ((externSsh instanceof String x) && (!x.isBlank()))
             if (x.startsWith("sudo "))
                cmd.insert(0, x);
             else
@@ -141,9 +185,24 @@ public record Snapshot(Integer id, Integer gen, Integer cgen, Integer parent, In
                // if (!ru.startsWith("-"))
                System.out.println(snapshot.key() + " => " + snapshot.toString());
          }
-         CmdStream.cleanup();
+         Commandline.cleanup();
       } catch (IOException e) {
          e.printStackTrace();
       }
+   }
+   public boolean isBackup() {
+      return received_uuid().length() > 8;
+   }
+   public Path getPathOn(String root, List<SnapConfig> snapConfigs) {
+      for (SnapConfig snapConfig:snapConfigs) {
+         if (snapConfig.original().mountPoint().equals(root)) {
+            String        k =snapConfig.kopie().mountPoint();
+            String        w =this.dirName();
+            Path   p=Path.of(k).resolve(w);
+            // StringBuilder q =new StringBuilder(path.toString());
+            return p;
+         }
+      }
+      return null;
    }
 }

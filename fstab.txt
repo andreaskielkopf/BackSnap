@@ -1,0 +1,2 @@
+# BACKUP-MEDIUM anhand BTRFS UUID mounten
+UUID=03417033-3745-4ae7-9451-efafcbb9124e	/mnt/BACKUP		btrfs	noauto,rw,noatime,compress=zstd:9,subvol=/			0 0

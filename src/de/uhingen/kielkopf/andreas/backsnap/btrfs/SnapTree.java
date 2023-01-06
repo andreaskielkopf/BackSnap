@@ -1,15 +1,14 @@
 /**
  * 
  */
-package de.uhingen.kielkopf.andreas.backsnap;
-
-import static java.lang.System.out;
+package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 
 import java.io.IOException;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 
 /**
@@ -41,7 +40,8 @@ public record SnapTree(String dirName, String extern, TreeMap<String, Snapshot> 
       try (CmdStream snapshotList=Commandline.execute(btrfsCmd)) {
          Future<?> task=Commandline.background.submit(() -> {// Some Error handling in background
             if (snapshotList.err().peek(System.err::println).anyMatch(line -> {
-               return line.contains("Connection closed") || line.contains("connection unexpectedly closed");
+               return line.contains("No route to host") || line.contains("Connection closed")
+                        || line.contains("connection unexpectedly closed");
             }))
                throw new IOException("connection unexpectedly closed");
             return "";
@@ -52,7 +52,7 @@ public record SnapTree(String dirName, String extern, TreeMap<String, Snapshot> 
             fileMap.put(snapshot.path().toString(), snapshot);
          });
          task.get(); // ende("");// T
-         out.println();
+         // out.println();
       } catch (IOException | ExecutionException | InterruptedException e) {
          e.printStackTrace();
       }
