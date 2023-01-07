@@ -35,7 +35,7 @@ public class Backsnap {
    // final static String srcSsH ="root@localhost";
    // final static String backupSsH =srcSsH;
    public static void main(String[] args) {
-      // DRYRUN.set(true);
+
       StringBuilder sb=new StringBuilder("args > ");
       for (String s:args)
          sb.append(" ").append(s);
@@ -49,89 +49,78 @@ public class Backsnap {
       String srcDir=srcSsh.isBlank() ? source : source.substring(srcSsh.length() + 1);
       if (srcSsh.startsWith("sudo"))
          srcSsh="sudo ";
-      // if (srcSsh.isBlank())
-      // srcSsh="root@localhost";
       if (srcDir.endsWith(DOT_SNAPSHOTS))
          srcDir=srcDir.substring(0, srcDir.length() - DOT_SNAPSHOTS.length());
       if ((srcDir.length() > 1) && srcDir.endsWith("/"))
          srcDir=srcDir.substring(0, srcDir.length() - 1);
-      // SnapTree srcTree =new SnapTree(srcDir, srcSsh);
-      // SrcVolume ermitteln
-      SubVolumeList srcSubVolumes=new SubVolumeList(srcSsh);
-      Subvolume     srcVolume    =srcSubVolumes.subvTree().get(srcDir);
-      if (srcVolume == null)
-         throw new RuntimeException("Could not find srcDir: " + srcDir);
-      if (srcVolume.snapshotTree().isEmpty())
-         throw new RuntimeException("Ingnoring, because there are no snapshots in: " + srcDir);
-      System.out.println("backup snapshots from: " + srcVolume.key());
-      // BackupVolume ermitteln
-      String backup   =Flag.getParameterOrDefault(1, "@BackSnap");
-      String backupSsh=backup.contains(":") ? backup.substring(0, backup.indexOf(":")) : "";
-      String backupDir=backupSsh.isBlank() ? backup : backup.substring(backupSsh.length() + 1);
-      if (backupSsh.startsWith("sudo"))
-         backupSsh="sudo ";
-      // if (backupSsh.isBlank())
-      // backupSsh="root@localhost";
-      // if (backupDir.endsWith(DOT_SNAPSHOTS))
-      // backupDir=backupDir.substring(0, backupDir.length() - DOT_SNAPSHOTS.length());
-      // if (backupDir.endsWith("//"))
-      // backupDir=backupDir.substring(0, srcDir.length() - 2);
-      // backupTree =new SnapTree("/", backupSsh);
-      SubVolumeList backupSubVolumes=new SubVolumeList(backupSsh);
-      Subvolume     backupVolume    =backupSubVolumes.getBackupVolume(backupDir);
-      if (backupVolume == null)
-         throw new RuntimeException("Could not find backupDir: " + backupDir);
-      if ((backupVolume.device().equals(srcVolume.device())) && backupSsh.equals(srcSsh))
-         throw new RuntimeException("Backup not possible onto same device: " + backupDir + " <= " + srcDir);
-      SnapTree backupTree=new SnapTree(backupVolume.mountPoint(), backupSsh);
-      System.out.println("Will try to use backupDir: " + backupVolume.key());
-      TreeMap<String, Snapshot> receivedSnapshots=new TreeMap<>();
-      List<SnapConfig>          snapConfigs      =SnapConfig.getList(srcSubVolumes);
-      for (Snapshot s:backupTree.fileMap().values())
-         if (s.isBackup())
-            receivedSnapshots.put(s.received_uuid(), s);
-      // backupVolume.populate(backupTree);
-      // if (GUI.get()) { BacksnapGui.main(args); } else
-      {
+      try {
+         SubVolumeList srcSubVolumes=new SubVolumeList(srcSsh);
+         Subvolume     srcVolume    =srcSubVolumes.subvTree().get(srcDir);
+         if (srcVolume == null)
+            throw new RuntimeException("Could not find srcDir: " + srcDir);
+         if (srcVolume.snapshotTree().isEmpty())
+            throw new RuntimeException("Ingnoring, because there are no snapshots in: " + srcDir);
+         System.out.println("backup snapshots from: " + srcVolume.key());
+         // BackupVolume ermitteln
+         String backup   =Flag.getParameterOrDefault(1, "@BackSnap");
+         String backupSsh=backup.contains(":") ? backup.substring(0, backup.indexOf(":")) : "";
+         String backupDir=backupSsh.isBlank() ? backup : backup.substring(backupSsh.length() + 1);
+         if (backupSsh.startsWith("sudo"))
+            backupSsh="sudo ";
+         SubVolumeList backupSubVolumes=new SubVolumeList(backupSsh);
+         Subvolume     backupVolume    =backupSubVolumes.getBackupVolume(backupDir);
+         if (backupVolume == null)
+            throw new RuntimeException("Could not find backupDir: " + backupDir);
+         if ((backupVolume.device().equals(srcVolume.device())) && backupSsh.equals(srcSsh))
+            throw new RuntimeException("Backup not possible onto same device: " + backupDir + " <= " + srcDir);
+         SnapTree backupTree=new SnapTree(backupVolume.mountPoint(), backupSsh);
+         System.out.println("Will try to use backupDir: " + backupVolume.key());
+         TreeMap<String, Snapshot> receivedSnapshots=new TreeMap<>();
+         List<SnapConfig>          snapConfigs      =SnapConfig.getList(srcSubVolumes);
+         for (Snapshot s:backupTree.fileMap().values())
+            if (s.isBackup())
+               receivedSnapshots.put(s.received_uuid(), s);
+         // backupVolume.populate(backupTree);
+         // if (GUI.get()) { BacksnapGui.main(args); } else
          out.println("Backup Snapshots from " + srcSsh + (srcSsh.contains("@") ? ":" : "") + srcDir + " to " + backupDir
                   + " ");
          try {
             usePv=Paths.get("/bin/pv").toFile().canExecute();
          } catch (Exception e1) {/**/}
          /// Alle Snapshots einzeln sichern
-         try {
-            if (connectionLost > 0) {
-               err.println("no SSH Connection");
-               ende("X");
-               System.exit(0);
-            }
-            TreeMap<String, Snapshot> sortedSnapshots=new TreeMap<>();
-            for (Snapshot s:srcVolume.snapshotTree().values())
-               sortedSnapshots.put(s.key(), s);
-            for (Snapshot sourceSnapshot:sortedSnapshots.values()) {// for (String sourceKey:sfMap.keySet()) {
-               if (canNotFindParent != null) {
-                  err.println("Please remove " + backupDir + "/" + canNotFindParent + "/" + SNAPSHOT + " !");
-                  ende("X");
-                  System.exit(-9);
-               } else
-                  if (connectionLost > 3) {
-                     err.println("SSH Connection lost !");
-                     ende("X");
-                     System.exit(-8);
-                  }
-               try {
-                  // ende("A");
-                  out.print(".");
-                  if (!backup(sourceSnapshot, srcVolume, receivedSnapshots, backupDir, srcSsh, backupSsh, snapConfigs))
-                     continue; // if (!backup(sourceDir, sourceKey, sfMap, dfMap, destDir, externSsh)) continue;
-               } catch (NullPointerException n) {
-                  n.printStackTrace();
-                  break;
-               }
-            }
-         } catch (IOException e) {
-            e.printStackTrace();
+         if (connectionLost > 0) {
+            err.println("no SSH Connection");
+            ende("X");
+            System.exit(0);
          }
+         TreeMap<String, Snapshot> sortedSnapshots=new TreeMap<>();
+         for (Snapshot s:srcVolume.snapshotTree().values())
+            sortedSnapshots.put(s.key(), s);
+         for (Snapshot sourceSnapshot:sortedSnapshots.values()) {// for (String sourceKey:sfMap.keySet()) {
+            if (canNotFindParent != null) {
+               err.println("Please remove " + backupDir + "/" + canNotFindParent + "/" + SNAPSHOT + " !");
+               ende("X");
+               System.exit(-9);
+            } else
+               if (connectionLost > 3) {
+                  err.println("SSH Connection lost !");
+                  ende("X");
+                  System.exit(-8);
+               }
+            try {
+               // ende("A");
+               out.print(".");
+               if (!backup(sourceSnapshot, srcVolume, receivedSnapshots, backupDir, srcSsh, backupSsh, snapConfigs))
+                  continue;
+            } catch (NullPointerException n) {
+               n.printStackTrace();
+               break;
+            }
+         }
+      } catch (IOException e) {
+         e.printStackTrace();
+         ende("Xabbruch");
+         System.exit(-1);
       }
       ende("X");
    }
@@ -312,149 +301,6 @@ public class Backsnap {
       throw new FileNotFoundException("Could not create dir: " + d);
    }
    /**
-    * Versuchen genau diesen einzelnen Snapshot zu sichern
-    * 
-    * @param sourceKey
-    * @param sMap
-    * @param dMap
-    * @throws IOException
-    */
-   // private static boolean backup(String sourceDir, String sourceKey, TreeMap<String, String> sMap,
-   // TreeMap<String, String> dMap, final String destDir, String externSsh) throws IOException {
-   // String sourceName =sMap.get(sourceKey);
-   // boolean existAlready=false;
-   // if (dMap.containsKey(sourceKey)) {
-   // Path p=Paths.get(destDir, dMap.get(sourceKey), SNAPSHOT);
-   // if (Files.isDirectory(p))
-   // existAlready=true;
-   // }
-   // if (existAlready) {
-   // parentKey=sourceKey;
-   // return false;
-   // }
-   // if (!dMap.containsKey(sourceKey))
-   // if (!Paths.get(destDir, sourceName).toFile().mkdirs())
-   // throw new FileNotFoundException("Could not create dir: " + destDir + "/" + sourceName);
-   // out.print("Backup of " + sourceName);
-   // StringBuilder send_cmd=new StringBuilder("/bin/btrfs send ");
-   // if (parentKey != null) {
-   // out.print(" based on " + parentKey);
-   // send_cmd.append("-p ").append(Paths.get(sourceDir, sMap.get(parentKey), SNAPSHOT)).append(" ");
-   // }
-   // out.println();
-   // send_cmd.append(Paths.get(sourceDir, sMap.get(sourceKey), SNAPSHOT));
-   // if ((externSsh instanceof String x) && (!x.isBlank()))
-   // if (x.startsWith("sudo "))
-   // send_cmd.insert(0, x);
-   // else
-   // send_cmd.insert(0, "ssh " + x + " '").append("'");
-   // if (usePv)
-   // send_cmd.append("|/bin/pv -f");
-   // send_cmd.append("|/bin/btrfs receive ").append(Paths.get(destDir, sourceName).toFile().getPath())
-   // .append(";/bin/sync");
-   // out.println(send_cmd);
-   // CmdStream btrfs_send=Commandline.execute(send_cmd);
-   // task=background.submit(() -> btrfs_send.err().forEach(line -> {
-   // if (line.contains("ERROR: cannot find parent subvolume"))
-   // Backsnap.canNotFindParent=Backsnap.parentKey;
-   // if (line.contains("Connection closed") || line.contains("connection unexpectedly closed"))
-   // Backsnap.connectionLost=10;
-   // if (line.contains("<=>")) { // from pv
-   // err.print(line);
-   // if (Backsnap.lastLine == 0)
-   // err.print("\n");
-   // else
-   // err.print("\r");
-   // Backsnap.lastLine=line.length();
-   // if (line.contains(":00 ")) {
-   // err.print("\n");
-   // Backsnap.connectionLost=0;
-   // }
-   // if (line.contains("0,00 B/s")) {
-   // err.println();
-   // err.println("HipCup");
-   // Backsnap.connectionLost++;
-   // }
-   // } else {
-   // if (Backsnap.lastLine != 0) {
-   // Backsnap.lastLine=0;
-   // err.println();
-   // }
-   // err.println(line);
-   // }
-   // }));
-   // btrfs_send.erg().forEach(line -> {
-   // if (lastLine != 0) {
-   // lastLine=0;
-   // out.println();
-   // }
-   // out.println();
-   // });
-   // ende("");// B
-   // StringBuilder copy_cmd=new StringBuilder("rsync -vcptgo --exclude '" + SNAPSHOT + "' ");
-   // if (!externSsh.isBlank()) {
-   // copy_cmd.append(externSsh);
-   // copy_cmd.append(":");
-   // }
-   // Path pc=Paths.get(sourceDir, sMap.get(sourceKey));
-   // copy_cmd.append(pc);
-   // copy_cmd.append("/* ");
-   // copy_cmd.append(Paths.get(destDir, sourceName).toFile().getPath());
-   // copy_cmd.append("/");
-   // out.print(copy_cmd.toString());
-   // CmdStream rsync=Commandline.execute(copy_cmd.toString());
-   // task=background.submit(() -> rsync.err().forEach(line -> {
-   // if (line.contains("Connection closed") || line.contains("connection unexpectedly closed"))
-   // Backsnap.connectionLost=10;
-   // err.println(line);
-   // }));
-   // rsync.erg().forEach(out::println);
-   // ende("");// R
-   // parentKey=sourceKey;
-   // return true;
-   // }
-   // private static final Pattern numericDirname=Pattern.compile("^[0-9]+$");
-   // final static ExecutorService background =Executors.newCachedThreadPool();
-   /**
-    * Hole ein Verzeichniss in die Map
-    * 
-    * @param dirName
-    * @param extern
-    * @return
-    * @throws IOException
-    */
-   // private final static TreeMap<String, String> getMap(final String dirName, final String extern) throws IOException
-   // {
-   // TreeMap<String, String> fileMap=new TreeMap<>();
-   // StringBuilder cmd =new StringBuilder("/bin/ls ").append(dirName);
-   // if ((extern instanceof String x) && (!x.isBlank())) {
-   // cmd.insert(0, x + " '").append("'");
-   // if (!x.startsWith("sudo "))
-   // cmd.insert(0, "ssh ");
-   // }
-   // Commandline.CmdStream std=Commandline.execute(cmd.toString());
-   // // Error handling in background
-   // task=background.submit(() -> std.err().forEach(line -> {
-   // if (line.contains("Connection closed") || line.contains("connection unexpectedly closed"))
-   // Backsnap.connectionLost=10;
-   // err.println(line);
-   // }));
-   // std.erg().forEachOrdered(file -> { // if (file.isDirectory()) {// später prüfen
-   // if (numericDirname.matcher(file).matches()) {
-   // out.print(file + " ");
-   // String s=".".repeat(10).concat(file); // ??? numerisch sortieren ;-)
-   // s=s.substring(s.length() - 10);
-   // fileMap.put(s, file);
-   // } else {
-   // err.println();
-   // err.print(file);
-   // }
-   // });
-   // ende("");// T
-   // out.println();
-   // return fileMap;
-   // }
-   /**
     * prozesse aufräumen
     * 
     * @param t
@@ -467,15 +313,6 @@ public class Backsnap {
          } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
          }
-      // for (Process process2:Commandline.processList) {
-      // if (process2.isAlive()) {
-      // out.print(t.toUpperCase());
-      // try {
-      // process2.waitFor(5, TimeUnit.SECONDS);
-      // } catch (InterruptedException e) {/**/ }
-      // out.print(t.toLowerCase());
-      // }
-      // }
       out.print(t);
       if (t.startsWith("X")) {
          out.print(" ready");

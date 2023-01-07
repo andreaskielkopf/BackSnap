@@ -104,6 +104,21 @@ public record Snapshot(Integer id, Integer gen, Integer cgen, Integer parent, In
          return "";
       return m.group(1);
    }
+   public boolean isBackup() {
+      return received_uuid().length() > 8;
+   }
+   public Path getPathOn(String root, List<SnapConfig> snapConfigs) {
+      for (SnapConfig snapConfig:snapConfigs) {
+         if (snapConfig.original().mountPoint().equals(root)) {
+            String k=snapConfig.kopie().mountPoint();
+            String w=this.dirName();
+            Path   p=Path.of(k).resolve(w);
+            // StringBuilder q =new StringBuilder(path.toString());
+            return p;
+         }
+      }
+      return null;
+   }
    public static void main(String[] args) {
       try {
          Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " /mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro");// Parameter
@@ -141,8 +156,7 @@ public record Snapshot(Integer id, Integer gen, Integer cgen, Integer parent, In
          Path pbsd=pbv.relativize(pbd);
          System.out.println(pbsd);
          // Verifizieren !#
-         //
-         if (!subVolumes.subvTree().isEmpty()) {
+         if (!subVolumes.subvTree().isEmpty())
             for (Entry<String, Subvolume> e:subVolumes.subvTree().entrySet()) {
                Subvolume subv=e.getValue();
                if (!subv.snapshotTree().isEmpty()) {// interessant sind nur die Subvolumes mit snapshots
@@ -153,7 +167,7 @@ public record Snapshot(Integer id, Integer gen, Integer cgen, Integer parent, In
                } else
                   System.out.println("NO snapshots of: " + e.getKey());
             }
-         }
+
          Subvolume bbv=subVolumes.getBackupVolume(null);
          System.out.println(bbv);
          System.exit(-9);
@@ -189,20 +203,5 @@ public record Snapshot(Integer id, Integer gen, Integer cgen, Integer parent, In
       } catch (IOException e) {
          e.printStackTrace();
       }
-   }
-   public boolean isBackup() {
-      return received_uuid().length() > 8;
-   }
-   public Path getPathOn(String root, List<SnapConfig> snapConfigs) {
-      for (SnapConfig snapConfig:snapConfigs) {
-         if (snapConfig.original().mountPoint().equals(root)) {
-            String        k =snapConfig.kopie().mountPoint();
-            String        w =this.dirName();
-            Path   p=Path.of(k).resolve(w);
-            // StringBuilder q =new StringBuilder(path.toString());
-            return p;
-         }
-      }
-      return null;
    }
 }

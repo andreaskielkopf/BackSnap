@@ -10,8 +10,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
@@ -28,8 +26,9 @@ public record SubVolumeList(String extern, TreeMap<String, Subvolume> subvTree) 
     *           mit Zugang zum PC
     * @param snapTree
     *           Liste mit Snapshots dieses PCs
+    * @throws IOException
     */
-   public SubVolumeList(String extern) {
+   public SubVolumeList(String extern) throws IOException {
       this(extern, new TreeMap<>());
       populate();
    }
@@ -37,8 +36,9 @@ public record SubVolumeList(String extern, TreeMap<String, Subvolume> subvTree) 
     * Ermittle alle Subvolumes die Snapshots enthalten indem "mount" gefragt wird
     * 
     * @param snapTree
+    * @throws IOException
     */
-   private void populate() {
+   private void populate() throws IOException {
       StringBuilder mountCmd=new StringBuilder("mount|grep btrfs");
       if (!extern.isBlank())
          if (extern.startsWith("sudo"))
@@ -47,22 +47,16 @@ public record SubVolumeList(String extern, TreeMap<String, Subvolume> subvTree) 
             mountCmd.insert(0, "ssh " + extern + " '").append("'");
       System.out.println(mountCmd);
       try (CmdStream subvolumeList=Commandline.execute(mountCmd)) {
-         Future<?> errorHandling=Commandline.background.submit(() -> {// Some Error handling in background
-            if (subvolumeList.err().peek(System.err::println).anyMatch(line -> {
-               return line.contains("No route to host") || line.contains("Connection closed")
-                        || line.contains("connection unexpectedly closed");
-            }))
-               throw new IOException("connection unexpectedly closed");
-            return "";
-         });
-         subvolumeList.erg().forEachOrdered(line -> {
+         subvolumeList.backgroundErr();
+         for (String line:subvolumeList.erg().toList()) {
             Subvolume subvolume=new Subvolume(line, extern);
             subvTree.put(subvolume.key(), subvolume);
-         });
-         errorHandling.get();
+         }
+         for (String line:subvolumeList.errList())
+            if (line.contains("No route to host") || line.contains("Connection closed")
+                     || line.contains("connection unexpectedly closed"))
+               throw new IOException(line);
          out.println();
-      } catch (IOException | ExecutionException | InterruptedException e) {
-         e.printStackTrace();
       }
    }
    /**
