@@ -24,6 +24,7 @@ public class Backsnap {
    static String              canNotFindParent=null;
    static int                 connectionLost  =0;
    static Future<?>           task            =null;
+   private static BacksnapGui bs;
    final public static String SNAPSHOT        ="snapshot";
    // final private static String SNAPSHOTS ="snapshots";
    // final private static String DOT_SNAPSHOT =".snapshot";
@@ -81,46 +82,48 @@ public class Backsnap {
                receivedSnapshots.put(s.received_uuid(), s);
          // backupVolume.populate(backupTree);
          if (GUI.get()) {
-            BacksnapGui bs=new BacksnapGui();
+            bs=new BacksnapGui();
             BacksnapGui.setGui(bs);
             BacksnapGui.main(args);
             bs.setSrc(srcVolume);
             bs.setBackup(backupVolume, backupTree.fileMap(), backupDir);
-         } else {
-            out.println("Backup Snapshots from " + srcSsh + (srcSsh.contains("@") ? ":" : "") + srcDir + " to "
-                     + backupDir + " ");
-            try {
-               usePv=Paths.get("/bin/pv").toFile().canExecute();
-            } catch (Exception e1) {/**/}
-            /// Alle Snapshots einzeln sichern
-            if (connectionLost > 0) {
-               err.println("no SSH Connection");
+         }
+         out.println("Backup Snapshots from " + srcSsh + (srcSsh.contains("@") ? ":" : "") + srcDir + " to " + backupDir
+                  + " ");
+         try {
+            usePv=Paths.get("/bin/pv").toFile().canExecute();
+         } catch (Exception e1) {/**/}
+         /// Alle Snapshots einzeln sichern
+         if (connectionLost > 0) {
+            err.println("no SSH Connection");
+            ende("X");
+            System.exit(0);
+         }
+         TreeMap<String, Snapshot> sortedSnapshots=new TreeMap<>();
+         for (Snapshot s:srcVolume.snapshotTree().values())
+            sortedSnapshots.put(s.key(), s);
+         for (Snapshot sourceSnapshot:sortedSnapshots.values()) {// for (String sourceKey:sfMap.keySet()) {
+            if (canNotFindParent != null) {
+               err.println("Please remove " + backupDir + "/" + canNotFindParent + "/" + SNAPSHOT + " !");
                ende("X");
-               System.exit(0);
-            }
-            TreeMap<String, Snapshot> sortedSnapshots=new TreeMap<>();
-            for (Snapshot s:srcVolume.snapshotTree().values())
-               sortedSnapshots.put(s.key(), s);
-            for (Snapshot sourceSnapshot:sortedSnapshots.values()) {// for (String sourceKey:sfMap.keySet()) {
-               if (canNotFindParent != null) {
-                  err.println("Please remove " + backupDir + "/" + canNotFindParent + "/" + SNAPSHOT + " !");
+               System.exit(-9);
+            } else
+               if (connectionLost > 3) {
+                  err.println("SSH Connection lost !");
                   ende("X");
-                  System.exit(-9);
-               } else
-                  if (connectionLost > 3) {
-                     err.println("SSH Connection lost !");
-                     ende("X");
-                     System.exit(-8);
-                  }
-               try {
-                  // ende("A");
-                  out.print(".");
-                  if (!backup(sourceSnapshot, srcVolume, receivedSnapshots, backupDir, srcSsh, backupSsh, snapConfigs))
-                     continue;
-               } catch (NullPointerException n) {
-                  n.printStackTrace();
-                  break;
+                  System.exit(-8);
                }
+            try {
+               // ende("A");
+               out.print(".");
+               if (!backup(sourceSnapshot, srcVolume, receivedSnapshots, backupDir, srcSsh, backupSsh, snapConfigs))
+                  continue;
+               if (GUI.get())
+                  refteshGUI(backupVolume, backupDir, backupSsh);
+               // break;
+            } catch (NullPointerException n) {
+               n.printStackTrace();
+               break;
             }
          }
       } catch (IOException e) {
@@ -129,6 +132,18 @@ public class Backsnap {
          System.exit(-1);
       }
       ende("X");
+   }
+   /**
+    * @param backupVolume
+    * @param backupDir
+    * @param backupSsh
+    * @throws IOException
+    * 
+    */
+   private static void refteshGUI(Subvolume backupVolume, String backupDir, String backupSsh) throws IOException {
+      // bs.setSrc(srcVolume);// ändert sich nicht
+      SnapTree backupTree=new SnapTree(backupVolume.mountPoint(), backupSsh);
+      bs.setBackup(backupVolume, backupTree.fileMap(), backupDir);
    }
    /**
     * Versuchen genau diesen einzelnen Snapshot zu sichern

@@ -6,6 +6,7 @@ package de.uhingen.kielkopf.andreas.backsnap;
 import java.awt.*;
 import java.util.List;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 import javax.swing.*;
 
@@ -108,7 +109,24 @@ public class BacksnapGui {
     */
    public void setSrc(Subvolume srcVolume) {
       getPanelSrc().setVolume(srcVolume, srcVolume.snapshotTree());
+      abgleich();
       getPanelSrc().repaint();
+   }
+   /**
+    * 
+    */
+   private void abgleich() {
+      ConcurrentSkipListMap<String, SnapshotLabel> snapshotLabels=getPanelSrc().labelTree_UUID;
+      ConcurrentSkipListMap<String, SnapshotLabel> backupLabels  =panelBackup.labelTree_UUID;
+      // Im Backup Farben bestimmen
+      for (SnapshotLabel label:backupLabels.values()) {
+         Snapshot snapshot    =label.snapshot;
+         String   recievedUuid=snapshot.received_uuid();
+         if (snapshotLabels.containsKey(recievedUuid)) {
+            label.setBackground(SnapshotLabel.backupColor);
+            snapshotLabels.get(recievedUuid).setBackground(SnapshotLabel.backupColor);
+         }
+      }
    }
    private SnapshotPanel getPanelBackup() {
       if (panelBackup == null) {
@@ -135,6 +153,7 @@ public class BacksnapGui {
             passendBackups.put(snapshot.key(), snapshot);
       }
       getPanelBackup().setVolume(backupVolume, passendBackups);
+      abgleich();
       getPanelBackup().repaint();
    }
 }

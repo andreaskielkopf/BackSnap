@@ -4,7 +4,6 @@
 package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 
 import java.awt.Color;
-import java.awt.SystemColor;
 
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
@@ -29,12 +28,14 @@ public class SnapshotLabel extends JLabel {
          return;
       snapshot=snapshot1;
       String name=snapshot.dirName();
-      setBackground(snapshot.isBackup() ? backupColor : snapshotColor);
+      setBackground(snapshot.isBackup() ? aktuellColor : snapshotColor);
       setText(name);
    }
-   static Color unknownColor =Color.RED;
-   static Color snapshotColor=SystemColor.info;
-   static Color backupColor  =Color.GREEN.brighter();
+   final static Color unknownColor =Color.RED.darker();
+   final static Color snapshotColor=Color.YELLOW.brighter();
+   final static Color aktuellColor =Color.YELLOW.darker();
+   final static Color        missingColor =Color.ORANGE.darker();
+   public final static Color backupColor  =Color.GREEN.brighter();
    private void initialize() {
       setBorder(new CompoundBorder(new LineBorder(new Color(0, 0, 0), 2, true), new EmptyBorder(5, 5, 5, 5)));
       setOpaque(true);
