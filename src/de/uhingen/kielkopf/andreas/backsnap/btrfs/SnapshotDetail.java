@@ -12,6 +12,7 @@ import javax.swing.*;
  *
  */
 public class SnapshotDetail extends JPanel {
+   private static final long serialVersionUID=-7659329578660282348L;
    private JPanel panel;
    private JLabel lblNewLabel;
    private JLabel lblNewLabel_1;

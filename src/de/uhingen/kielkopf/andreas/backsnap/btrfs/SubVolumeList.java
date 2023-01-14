@@ -8,8 +8,10 @@ import static java.lang.System.out;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
@@ -20,7 +22,7 @@ import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
  * @author Andreas Kielkopf
  *
  */
-public record SubVolumeList(String extern, TreeMap<String, Subvolume> subvTree) {
+public record SubVolumeList(String extern, ConcurrentSkipListMap<String, Mount> mountTree) {
    /**
     * @param string
     *           mit Zugang zum PC
@@ -29,7 +31,7 @@ public record SubVolumeList(String extern, TreeMap<String, Subvolume> subvTree) 
     * @throws IOException
     */
    public SubVolumeList(String extern) throws IOException {
-      this(extern, new TreeMap<>());
+      this(extern, new ConcurrentSkipListMap<>());
       populate();
    }
    /**
@@ -46,13 +48,15 @@ public record SubVolumeList(String extern, TreeMap<String, Subvolume> subvTree) 
          else
             mountCmd.insert(0, "ssh " + extern + " '").append("'");
       System.out.println(mountCmd);
-      try (CmdStream subvolumeList=Commandline.execute(mountCmd)) {
-         subvolumeList.backgroundErr();
-         for (String line:subvolumeList.erg().toList()) {
-            Subvolume subvolume=new Subvolume(line, extern);
-            subvTree.put(subvolume.key(), subvolume);
+      String key="mount " + extern;
+      try (CmdStream mountList=Commandline.executeCached(mountCmd, key)) {
+         mountList.backgroundErr();
+         for (String line:mountList.erg().toList()) {
+            Mount mount=new Mount(this, line, extern);
+            mountTree.put(mount.key(), mount);
          }
-         for (String line:subvolumeList.errList())
+         mountList.waitFor();
+         for (String line:mountList.errList())
             if (line.contains("No route to host") || line.contains("Connection closed")
                      || line.contains("connection unexpectedly closed"))
                throw new IOException(line);
@@ -63,11 +67,11 @@ public record SubVolumeList(String extern, TreeMap<String, Subvolume> subvTree) 
     * @param vorschlag
     * @return
     */
-   public Subvolume getBackupVolume(String vorschlag) {
-      if (subvTree.containsKey(vorschlag))
-         return subvTree.get(vorschlag);
-      List<Subvolume> treffer=new ArrayList<>();
-      for (Entry<String, Subvolume> e:subvTree.entrySet())
+   public Mount getBackupVolume(String vorschlag) {
+      if (mountTree.containsKey(vorschlag))
+         return mountTree.get(vorschlag);
+      List<Mount> treffer=new ArrayList<>();
+      for (Entry<String, Mount> e:mountTree.entrySet())
          if (e.getKey().contains(vorschlag))
             treffer.add(e.getValue());
       if (treffer.size() == 1)

@@ -54,8 +54,8 @@ public class BacksnapGui {
     * @param backupVolume
     * @param backupSubVolumes
     */
-   public BacksnapGui(List<SnapConfig> snapConfigs, Subvolume srcVolume, SubVolumeList srcSubVolumes,
-            Subvolume backupVolume, SubVolumeList backupSubVolumes) {
+   public BacksnapGui(List<SnapConfig> snapConfigs, Mount srcVolume, SubVolumeList srcSubVolumes, Mount backupVolume,
+            SubVolumeList backupSubVolumes) {
       this();
    }
    /**
@@ -107,7 +107,7 @@ public class BacksnapGui {
    /**
     * @param srcVolume
     */
-   public void setSrc(Subvolume srcVolume) {
+   public void setSrc(Mount srcVolume) {
       getPanelSrc().setVolume(srcVolume, srcVolume.snapshotTree());
       abgleich();
       getPanelSrc().repaint();
@@ -139,12 +139,14 @@ public class BacksnapGui {
     * @param receivedSnapshots
     * @param backupDir
     */
-   public void setBackup(Subvolume backupVolume, TreeMap<String, Snapshot> receivedSnapshots, String backupDir) {
-      TreeMap<String, Snapshot> passendBackups=new TreeMap<>();
-      String                    mount         =backupVolume.mountPoint();
-      if (!mount.endsWith("/"))
-         mount+="/";
+   public void setBackup(Mount backupVolume, TreeMap<String, Snapshot> receivedSnapshots, String backupDir) {
+      ConcurrentSkipListMap<String, Object> passendBackups=new ConcurrentSkipListMap<>();
+      String                                mount         =backupVolume.mountPoint();
+      // if (!mount.endsWith("/"))
+      // mount+="/";
       String rest=backupDir.replaceFirst(mount, "");
+      if (!rest.startsWith("/"))
+         rest="/" + rest;
       if (!rest.endsWith("/"))
          rest+="/";
       for (Snapshot snapshot:receivedSnapshots.values()) {

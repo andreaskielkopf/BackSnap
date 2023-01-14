@@ -8,7 +8,6 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import javax.swing.*;
@@ -18,16 +17,16 @@ import javax.swing.*;
  *
  */
 public class SnapshotPanel extends JPanel implements ComponentListener {
-   private static final long             serialVersionUID=-3405881652038164771L;
-   private JPanel                        panelView;
-   private JPanel                        panelDetail;
-   private JPanel                        panelVolumeName;
-   private JLabel                        volumeName;
-   private JPanel                        panel;
-   private JScrollPane                   scrollPane;
+   private static final long                           serialVersionUID=-3405881652038164771L;
+   private JPanel                                      panelView;
+   private JPanel                                      panelDetail;
+   private JPanel                                      panelVolumeName;
+   private JLabel                                      volumeName;
+   private JPanel                                      panel;
+   private JScrollPane                                 scrollPane;
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_UUID  =new ConcurrentSkipListMap<>();
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_Parent=new ConcurrentSkipListMap<>();
-   public TreeMap<String, Snapshot>      sTree;
+   public ConcurrentSkipListMap<String, Object>        sTree;
    public SnapshotPanel() {
       initialize();
       getPanelView().add(new SnapshotLabel(null));
@@ -117,8 +116,8 @@ public class SnapshotPanel extends JPanel implements ComponentListener {
     * @param receivedSnapshots
     * @param srcVolume
     */
-   public void setVolume(Subvolume subVolume, TreeMap<String, Snapshot> tree) {
-      String        extern=subVolume.extern();
+   public void setVolume(Mount subVolume, ConcurrentSkipListMap<String, Object> tree) {
+      String        extern=subVolume.mountList().extern();
       String        mount =subVolume.mountPoint();
       String        device=subVolume.device();
       StringBuilder sb    =new StringBuilder(mount).append("(").append(device).append(")");
@@ -132,13 +131,14 @@ public class SnapshotPanel extends JPanel implements ComponentListener {
       labelTree_Parent.clear();
       sTree=tree;
       pv.revalidate();
-      for (Snapshot snapshot:tree.values()) {
-         SnapshotLabel snapshotLabel=new SnapshotLabel(snapshot);
-         labelTree_UUID.put(snapshot.uuid(), snapshotLabel);
-         labelTree_Parent.put(snapshot.parent_uuid(), snapshotLabel);
-         pv.add(snapshotLabel);
-         pv.revalidate();
-      }
+      for (Object o:tree.values())
+         if (o instanceof Snapshot snapshot) {
+            SnapshotLabel snapshotLabel=new SnapshotLabel(snapshot);
+            labelTree_UUID.put(snapshot.uuid(), snapshotLabel);// nach UUID sortiert
+            labelTree_Parent.put(snapshot.parent_uuid(), snapshotLabel);// nach parent sortiert (keine doppelten !)
+            pv.add(snapshotLabel);
+            pv.revalidate();
+         }
       componentResized(null);
    }
    private JLabel getVolumeName() {
