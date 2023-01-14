@@ -33,6 +33,7 @@ public class Backsnap {
    final static Flag          GUI             =new Flag('g', "gui");
    final static Flag          DRYRUN          =new Flag('d', "dryrun");
    final static Flag          VERBOSE         =new Flag('v', "verbose");
+   final static Flag          VERSION         =new Flag('x', "version");
    final static Flag          ONESNAPSHOT     =new Flag('o', "onesnapshot");
    // final static String srcSsH ="root@localhost";
    // final static String backupSsH =srcSsH;
@@ -42,6 +43,10 @@ public class Backsnap {
          sb.append(" ").append(s);
       System.out.println(sb);
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
+      if (VERSION.get()) {
+         System.out.println("BackSnap Version 0.4.1  (2023/01/14)");
+         System.exit(0);
+      }
       if (DRYRUN.get())
          System.out.println("Doing a dry run ! ");
       // Parameter sammeln
