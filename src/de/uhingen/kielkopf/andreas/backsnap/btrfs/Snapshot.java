@@ -50,9 +50,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
     * @return String
     */
    public static String getString(Matcher m) {
-      if (!m.find())
-         return null;
-      return m.group(1);
+      return (m.find()) ? m.group(1) : null;
    }
    /**
     * @param Matcher
@@ -60,53 +58,42 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
     */
    @SuppressWarnings("boxing")
    public static Integer getInt(Matcher m) {
-      if (!m.find())
-         return null;
-      return Integer.parseUnsignedInt(m.group(1));
+      return (m.find()) ? Integer.parseUnsignedInt(m.group(1)) : null;
    }
    /**
     * @param Matcher
     * @return Path
     */
    public static Path getPath(Matcher m) {
-      if (!m.find())
-         return null;
-      String q=m.group(1).replaceAll("<FS_TREE>", "");
-      return Path.of(q);
+      return (m.find()) ? Path.of(m.group(1).replaceAll("<FS_TREE>", "")) : null;
    }
    private static Pattern createPatternFor(String s) {
       return Pattern.compile("^(?:.*[ \\[])?" + s + "[ =]([^ ,\\]]+)");
    }
+   public static final int SORT_LEN=10; // Reicht 100 Jahre ???
    /**
     * @return Key um snapshot zu sortieren sofern im Pfad ein numerischer WERT steht
     */
    public String key() {
-      final int SORT_LEN=8;                                       // Reicht 100 Jahre ???
-      Matcher   m       =NUMERIC_DIRNAME.matcher(path.toString());
-      if (!m.find()) {
-         System.err.println("§: " + path.toString());
-         return path.toString();
-      }
-      String name=m.group(1);// +"§"+path.toString();
-      if (name.length() < SORT_LEN)
-         name=".".repeat(SORT_LEN - name.length()).concat(name); // ??? numerisch sortieren ;-)
-      name+=path.toString();
-      return name;
+      Matcher m=NUMERIC_DIRNAME.matcher(path.toString());
+      if (m.find())
+         return dir2key(m.group(1)) + path.toString(); // ??? numerisch sortieren ;-)
+      System.err.println("§: " + path.toString());
+      return path.toString();
+   }
+   final public static String dir2key(String dir) { // ??? numerisch sortieren ;-)
+      return (dir.length() >= SORT_LEN) ? dir : ".".repeat(SORT_LEN - dir.length()).concat(dir);
    }
    public String dirName() {
       Matcher m=DIRNAME.matcher(path.toString());
-      if (!m.find())
-         return null;
-      return m.group(1);
+      return (m.find()) ? m.group(1) : null;
    }
    /**
     * @return Mount dieses Snapshots sofern im Pfad enthalten
     */
    public String subvolume() {
       Matcher m=SUBVOLUME.matcher(path.toString());
-      if (!m.find())
-         return "";
-      return m.group(1);
+      return (m.find()) ? m.group(1) : "";
    }
    public boolean isBackup() {
       return received_uuid().length() > 8;

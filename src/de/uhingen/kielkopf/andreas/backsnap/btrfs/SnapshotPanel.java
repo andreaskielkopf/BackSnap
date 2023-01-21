@@ -6,8 +6,8 @@ package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 import java.awt.*;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import javax.swing.*;
@@ -17,15 +17,18 @@ import javax.swing.*;
  *
  */
 public class SnapshotPanel extends JPanel implements ComponentListener {
-   private static final long                           serialVersionUID=-3405881652038164771L;
+   private static final long                           serialVersionUID    =-3405881652038164771L;
    private JPanel                                      panelView;
    private JPanel                                      panelDetail;
    private JPanel                                      panelVolumeName;
    private JLabel                                      volumeName;
    private JPanel                                      panel;
    private JScrollPane                                 scrollPane;
-   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_UUID  =new ConcurrentSkipListMap<>();
-   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_Parent=new ConcurrentSkipListMap<>();
+   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_UUID      =new ConcurrentSkipListMap<>();
+   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_ParentUuid=new ConcurrentSkipListMap<>();
+   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_Key       =new ConcurrentSkipListMap<>();
+   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_DirName   =new ConcurrentSkipListMap<>();
+   public ArrayList<SnapshotLabel>                     mixedList           =new ArrayList<>();
    public ConcurrentSkipListMap<String, Object>        sTree;
    public SnapshotPanel() {
       initialize();
@@ -128,17 +131,29 @@ public class SnapshotPanel extends JPanel implements ComponentListener {
       JPanel pv=getPanelView();
       pv.removeAll();
       labelTree_UUID.clear();
-      labelTree_Parent.clear();
-      sTree=tree;
-      pv.revalidate();
-      for (Object o:tree.values())
-         if (o instanceof Snapshot snapshot) {
-            SnapshotLabel snapshotLabel=new SnapshotLabel(snapshot);
-            labelTree_UUID.put(snapshot.uuid(), snapshotLabel);// nach UUID sortiert
-            labelTree_Parent.put(snapshot.parent_uuid(), snapshotLabel);// nach parent sortiert (keine doppelten !)
-            pv.add(snapshotLabel);
-            pv.revalidate();
-         }
+      labelTree_ParentUuid.clear();
+      labelTree_Key.clear();
+      labelTree_DirName.clear();
+      // ArrayList<SnapshotLabel> mixedList1=new ArrayList<>();
+      synchronized (mixedList) {
+         sTree=tree;
+         boolean shuffle=(mixedList.size() < tree.size() / 2);
+         pv.revalidate();
+         for (Object o:tree.values())
+            if (o instanceof Snapshot snapshot) {
+               SnapshotLabel snapshotLabel=SnapshotLabel.getSnapshotLabel(snapshot);
+               labelTree_UUID.put(snapshot.uuid(), snapshotLabel);// nach UUID sortiert
+               labelTree_ParentUuid.put(snapshot.parent_uuid(), snapshotLabel);// parent sortiert (keine doppelten !)
+               labelTree_Key.put(snapshot.key(), snapshotLabel);// nach Key sortiert (keine doppelten !)
+               labelTree_DirName.put(snapshot.dirName(), snapshotLabel);// nach Key sortiert (keine doppelten !)
+               if (!mixedList.contains(snapshotLabel))
+                  mixedList.add(snapshotLabel);
+               pv.add(snapshotLabel);
+               pv.revalidate();
+            }
+         if (shuffle)
+            Collections.shuffle(mixedList);
+      }
       componentResized(null);
    }
    private JLabel getVolumeName() {

@@ -70,6 +70,13 @@ public record SubVolumeList(String extern, ConcurrentSkipListMap<String, Mount> 
    public Mount getBackupVolume(String vorschlag) {
       if (mountTree.containsKey(vorschlag))
          return mountTree.get(vorschlag);
+      Entry<String, Mount> test=null;
+      for (Entry<String, Mount> e:mountTree.entrySet())
+         if (vorschlag.startsWith(e.getKey())) // find the longest matching key
+            if ((test == null) || (test.getKey().length() < e.getKey().length()))
+               test=e;
+      if (test != null)
+         return test.getValue();
       List<Mount> treffer=new ArrayList<>();
       for (Entry<String, Mount> e:mountTree.entrySet())
          if (e.getKey().contains(vorschlag))

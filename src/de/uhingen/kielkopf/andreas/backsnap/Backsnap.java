@@ -17,32 +17,36 @@ import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
 import de.uhingen.kielkopf.andreas.beans.cli.Flag;
 
 public class Backsnap {
-   static String              parentKey       =null;
-   private static Snapshot    parentSnapshot  =null;
-   private static boolean     usePv           =false;
-   static int                 lastLine        =0;
-   static String              canNotFindParent=null;
-   static int                 connectionLost  =0;
-   static Future<?>           task            =null;
+   static String              parentKey          =null;
+   private static Snapshot    parentSnapshot     =null;
+   private static boolean     usePv              =false;
+   static int                 lastLine           =0;
+   static String              canNotFindParent   =null;
+   static int                 connectionLost     =0;
+   static Future<?>           task               =null;
    private static BacksnapGui bs;
-   final public static String SNAPSHOT        ="snapshot";
-   // final private static String SNAPSHOTS ="snapshots";
-   // final private static String DOT_SNAPSHOT =".snapshot";
-   final public static String DOT_SNAPSHOTS   =".snapshots";
-   final public static String AT_SNAPSHOTS    ="@snapshots";
-   final static Flag          GUI             =new Flag('g', "gui");
-   final static Flag          DRYRUN          =new Flag('d', "dryrun");
-   final static Flag          VERBOSE         =new Flag('v', "verbose");
-   final static Flag          VERSION         =new Flag('x', "version");
-   final static Flag          ONESNAPSHOT     =new Flag('o', "onesnapshot");
+   private static String      refreshGUIcKey     =null;
+   private static Mount       refreshBackupVolume=null;
+   private static String      refreshBackupDir   =null;
+   final static Flag          GUI                =new Flag('g', "gui");            // show and wait for gui
+   final static Flag          DRYRUN             =new Flag('d', "dryrun");         // do not do anythimg
+   final static Flag          VERBOSE            =new Flag('v', "verbose");
+   final static Flag          HELP               =new Flag('h', "help");           // show usage
+   final static Flag          VERSION            =new Flag('x', "version");        // show version info
+   final public static String SNAPSHOT           ="snapshot";
+   final public static String DOT_SNAPSHOTS      =".snapshots";
+   final public static String AT_SNAPSHOTS       ="@snapshots";
+   final static Flag          SINGLESNAPSHOT     =new Flag('s', "singlesnapshot"); // make one s
+   final static Flag          DELETEOLD          =new Flag('o', "deleteold");      // delete older s
+   final static Flag          MINIMUMSNAPSHOTS   =new Flag('m', "keepminimum");    // keep at least
    // final static String srcSsH ="root@localhost";
    // final static String backupSsH =srcSsH;
    public static void main(String[] args) {
+      Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
       StringBuilder sb=new StringBuilder("args > ");
       for (String s:args)
          sb.append(" ").append(s);
       System.out.println(sb);
-      Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
       if (VERSION.get()) {
          System.out.println("BackSnap Version 0.4.1  (2023/01/14)");
          System.exit(0);
@@ -94,7 +98,7 @@ public class Backsnap {
          if (GUI.get()) {
             bs=new BacksnapGui();
             BacksnapGui.setGui(bs);
-            BacksnapGui.main(args);
+            BacksnapGui.main2(args);
             bs.setSrc(srcVolume);
             bs.setBackup(backupVolume, backupTree.fileMap(), backupDir);
          }
@@ -130,8 +134,8 @@ public class Backsnap {
                if (!backup(sourceSnapshot, srcVolume, receivedSnapshots, backupDir, srcSsh, backupSsh, snapConfigs))
                   continue;
                if (GUI.get())
-                  refteshGUI(backupVolume, backupDir, backupSsh);
-               if (ONESNAPSHOT.get())// nur einen Snapshot übertragen
+                  refreshGUI(backupVolume, backupDir, backupSsh);
+               if (SINGLESNAPSHOT.get())// nur einen Snapshot übertragen
                   break;
             } catch (NullPointerException n) {
                n.printStackTrace();
@@ -152,14 +156,23 @@ public class Backsnap {
     * @throws IOException
     * 
     */
-   private static void refteshGUI(Mount backupVolume, String backupDir, String backupSsh) throws IOException {
-      // bs.setSrc(srcVolume);// ändert sich nicht
+   private static void refreshGUI(Mount backupVolume, String backupDir, String backupSsh) throws IOException {
       String extern  =backupVolume.mountList().extern();
       String device  =backupVolume.device();
       String cacheKey=extern + ":" + device;
       Commandline.removeFromCache(cacheKey);
-      SnapTree backupTree=new SnapTree(backupVolume/* , backupVolume.mountPoint(), backupSsh */);// umgeht den cache
+      SnapTree backupTree=new SnapTree(backupVolume);// umgeht den cache
       bs.setBackup(backupVolume, backupTree.fileMap(), backupDir);
+      refreshGUIcKey=cacheKey;
+      refreshBackupVolume=backupVolume;
+      refreshBackupDir=backupDir;
+   }
+   public static void refreshGUI() throws IOException {
+      if (refreshGUIcKey == null)
+         return;
+      Commandline.removeFromCache(refreshGUIcKey);
+      SnapTree backupTree=new SnapTree(refreshBackupVolume);// umgeht den cache
+      bs.setBackup(refreshBackupVolume, backupTree.fileMap(), refreshBackupDir);
    }
    /**
     * Versuchen genau diesen einzelnen Snapshot zu sichern
@@ -308,6 +321,31 @@ public class Backsnap {
          // ende("");// R
       }
    }
+   public static void removeSnapshot(Snapshot s) throws IOException {
+      StringBuilder remove_cmd=new StringBuilder("/bin/btrfs subvolume delete -Cv ");
+      remove_cmd.append(s.mount().mountPoint());
+      remove_cmd.append(s.path());
+      if ((s.mount().oextern() instanceof String x) && (!x.isBlank()))
+         if (x.startsWith("sudo "))
+            remove_cmd.insert(0, x);
+         else
+            remove_cmd.insert(0, "ssh " + x + " '").append("'");
+      out.println();
+      out.print(remove_cmd);
+//      if (!DRYRUN.get())
+         try (CmdStream remove_snap=Commandline.executeCached(remove_cmd, null)) {
+            remove_snap.backgroundErr();
+            remove_snap.erg().forEach(line -> {
+               if (lastLine != 0) {
+                  lastLine=0;
+                  out.println();
+               }
+               out.println();
+            });
+            remove_snap.waitFor();
+            out.println(" # ");
+         }
+   }
    /**
     * @param d
     * @param backupSsh
@@ -353,8 +391,14 @@ public class Backsnap {
       out.print(t);
       if (t.startsWith("X")) {
          out.print(" ready");
-         Commandline.background.shutdown();
+         if (GUI.get()) {
+            while (bs != null) {
+               if (bs.frame == null)
+                  break;
+            }
+         }
          out.print(" to");
+         Commandline.background.shutdown();
          out.print(" exit");
          Commandline.cleanup();
          out.print(" java");

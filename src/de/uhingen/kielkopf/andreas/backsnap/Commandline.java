@@ -71,17 +71,21 @@ public class Commandline {
     */
    public record CmdStream(Process process, BufferedReader brErg, BufferedReader brErr, List<String> errList,
             List<String> ergList, String key) implements Closeable {
-      public void backgroundErr() { // Fehler im Hintergrund ausgeben und ablegen
-         background.submit(() -> bE());// err().forEach(System.err::println));
-      }
-      @SuppressWarnings("resource")
-      private void bE() {
-         try {
-            errList.addAll(brErr().lines().peek(System.err::println).toList());
-            brErr.close();
-         } catch (IOException e) {
-            e.printStackTrace();
-         }
+      public void backgroundErr() { // Fehler im Hintergrund ausgeben und ablegen // System.out.print("0");
+         if ((key != null) && cache.containsKey(key))
+            return;
+         background.submit(new Runnable() {
+            @Override
+            public void run() {
+               try { // System.out.print("1");
+                  try (BufferedReader q=brErr()) {
+                     errList.addAll(q.lines().peek(System.err::println).toList());
+                  } // System.out.print("2"); // System.out.println("3");
+               } catch (IOException e) {
+                  e.printStackTrace();
+               }
+            }
+         }); // System.out.print("4");
       }
       /**
        * Schließt diesen Stream automatisch wenn alles gelesen wurde. Wenn ein cache-key vergeben wurde, wird der Inhalt
@@ -91,12 +95,11 @@ public class Commandline {
        */
       @SuppressWarnings("resource")
       @Override
-      public void close() throws IOException {
-         // waitFor();
+      public void close() throws IOException { // waitFor();
          brErr.close(); // errlist ist komplett jetzt
          brErg.close(); // erg wurde gelesen
          process.destroy();
-         if (key != null) {
+         if ((key != null) && (!cache.containsKey(key))) {
             System.out.println("enable " + key + " in cache");
             cache.put(key, this);
          }
