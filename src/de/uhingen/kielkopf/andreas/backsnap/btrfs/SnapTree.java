@@ -62,7 +62,7 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> fileMap) {
     * @throws IOException
     */
    public static SnapTree getSnapTree(Mount mount2/* , String omountPoint, String oextern2 */) throws IOException {
-      String deviceKey=mount2.device(); // +mount2.extern
+      String deviceKey=mount2.oextern()+"->"+ mount2.device(); // +mount2.extern
       if (!snapTreeCache.containsKey(deviceKey)) {
          SnapTree st=new SnapTree(mount2/* , omountPoint, oextern2 */);
          snapTreeCache.put(deviceKey, st);// nach deviceKey sortiert

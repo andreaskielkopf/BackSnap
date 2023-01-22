@@ -15,12 +15,12 @@ function backup {
     BS_SOURCE="$1/.snapshots"
     BS_DEST="$BS_MOUNT/@snapshots/$2"
 #    echo "java -jar $BS_JAR $BS_SOURCE $BS_DEST"
-    java -jar $BS_JAR $BS_SOURCE $BS_DEST || exit
+    java -jar $BS_JAR -g -o -m $BS_SOURCE $BS_DEST || exit
     echo  "OK"
 }
 
 # lokal sichern
-backup "" "manjaro18"
+backup "" "manjaro18" 
 backup "/home" "manjaro18.home"
 
 # server sichern
@@ -29,10 +29,10 @@ backup "root@server:/home" "server.home"
 backup "root@server:/srv" "server.srv"
 
 # jitsi sichern
-backup "root@jitsim1:" "jitsim1"
-backup "root@jitsim1:/home" "jitsim1.home"
-backup "root@jitsim1:/opt/hst" "jitsim1.hst"
-backup "root@jitsim1:/opt/hugo" "jitsim1.hugo"
+#backup "root@jitsim1:" "jitsim1"
+#backup "root@jitsim1:/home" "jitsim1.home"
+#backup "root@jitsim1:/opt/hst" "jitsim1.hst"
+#backup "root@jitsim1:/opt/hugo" "jitsim1.hugo"
 
 # laptop sichern 
 #backup "root@notebook:" "notebook"
@@ -42,5 +42,6 @@ backup "root@jitsim1:/opt/hugo" "jitsim1.hugo"
 #backup "root@gast:" "gast"
 #backup "root@gast:/home" "gast"
 
+sync
 umount $BS_MOUNT
 echo "fertig"
