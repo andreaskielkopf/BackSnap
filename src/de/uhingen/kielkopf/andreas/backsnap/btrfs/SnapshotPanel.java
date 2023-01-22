@@ -52,36 +52,35 @@ public class SnapshotPanel extends JPanel implements ComponentListener {
                   super.paint(g);
                   g2d.setColor(Color.BLUE);
                   g2d.setStroke(stroke);
-                  // TreeMap<String, Snapshot> tr=sTree;
                   int                               w =getWidth();
-                  Set<Entry<String, SnapshotLabel>> lt=labelTree_UUID.entrySet();
-                  for (Entry<String, SnapshotLabel> en:lt) {
-                     SnapshotLabel sn         =en.getValue();
-                     // Snapshot s =sn.snapshot;
-                     String        parent_uuid=sn.snapshot.parent_uuid();
+                  Set<Entry<String, SnapshotLabel>> labelTree=labelTree_UUID.entrySet();
+                  for (Entry<String, SnapshotLabel> entry:labelTree) {
+                     SnapshotLabel snap       =entry.getValue();
+                     String        parent_uuid=snap.snapshot.parent_uuid();
                      SnapshotLabel parent     =labelTree_UUID.get(parent_uuid);
                      if (parent != null) {
-                        Rectangle sb  =sn.getBounds();
-                        Rectangle pb  =parent.getBounds();
-                        double    abst=pb.getMaxX() - sb.getMinX();
-                        boolean   t   =(abst + sb.getWidth() > w);
-                        boolean   m   =(Math.abs(abst) < sb.getWidth());
+                        Rectangle snapBounds  =snap.getBounds();
+                        Rectangle parentBounds=parent.getBounds();
+                        double    abstand     =parentBounds.getMaxX() - snapBounds.getMinX();
+                        boolean   t           =(abstand + snapBounds.getWidth()+20 > w);
+                        boolean   m           =(Math.abs(abstand) < snapBounds.getWidth());
                         if (t) {
                            g2d.setColor(Color.BLACK);
-                           int y=(int) ((pb.getCenterY() + sb.getCenterY()) / 2);
-                           g2d.drawLine((int) pb.getMaxX(), (int) pb.getCenterY(), w, y);
-                           g2d.drawLine(0, y, (int) sb.getMinX(), (int) sb.getCenterY());
+                           int y=(int) ((parentBounds.getCenterY() + snapBounds.getCenterY()) / 2);
+                           g2d.drawLine((int) parentBounds.getMaxX(), (int) parentBounds.getCenterY(), w, y);
+                           g2d.drawLine(0, y, (int) snapBounds.getMinX(), (int) snapBounds.getCenterY());
                         } else
                            if (m) {
                               g2d.setColor(Color.BLACK);
-                              g2d.drawLine((int) pb.getMaxX(), (int) pb.getCenterY(), (int) sb.getMinX(),
-                                       (int) sb.getCenterY());
+                              g2d.drawLine((int) parentBounds.getMaxX(), (int) parentBounds.getCenterY(),
+                                       (int) snapBounds.getMinX(), (int) snapBounds.getCenterY());
                            } else {
                               g2d.setColor(Color.BLUE.darker());
-                              g2d.fillOval((int) pb.getMaxX() - 10, (int) pb.getMaxY() - 10, 10, 10);
-                              g2d.drawLine((int) pb.getMaxX(), (int) pb.getMaxY() - 5, (int) sb.getMinX(),
-                                       (int) sb.getMinY() + 5);
-                              g2d.drawOval((int) sb.getMinX(), (int) sb.getMinY(), 10, 10);
+                              g2d.fillOval((int) parentBounds.getMaxX() - 10, (int) parentBounds.getMaxY() - 10, 10,
+                                       10);
+                              g2d.drawLine((int) parentBounds.getMaxX(), (int) parentBounds.getMaxY() - 5,
+                                       (int) snapBounds.getMinX(), (int) snapBounds.getMinY() + 5);
+                              g2d.drawOval((int) snapBounds.getMinX(), (int) snapBounds.getMinY(), 10, 10);
                            }
                      }
                   }
@@ -90,8 +89,6 @@ public class SnapshotPanel extends JPanel implements ComponentListener {
             @Override
             protected void paintComponent(Graphics g) {
                if (g instanceof Graphics2D g2d) {
-                  // g2d.setColor(Color.BLUE);
-                  // g2d.drawLine(10, 10, 1000, 1000);
                   super.paintComponent(g);
                   g2d.setColor(Color.GREEN);
                   g2d.drawLine(10, 10, 500, 500);
