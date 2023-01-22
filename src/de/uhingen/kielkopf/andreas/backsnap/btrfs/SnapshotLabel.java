@@ -53,12 +53,14 @@ public class SnapshotLabel extends JLabel {
     * @return
     */
    public static SnapshotLabel getSnapshotLabel(Snapshot snapshot2) {
+      SnapshotLabel snapLabel=null;
       if (labels.get(snapshot2.uuid()) instanceof SnapshotLabel sl) {
-         sl.setBackground(snapshot2.isBackup() ? aktuellColor : snapshotColor);
-         return sl;
+         snapLabel=sl;
+         snapLabel.setBackground(snapshot2.isBackup() ? aktuellColor : snapshotColor);
+      } else {
+         snapLabel=new SnapshotLabel(snapshot2);
+         labels.put(snapshot2.uuid(), snapLabel);
       }
-      SnapshotLabel sl=new SnapshotLabel(snapshot2);
-      labels.put(snapshot2.uuid(), sl);
-      return sl;
+      return snapLabel;
    }
 }

@@ -52,7 +52,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener {
                   super.paint(g);
                   g2d.setColor(Color.BLUE);
                   g2d.setStroke(stroke);
-                  int                               w =getWidth();
+                  int                               w        =getWidth();
                   Set<Entry<String, SnapshotLabel>> labelTree=labelTree_UUID.entrySet();
                   for (Entry<String, SnapshotLabel> entry:labelTree) {
                      SnapshotLabel snap       =entry.getValue();
@@ -62,7 +62,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener {
                         Rectangle snapBounds  =snap.getBounds();
                         Rectangle parentBounds=parent.getBounds();
                         double    abstand     =parentBounds.getMaxX() - snapBounds.getMinX();
-                        boolean   t           =(abstand + snapBounds.getWidth()+20 > w);
+                        boolean   t           =(abstand + snapBounds.getWidth() * 2 > w);
                         boolean   m           =(Math.abs(abstand) < snapBounds.getWidth());
                         if (t) {
                            g2d.setColor(Color.BLACK);
@@ -95,6 +95,8 @@ public class SnapshotPanel extends JPanel implements ComponentListener {
                }
             }
          };
+         FlowLayout flowLayout=(FlowLayout) panelView.getLayout();
+         flowLayout.setAlignment(FlowLayout.LEFT);
       }
       return panelView;
    }
@@ -120,35 +122,36 @@ public class SnapshotPanel extends JPanel implements ComponentListener {
       String        extern=subVolume.mountList().extern();
       String        mount =subVolume.mountPoint();
       String        device=subVolume.device();
-      StringBuilder sb    =new StringBuilder(mount).append("(").append(device).append(")");
+      StringBuilder sb    =new StringBuilder(mount).append(" (on ").append(device).append(")");
       if (!extern.isBlank())
-         sb.insert(0, ":").insert(0, extern);
+         sb.insert(0, " : ").insert(0, extern);
       getVolumeName().setText(sb.toString());
-      repaint();
-      JPanel pv=getPanelView();
-      pv.removeAll();
+      repaint(100);
       labelTree_UUID.clear();
       labelTree_ParentUuid.clear();
       labelTree_Key.clear();
       labelTree_DirName.clear();
-      // ArrayList<SnapshotLabel> mixedList1=new ArrayList<>();
+      ConcurrentSkipListMap<String, Snapshot> sortedTree=new ConcurrentSkipListMap<>();
+      for (Object o:tree.values())
+         if (o instanceof Snapshot snapshot)
+            sortedTree.put(snapshot.key(), snapshot);// sortierbare Nummern bis 8 Stellen
       synchronized (mixedList) {
-         sTree=tree;
-         boolean shuffle=(mixedList.size() < tree.size() / 2);
+         boolean doShuffle=(mixedList.size() < tree.size() / 2);
+         JPanel  pv       =getPanelView();
+         pv.removeAll(); // alle Labels entfernen
          pv.revalidate();
-         for (Object o:tree.values())
-            if (o instanceof Snapshot snapshot) {
-               SnapshotLabel snapshotLabel=SnapshotLabel.getSnapshotLabel(snapshot);
-               labelTree_UUID.put(snapshot.uuid(), snapshotLabel);// nach UUID sortiert
-               labelTree_ParentUuid.put(snapshot.parent_uuid(), snapshotLabel);// parent sortiert (keine doppelten !)
-               labelTree_Key.put(snapshot.key(), snapshotLabel);// nach Key sortiert (keine doppelten !)
-               labelTree_DirName.put(snapshot.dirName(), snapshotLabel);// nach Key sortiert (keine doppelten !)
-               if (!mixedList.contains(snapshotLabel))
-                  mixedList.add(snapshotLabel);
-               pv.add(snapshotLabel);
-               pv.revalidate();
-            }
-         if (shuffle)
+         for (Snapshot snapshot:sortedTree.values()) {
+            SnapshotLabel snapshotLabel=SnapshotLabel.getSnapshotLabel(snapshot);// gespeichertes Label holen
+            labelTree_UUID.put(snapshot.uuid(), snapshotLabel);// nach UUID sortiert
+            labelTree_ParentUuid.put(snapshot.parent_uuid(), snapshotLabel);// parent sortiert (keine doppelten !)
+            labelTree_Key.put(snapshot.key(), snapshotLabel);// nach Key sortiert (keine doppelten !)
+            labelTree_DirName.put(snapshot.dirName(), snapshotLabel);// nach Key sortiert (keine doppelten !)
+            if (!mixedList.contains(snapshotLabel))
+               mixedList.add(snapshotLabel);
+            pv.add(snapshotLabel);
+            pv.revalidate();
+         }
+         if (doShuffle)
             Collections.shuffle(mixedList);
       }
       componentResized(null);
