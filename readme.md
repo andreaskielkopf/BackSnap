@@ -141,6 +141,7 @@ The backsnap.jar file must be stored "somewhere". (Recommended: /usr/local/bin/b
 After initial manual experiments, a backup script should be created (e.g. in `/usr/local/bin/backup` ).
 The desired subvolumes / computers are then backed up there.
 Btrfs needs root access. The script must therefore be executable and started with sudo!
+
 ###### Example:
 ```
    #!/bin/zsh
@@ -184,6 +185,9 @@ Btrfs needs root access. The script must therefore be executable and started wit
    echo "fertig"
 ```
    
+#### Upcoming 
+
+There is a functional, but incomplete version in gui-branch <https://github.com/andreaskielkopf/BackSnap/tree/gui> 
  
 
 
