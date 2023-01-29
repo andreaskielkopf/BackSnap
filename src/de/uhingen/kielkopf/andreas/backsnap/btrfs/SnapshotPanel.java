@@ -40,7 +40,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener {
       add(getPanelDetail(), BorderLayout.SOUTH);
       add(getPanelVolumeName(), BorderLayout.NORTH);
    }
-   private JPanel getPanelView() {
+   public JPanel getPanelView() {
       if (panelView == null) {
          panelView=new JPanel() {
             BasicStroke               stroke          =new BasicStroke(3f, BasicStroke.CAP_ROUND,
@@ -201,4 +201,10 @@ public class SnapshotPanel extends JPanel implements ComponentListener {
    public void componentShown(ComponentEvent e) {/* */ }
    @Override
    public void componentHidden(ComponentEvent e) {/* */ }
+   /**
+    * @return
+    */
+   public ConcurrentSkipListMap<String, SnapshotLabel> getLabels() {
+      return labelTree_Key;
+   }
 }

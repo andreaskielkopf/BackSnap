@@ -4,6 +4,7 @@
 package de.uhingen.kielkopf.andreas.backsnap;
 
 import java.awt.*;
+import java.awt.event.*;
 import java.util.*;
 import java.util.List;
 import java.util.Map.Entry;
@@ -13,10 +14,10 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import javax.swing.*;
 
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
-import java.awt.event.ActionListener;
+
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.awt.event.ActionEvent;
+
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
@@ -25,23 +26,24 @@ import javax.swing.event.ChangeEvent;
  * @author Andreas Kielkopf
  *
  */
-public class BacksnapGui {
-   private static BacksnapGui backSnapGui;
-   JFrame                     frame;
-   private JPanel             panel;
-   private JLabel             lblNewLabel;
-   private JPanel             panel_1;
-   private SnapshotPanel      panelSrc;
-   private SnapshotPanel      panelBackup;
-   private JSplitPane         splitPane;
-   private JButton            btnMeta;
-   private JButton            btnSpace;
-   private JPanel             panelSpace;
-   private JPanel             panelMeta;
-   private JCheckBox          chckSpace;
-   private JSlider            sliderSpace;
-   private JCheckBox          chckMeta;
-   private JSlider            sliderMeta;
+public class BacksnapGui implements MouseListener {
+   private static BacksnapGui                          backSnapGui;
+   JFrame                                              frame;
+   private JPanel                                      panel;
+   private JLabel                                      lblNewLabel;
+   private JPanel                                      panel_1;
+   private SnapshotPanel                               panelSrc;
+   private SnapshotPanel                               panelBackup;
+   private JSplitPane                                  splitPane;
+   private JButton                                     btnMeta;
+   private JButton                                     btnSpace;
+   private JPanel                                      panelSpace;
+   private JPanel                                      panelMeta;
+   private JCheckBox                                   chckSpace;
+   private JSlider                                     sliderSpace;
+   private JCheckBox                                   chckMeta;
+   private JSlider                                     sliderMeta;
+   public ConcurrentSkipListMap<String, SnapshotLabel> manualDelete=new ConcurrentSkipListMap<>();
    /**
     * @param args
     */
@@ -113,9 +115,7 @@ public class BacksnapGui {
       if (panel_1 == null) {
          panel_1=new JPanel();
          panel_1.setLayout(new BorderLayout(0, 0));
-         // panel_1.add(getPanelBackup());
          panel_1.add(getSplitPane(), BorderLayout.CENTER);
-         // panel_1.add(getPanelSrc());
       }
       return panel_1;
    }
@@ -138,11 +138,13 @@ public class BacksnapGui {
     */
    private void abgleich() {
       ConcurrentSkipListMap<String, SnapshotLabel>  snapshotLabels_Uuid=getPanelSrc().labelTree_UUID;
+      ConcurrentSkipListMap<String, SnapshotLabel>  backupLabels_Uuid  =getPanelBackup().labelTree_UUID;
       ConcurrentSkipListMap<String, SnapshotLabel>  backupLabels_Key   =getPanelBackup().labelTree_Key;
       // ConcurrentSkipListMap<String, SnapshotLabel> keepLabels =new ConcurrentSkipListMap<>();
       ConcurrentSkipListMap<String, SnapshotLabel>  deleteLabels       =new ConcurrentSkipListMap<>();
+      ConcurrentSkipListMap<String, SnapshotLabel>  keineSackgasse     =new ConcurrentSkipListMap<>();
       // ConcurrentSkipListMap<String, SnapshotLabel> restLabels =new ConcurrentSkipListMap<>();
-      ConcurrentNavigableMap<String, SnapshotLabel> toDelete           =new ConcurrentSkipListMap<>();
+      ConcurrentNavigableMap<String, SnapshotLabel> toDeleteOld        =new ConcurrentSkipListMap<>();
       ArrayList<SnapshotLabel>                      deleteList         =new ArrayList<>();
       // SINGLESNAPSHOT make or delete only one(1) snapshot per call
       // DELETEOLD delete all snapshots that are "o=999" older than the newest one
@@ -152,25 +154,66 @@ public class BacksnapGui {
             SnapshotLabel last     =lastEntry.getValue();
             int           firstNr  =parseIntOrDefault(last.snapshot.dirName(), deleteOld) - deleteOld;
             if (firstNr > 0)
-               toDelete=backupLabels_Key.headMap(Snapshot.dir2key(Integer.toString(firstNr)));
+               toDeleteOld=backupLabels_Key.headMap(Snapshot.dir2key(Integer.toString(firstNr)));
          }
       }
-      recolor(backupLabels_Key, deleteLabels, toDelete, deleteList);
+      recolor(backupLabels_Key, deleteLabels, toDeleteOld, deleteList);
+      // suche Sackgassen
+      // ConcurrentNavigableMap<String, SnapshotLabel> reverseSorted=backupLabels_Key.descendingMap();
+      if (!backupLabels_Key.isEmpty()) {
+         SnapshotLabel child=backupLabels_Key.lastEntry().getValue();
+         while (child != null) {
+            Snapshot s=child.snapshot;
+            keineSackgasse.put(s.key(), child);
+            String        parent_uuid=s.parent_uuid();
+            SnapshotLabel parent     =backupLabels_Uuid.get(parent_uuid);
+            child=parent;
+         }
+      }
+      // MINIMUMSNAPSHOTS
       if (Backsnap.MINIMUMSNAPSHOTS.get()) {
          ArrayList<SnapshotLabel> mixedList2;
          synchronized (getPanelBackup().mixedList) {
             mixedList2=new ArrayList<>(getPanelBackup().mixedList);
          }
          int minimum  =parseIntOrDefault(Backsnap.MINIMUMSNAPSHOTS.getParameter(), 499);
-         int deletable=mixedList2.size() - minimum - snapshotLabels_Uuid.size() - toDelete.size();
-         for (SnapshotLabel snapshotLabel:mixedList2) {
+         int deletable=mixedList2.size() - minimum - snapshotLabels_Uuid.size() - toDeleteOld.size();
+         for (SnapshotLabel snapshotLabel:mixedList2) { // zuerst manuell gelöschte anbieten
             if (deletable < 1)
                break;
-            if (toDelete.containsValue(snapshotLabel))
+            if (!manualDelete.containsValue(snapshotLabel))
+               continue;
+            if (toDeleteOld.containsValue(snapshotLabel))
                continue; // wird eh schon gelöscht
-            String  received_uuid=snapshotLabel.snapshot.received_uuid();
-            boolean istAktuell   =getPanelSrc().labelTree_UUID.containsKey(received_uuid);
-            if (istAktuell)
+            if (getPanelSrc().labelTree_UUID.containsKey(snapshotLabel.snapshot.received_uuid()))
+               continue;// aktuell
+            deleteList.add(snapshotLabel);
+            snapshotLabel.setBackground(SnapshotLabel.delete2Color);
+            deletable--;
+         }
+         for (SnapshotLabel snapshotLabel:mixedList2) { // zuerst Sackgassen anbieten
+            if (deletable < 1)
+               break;
+            if (deleteList.contains(snapshotLabel))
+               continue;
+            if (keineSackgasse.containsValue(snapshotLabel))
+               continue;
+            if (toDeleteOld.containsValue(snapshotLabel))
+               continue; // wird eh schon gelöscht
+            if (getPanelSrc().labelTree_UUID.containsKey(snapshotLabel.snapshot.received_uuid()))
+               continue; // aktuell
+            deleteList.add(snapshotLabel);
+            snapshotLabel.setBackground(SnapshotLabel.delete2Color);
+            deletable--;
+         }
+         for (SnapshotLabel snapshotLabel:mixedList2) { // reguläre Snapshots anbieten
+            if (deletable < 1)
+               break;
+            if (deleteList.contains(snapshotLabel))
+               continue;
+            if (toDeleteOld.containsValue(snapshotLabel))
+               continue; // wird eh schon gelöscht
+            if (getPanelSrc().labelTree_UUID.containsKey(snapshotLabel.snapshot.received_uuid()))
                continue;
             deleteList.add(snapshotLabel);
             snapshotLabel.setBackground(SnapshotLabel.delete2Color);
@@ -178,7 +221,7 @@ public class BacksnapGui {
          }
       }
       // Show status of snapshots
-      recolor(backupLabels_Key, deleteLabels, toDelete, deleteList);
+      recolor(backupLabels_Key, deleteLabels, toDeleteOld, deleteList);
       System.out.println("Show Backups");
    }
    private void delete(final JButton jButton, Color deleteColor) {
@@ -198,6 +241,8 @@ public class BacksnapGui {
             for (Snapshot snapshot:toRemove) {
                try {
                   Backsnap.removeSnapshot(snapshot);
+               } catch (IOException e1) { /* */ }
+               try {
                   EventQueue.invokeAndWait(() -> {
                      try {
                         Backsnap.refreshGUI();
@@ -207,8 +252,6 @@ public class BacksnapGui {
                         e2.printStackTrace();
                      }
                   });
-               } catch (IOException e) {
-                  e.printStackTrace();
                } catch (InvocationTargetException e) {
                   e.printStackTrace();
                } catch (InterruptedException e) {
@@ -282,6 +325,8 @@ public class BacksnapGui {
       getPanelBackup().setVolume(backupVolume, passendBackups);
       abgleich();
       getPanelBackup().repaint();
+      for (SnapshotLabel label:getPanelBackup().getLabels().values())
+         label.addMouseListener(this);
    }
    private JSplitPane getSplitPane() {
       if (splitPane == null) {
@@ -437,4 +482,25 @@ public class BacksnapGui {
       }
       return sliderMeta;
    }
+   @Override
+   public void mouseClicked(MouseEvent e) {
+      if (e.getSource() instanceof SnapshotLabel sl) {
+         System.out.print("click-" + sl);
+         if (!manualDelete.containsValue(sl))
+            manualDelete.put(sl.getText(), sl);
+         else
+            manualDelete.remove(sl.getText());
+         System.out.print(manualDelete.containsValue(sl) ? "del" : "keep");
+         abgleich();
+         sl.repaint(100);
+      }
+   }
+   @Override
+   public void mousePressed(MouseEvent e) {/* */}
+   @Override
+   public void mouseReleased(MouseEvent e) {/* */}
+   @Override
+   public void mouseEntered(MouseEvent e) {/* */}
+   @Override
+   public void mouseExited(MouseEvent e) {/* */}
 }

@@ -4,6 +4,7 @@
 package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 
 import java.awt.Color;
+import java.awt.event.MouseListener;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import javax.swing.JLabel;
@@ -62,5 +63,19 @@ public class SnapshotLabel extends JLabel {
          labels.put(snapshot2.uuid(), snapLabel);
       }
       return snapLabel;
+   }
+   @Override
+   public String toString() {
+      StringBuilder sb=new StringBuilder(snapshot.dirName());
+      return sb.toString();
+   }
+   @Override
+   public synchronized void addMouseListener(MouseListener l) {
+      MouseListener[] wl=getListeners(MouseListener.class);      
+      for (MouseListener mouseListener:wl)
+         if (mouseListener == l)
+            return;
+      System.out.print(" "+this);
+      super.addMouseListener(l);
    }
 }

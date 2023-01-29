@@ -209,6 +209,8 @@ public class Backsnap {
       // }
       // if (!dMap.containsKey(sourceKey))
       Path sDir=srcSnapshot.getPathOn(srcVolume.mountPoint(), snapConfigs);
+      if (sDir == null)
+         throw new FileNotFoundException("Could not find dir: " + srcVolume);
       Path bDir=Paths.get(backupDir, srcSnapshot.dirName());
       out.print("Backup of " + srcSnapshot.dirName());
       if (parentSnapshot != null) // @todo genauer prüfen
@@ -291,8 +293,7 @@ public class Backsnap {
                }
                out.println();
             });
-         }
-      // ende("S");// B
+         } // ende("S");// B
    }
    private static void rsyncFiles(String srcSsh, String backupSsh, Path sDir, Path bDir) throws IOException {
       StringBuilder copyCmd=new StringBuilder("/bin/rsync -vcptgo --exclude \"" + SNAPSHOT + "\" ");
@@ -307,8 +308,7 @@ public class Backsnap {
             copyCmd.insert(0, "ssh " + srcSsh + " '").append("'"); // gesamten Befehl senden ;-)
          else
             copyCmd.insert(0, srcSsh); // nur sudo, kein quoting !
-      out.println(copyCmd.toString());
-      // if (!DRYRUN.get())
+      out.println(copyCmd.toString());// if (!DRYRUN.get())
       try (CmdStream rsync=Commandline.executeCached(copyCmd.toString(), null)) { // not cached
          rsync.backgroundErr();
          rsync.erg().forEach(out::println);
@@ -317,8 +317,7 @@ public class Backsnap {
                      || line.contains("connection unexpectedly closed")) {
                Backsnap.connectionLost=10;
                break;
-            }
-         // ende("");// R
+            } // ende("");// R
       }
    }
    public static void removeSnapshot(Snapshot s) throws IOException {
@@ -332,19 +331,19 @@ public class Backsnap {
             remove_cmd.insert(0, "ssh " + x + " '").append("'");
       out.println();
       out.print(remove_cmd);
-//      if (!DRYRUN.get())
-         try (CmdStream remove_snap=Commandline.executeCached(remove_cmd, null)) {
-            remove_snap.backgroundErr();
-            remove_snap.erg().forEach(line -> {
-               if (lastLine != 0) {
-                  lastLine=0;
-                  out.println();
-               }
+      // if (!DRYRUN.get())
+      try (CmdStream remove_snap=Commandline.executeCached(remove_cmd, null)) {
+         remove_snap.backgroundErr();
+         remove_snap.erg().forEach(line -> {
+            if (lastLine != 0) {
+               lastLine=0;
                out.println();
-            });
-            remove_snap.waitFor();
-            out.println(" # ");
-         }
+            }
+            out.println();
+         });
+         remove_snap.waitFor();
+         out.println(" # ");
+      }
    }
    /**
     * @param d

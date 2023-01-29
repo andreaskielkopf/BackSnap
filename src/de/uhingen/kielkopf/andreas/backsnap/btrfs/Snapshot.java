@@ -8,6 +8,7 @@ import static de.uhingen.kielkopf.andreas.backsnap.Backsnap.DOT_SNAPSHOTS;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -103,14 +104,21 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          if (snapConfig.original().mountPoint().equals(root)) {
             String k=snapConfig.kopie().mountPoint();
             String w=this.dirName();
-            Path   p=Path.of(k).resolve(w);
+            if (snapConfig.original().equals(snapConfig.kopie())) {
+               Path p2=Paths.get( snapConfig.original().subvol());
+               Path p3=p2.relativize(path).getParent();
+               Path p4=Paths.get(k).resolve(p3);
+//               System.out.println(p3);
+               return p4;
+            }
+            Path p=Path.of(k).resolve(w);
             // StringBuilder q =new StringBuilder(path.toString());
             return p;
          }
       }
       return null;
    }
-   public static void main(String[] args) {
+   public static void mkain(String[] args) {
       try {
          Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " /mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro");// Parameter
                                                                                                     // sammeln
