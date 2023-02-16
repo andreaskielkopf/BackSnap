@@ -47,7 +47,8 @@ public class Subvol extends JPanel {
    private JPanel getPanel() {
       if (panel == null) {
          panel=new JPanel();
-         panel.setBorder(new TitledBorder(null, "name on backup", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(59, 59, 59)));
+         panel.setBorder(new TitledBorder(null, "name on backup", TitledBorder.LEADING, TitledBorder.TOP, null,
+                  new Color(59, 59, 59)));
          panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
          panel.add(getPanel_1());
          panel.add(getPanel_2());
@@ -147,14 +148,16 @@ public class Subvol extends JPanel {
       return mount;
    }
    public void setMount(Mount mount1) {
-      this.mount=mount1;
-      if (mount == null)
+      if (mount1 == null)
          return;
+      if (mount == mount1)
+         return;
+      mount=mount1;
       getDevice().setText(mount.device());
       getMountpoint().setText(mount.mountPoint());
       getSubvolume().setText(mount.subvol());
       getOptions().setText(mount.options());
-      getCount().setText(Integer.toString(mount.snapshotTree().size()-1));
+      getCount().setText(Integer.toString(mount.snapshotTree().size() - 1));
    }
    public String getLabel() {
       return label;
