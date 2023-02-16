@@ -1,7 +1,7 @@
 /**
  * 
  */
-package de.uhingen.kielkopf.andreas.backsnap;
+package de.uhingen.kielkopf.andreas.backsnap.gui;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -13,6 +13,8 @@ import java.util.concurrent.ConcurrentSkipListMap;
 
 import javax.swing.*;
 
+import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
+import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
 
 import java.io.IOException;
@@ -28,7 +30,7 @@ import javax.swing.event.ChangeEvent;
  */
 public class BacksnapGui implements MouseListener {
    private static BacksnapGui                          backSnapGui;
-   JFrame                                              frame;
+   public JFrame                                              frame;
    private JPanel                                      panel;
    private JLabel                                      lblNewLabel;
    private JPanel                                      panel_1;

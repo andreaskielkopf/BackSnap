@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
+import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
 import de.uhingen.kielkopf.andreas.beans.cli.Flag;
 
 public class Backsnap {
@@ -36,9 +37,9 @@ public class Backsnap {
    final public static String SNAPSHOT           ="snapshot";
    final public static String DOT_SNAPSHOTS      =".snapshots";
    final public static String AT_SNAPSHOTS       ="@snapshots";
-   final static Flag          SINGLESNAPSHOT     =new Flag('s', "singlesnapshot"); // make one s
-   final static Flag          DELETEOLD          =new Flag('o', "deleteold");      // delete older s
-   final static Flag          MINIMUMSNAPSHOTS   =new Flag('m', "keepminimum");    // keep at least
+   public final static Flag          SINGLESNAPSHOT     =new Flag('s', "singlesnapshot"); // make one s
+   public final static Flag          DELETEOLD          =new Flag('o', "deleteold");      // delete older s
+   public final static Flag          MINIMUMSNAPSHOTS   =new Flag('m', "keepminimum");    // keep at least
    // final static String srcSsH ="root@localhost";
    // final static String backupSsH =srcSsH;
    public static void main(String[] args) {

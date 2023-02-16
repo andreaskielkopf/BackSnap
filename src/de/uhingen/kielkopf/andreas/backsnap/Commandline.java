@@ -55,10 +55,9 @@ public class Commandline {
     * @throws IOException
     */
    @SuppressWarnings("resource")
-   static CmdStream executeCached(String cmd, String key) throws IOException {
-      if (key != null)
-         if (cache.containsKey(key)) // aus dem cache antworten, wenn es im cache ist
-            return cache.get(key); // ansonsten den Befehl neu ausführen und im cache ablegen
+   public static CmdStream executeCached(String cmd, String key) throws IOException {
+      if ((key != null) && cache.containsKey(key)) // aus dem cache antworten, wenn es im cache ist
+         return cache.get(key); // ansonsten den Befehl neu ausführen und im cache ablegen
       Process process=processBuilder.command(List.of("/bin/bash", "-c", cmd)).start();
       return new CmdStream(process, new BufferedReader(new InputStreamReader(process.getInputStream(), UTF_8)),
                new BufferedReader(new InputStreamReader(process.getErrorStream(), UTF_8)), new ArrayList<>(),
@@ -73,7 +72,7 @@ public class Commandline {
             List<String> ergList, String key) implements Closeable {
       public void backgroundErr() { // Fehler im Hintergrund ausgeben und ablegen // System.out.print("0");
          if ((key != null) && cache.containsKey(key))
-            return;
+            return; // ist schon im cache
          background.submit(new Runnable() {
             @Override
             public void run() {
@@ -100,7 +99,7 @@ public class Commandline {
          brErg.close(); // erg wurde gelesen
          process.destroy();
          if ((key != null) && (!cache.containsKey(key))) {
-            System.out.println("enable " + key + " in cache");
+            // System.out.println("enable " + key + " in cache");
             cache.put(key, this);
          }
       }
@@ -110,9 +109,14 @@ public class Commandline {
        * @return err
        */
       public Stream<String> err() {
-         if (key == null)
+         if ((key != null) && cache.containsKey(key))
+            return errList.stream(); // aus dem cache
+         // if ((key == null) && errList.isEmpty())
+         if (key == null) // den cache ignorieren
             return brErr.lines();
-         return errList.stream(); // Konserve
+         if (errList.isEmpty())
+            return brErr.lines().peek(ergList::add); // legt alle Zeilen im cache-Array ab
+         return errList.stream(); // eigene Konserve
       }
       /**
        * Während der Prozess läuft gib den aktuellen Stream zurück. später den aus dem cache
@@ -120,15 +124,16 @@ public class Commandline {
        * @return erg
        */
       public Stream<String> erg() {
-         if (key == null)
+         if ((key != null) && cache.containsKey(key)) {
+            // System.out.println("use " + key + " from cache");
+            return ergList.stream(); // aus dem cache
+         }
+         if (key == null) // den cache ignorieren
             return brErg.lines();
-         System.out.println("save " + key + " into cache");
+         // System.out.println("save " + key + " into cache");
          if (ergList.isEmpty()) // wird nur hier gefüllt , also einmal wahr, dann falsch
-            return brErg.lines().peek(line -> {
-               // System.out.println(line);
-               ergList.add(line);
-            }); // legt alle Zeilen im cache-Array ab
-         System.err.println("use " + key + " from cache");
+            return brErg.lines().peek(ergList::add); // legt alle Zeilen im cache-Array ab
+         // System.err.println("reuse " + key + " from cache");
          return ergList.stream(); // Konserve
       }
       /**
