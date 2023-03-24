@@ -70,7 +70,7 @@ public class Backsnap {
          Mount         srcVolume    =srcSubVolumes.mountTree().get(srcKey);
          if (srcVolume == null)
             throw new RuntimeException("Could not find srcDir: " + srcDir);
-         int snapshotCount=srcVolume.snapshotMap().size() ;
+         int snapshotCount=srcVolume.snapshotMap().size();
          if (snapshotCount < 1)
             throw new RuntimeException("Ingnoring, because there are no snapshots in: " + srcDir);
          System.out.println("backup snapshots from: " + srcVolume.key());
@@ -110,9 +110,8 @@ public class Backsnap {
             System.exit(0);
          }
          TreeMap<String, Snapshot> sortedSnapshots=new TreeMap<>();
-         for (Object o:srcVolume.snapshotMap().values())
-            if (o instanceof Snapshot s)
-               sortedSnapshots.put(s.keyO(), s); // sortieren nach Mountpoint und datum
+         for (Snapshot s:srcVolume.snapshotMap().values())
+            sortedSnapshots.put(s.keyO(), s); // sortieren nach Mountpoint und datum
          for (Snapshot sourceSnapshot:sortedSnapshots.values()) {
             if (canNotFindParent != null) {
                err.println("Please remove " + backupDir + "/" + canNotFindParent + "/" + SNAPSHOT + " !");

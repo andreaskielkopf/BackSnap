@@ -30,7 +30,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_Key       =new ConcurrentSkipListMap<>();
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_DirName   =new ConcurrentSkipListMap<>();
    public ArrayList<SnapshotLabel>                     mixedList           =new ArrayList<>();
-   public ConcurrentSkipListMap<String, Object>        sTree;
+//   public ConcurrentSkipListMap<String, Object>        sTree;
    public SnapshotPanel() {
       initialize();
       getPanelView().add(new SnapshotLabel(null));
@@ -133,7 +133,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
       labelTree_Key.clear();
       labelTree_DirName.clear();
       TreeMap<String, Snapshot> sortedTreeC=new TreeMap<>();
-      for (Object o:list)
+      for (Snapshot o:list)
          if (o instanceof Snapshot snapshot)
             sortedTreeC.put(snapshot.key(), snapshot);// sortierbare Nummern bis 8 Stellen
       synchronized (mixedList) {
@@ -217,8 +217,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    public void mouseReleased(MouseEvent e) { /* noop */ }
    @Override
    public void mouseEntered(MouseEvent e) {
-      Object s=e.getSource();
-      if (s instanceof SnapshotLabel sl) {
+      if (e.getSource() instanceof SnapshotLabel sl) {
          Snapshot       sn=sl.snapshot;
          SnapshotDetail pd=getPanelDetail();
          pd.setInfo("Snapshot " + sn.dirName() + ":", sn.getInfo());

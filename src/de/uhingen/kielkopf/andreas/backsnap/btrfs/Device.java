@@ -7,6 +7,7 @@ import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Snapshot.getString;
 
 import java.io.IOException;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,11 +15,11 @@ import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 
 /**
- * @author Andreas Kielkopf
+ * @author Andreas Kielkopf 
  *
  */
-public record Device(SubVolumeList mountList, String device, String mountPoint, String subvol, String options,String oextern,
-         ConcurrentSkipListMap<String, Object> snapshotTree ) {
+public record Device(SubVolumeList mountList, String device, String mountPoint, String subvol, String options,
+         String oextern, ConcurrentSkipListMap<String, Snapshot> snapshotMap, ConcurrentSkipListSet<String> namen) {
    final static Pattern DEVICE=Pattern.compile("^(?:.*[ \\[]device=)?([^ ,]+)");
    final static Pattern MOUNTPOINT=Pattern.compile("(?: on |[ \\[]mountPoint=)([^ ,]+)");
    final static Pattern SUBVOLUME=Pattern.compile("(?:, ?subvol=)([^ ,)\\]]+)");
@@ -30,14 +31,14 @@ public record Device(SubVolumeList mountList, String device, String mountPoint, 
     * @return gemeinsamen Start des Pfads
     */
    public String getCommonName() {
-      if (snapshotTree.isEmpty())
+      if (snapshotMap.isEmpty())
          return null;
-      String  k=snapshotTree.firstEntry().getKey();
+      String  k=snapshotMap.firstEntry().getKey();
       Matcher m=COMMON.matcher(k);
       if (!m.find())
          return null;
       String c=m.group(1);
-      for (String key:snapshotTree.keySet())
+      for (String key:snapshotMap.keySet())
          if (!key.startsWith(c))
             return null;
       return c;
@@ -58,7 +59,7 @@ public record Device(SubVolumeList mountList, String device, String mountPoint, 
    public Device(SubVolumeList mountList, String line, String extern) throws IOException {
       this(mountList, getString(DEVICE.matcher(line)), getString(MOUNTPOINT.matcher(line)),
                getString(SUBVOLUME.matcher(line)), getString(OPTIONS.matcher(line)), extern,
-               new ConcurrentSkipListMap<>());
+               new ConcurrentSkipListMap<>(), new ConcurrentSkipListSet<>());
       populate();
    }
    /**
@@ -85,7 +86,7 @@ public record Device(SubVolumeList mountList, String device, String mountPoint, 
             Matcher mn=NAME.matcher(line);
             if (mn.find()) {
                String name=mn.group(1);
-               snapshotTree.put("Name:", name);// "<FS_TREE>" wenn / gemountet ist
+               namen.add(name);// "<FS_TREE>" wenn / gemountet ist
             } else {
                Matcher m=SNAPSHOT.matcher(line);
                if (m.find()) {
@@ -102,7 +103,7 @@ public record Device(SubVolumeList mountList, String device, String mountPoint, 
                            System.out.println(p);
                      }
                   }
-                  snapshotTree.put(p, zeiger);
+                  snapshotMap.put(p, zeiger);
                }
             }
          });
@@ -117,10 +118,8 @@ public record Device(SubVolumeList mountList, String device, String mountPoint, 
    public String toString() {
       StringBuilder sb=new StringBuilder("Mount [").append(mountList.extern()).append(":").append(device).append(" -> ")
                .append(mountPoint);
-      if (snapshotTree.get("Name:") instanceof String name) {
-         int l=snapshotTree.size() - 1;
-         sb.append("(").append(name).append(":").append(l).append(")");
-      }
+      if (!namen.isEmpty())
+         sb.append("(").append(namen.first()).append(":").append(snapshotMap.size()).append(")");
       sb.append("]");
       return sb.toString();
    }
