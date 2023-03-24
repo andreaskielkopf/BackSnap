@@ -71,7 +71,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    private static Pattern createPatternFor(String s) {
       return Pattern.compile("^(?:.*[ \\[])?" + s + "[ =]([^ ,\\]]+)");
    }
-   public static final int SORT_LEN=10; // Reicht 100 Jahre ???
+   public static final int SORT_LEN=10; // reichen 100 Jahre ???
    /**
     * @return Key um snapshot zu sortieren sofern im Pfad ein numerischer WERT steht
     */
@@ -120,8 +120,19 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    }
    public Stream<Entry<String, String>> getInfo() {
       Map<String, String> infoMap=new TreeMap<>();
-      infoMap.put("uuid", uuid);
-      infoMap.put("parent_uuid", parent_uuid);
+      infoMap.put("0: mount", mount.mountPoint());
+      infoMap.put("1: dirName()", dirName());
+      infoMap.put("2: path", path.toString());
+      infoMap.put("b: otime", otime);
+      infoMap.put("c: uuid", uuid);
+      infoMap.put("d: parent_uuid", parent_uuid);
+      infoMap.put("e: received_uuid", received_uuid);
+      infoMap.put("g: gen", gen.toString());
+      infoMap.put("h: cgen", cgen.toString());
+      infoMap.put("i: id", id.toString());
+      infoMap.put("j: top_level", top_level.toString());
+      infoMap.put("k: parent", parent.toString());
+      infoMap.put("m: key", key());
       return infoMap.entrySet().parallelStream();
    }
    public static void mkain(String[] args) {

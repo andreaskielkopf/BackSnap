@@ -221,7 +221,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
       if (s instanceof SnapshotLabel sl) {
          Snapshot       sn=sl.snapshot;
          SnapshotDetail pd=getPanelDetail();
-         pd.setInfo("Snapshot " + sl.getText() + ":", sn.getInfo());
+         pd.setInfo("Snapshot " + sn.dirName() + ":", sn.getInfo());
       }
    }
    @Override

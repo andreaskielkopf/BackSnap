@@ -19,9 +19,6 @@ import javax.swing.border.TitledBorder;
  */
 public class SnapshotDetail extends JPanel {
    private static final long serialVersionUID=-7659329578660282348L;
-   private JPanel            panel;
-   private JLabel            lblNewLabel;
-   private JLabel            lblNewLabel_1;
    private JPanel            panel_1;
    private JPanel            panelInfo;
    private TitledBorder      tBorder;
@@ -36,35 +33,11 @@ public class SnapshotDetail extends JPanel {
       infoMap.put("parent_uuid", "2");
       setInfo("Info:", infoMap.entrySet().parallelStream());
    }
-   private JPanel getPanel() {
-      if (panel == null) {
-         panel=new JPanel();
-         panel.setLayout(new GridLayout(0, 2, 10, 0));
-         panel.add(getLblNewLabel());
-         panel.add(getLblNewLabel_1());
-      }
-      return panel;
-   }
-   private JLabel getLblNewLabel() {
-      if (lblNewLabel == null) {
-         lblNewLabel=new JLabel("name:");
-         lblNewLabel.setFont(new Font("Noto Sans", Font.BOLD, 12));
-         lblNewLabel.setHorizontalAlignment(SwingConstants.TRAILING);
-      }
-      return lblNewLabel;
-   }
-   private JLabel getLblNewLabel_1() {
-      if (lblNewLabel_1 == null) {
-         lblNewLabel_1=new JLabel("snapshot 5");
-      }
-      return lblNewLabel_1;
-   }
    private JPanel getPanel_1() {
       if (panel_1 == null) {
          panel_1=new JPanel();
          panel_1.setBorder(getTBorder());
          panel_1.setLayout(new BorderLayout(0, 0));
-         panel_1.add(getPanel(), BorderLayout.NORTH);
          panel_1.add(getPanelInfo(), BorderLayout.CENTER);
       }
       return panel_1;
@@ -75,7 +48,7 @@ public class SnapshotDetail extends JPanel {
       return tBorder;
    }
    public String getTitle() {
-      return tBorder.getTitle();
+      return getTBorder().getTitle();
    }
    public void setTitle(String title) {
       tBorder.setTitle(title);
@@ -92,13 +65,10 @@ public class SnapshotDetail extends JPanel {
       JPanel pi=getPanelInfo();
       pi.removeAll();
       infoStream.forEachOrdered(e -> {
-         System.out.println(e);
-         JLabel lk=new JLabel(e.getKey() + ":");
-         pi.add(lk);
-         JLabel lv=new JLabel(e.getValue());
-         pi.add(lv);
+         pi.add(new JLabel(e.getKey() + ":"));
+         pi.add(new JLabel(e.getValue()));
       });
       pi.revalidate();
-      pi.repaint(100);
+      repaint(100);
    }
 }
