@@ -9,11 +9,11 @@ import static de.uhingen.kielkopf.andreas.backsnap.Backsnap.DOT_SNAPSHOTS;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
@@ -105,10 +105,10 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
             String k=snapConfig.kopie().mountPoint();
             String w=this.dirName();
             if (snapConfig.original().equals(snapConfig.kopie())) {
-               Path p2=Paths.get( snapConfig.original().subvol());
+               Path p2=Paths.get(snapConfig.original().subvol());
                Path p3=p2.relativize(path).getParent();
                Path p4=Paths.get(k).resolve(p3);
-//               System.out.println(p3);
+               // System.out.println(p3);
                return p4;
             }
             Path p=Path.of(k).resolve(w);
@@ -117,6 +117,12 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          }
       }
       return null;
+   }
+   public Stream<Entry<String, String>> getInfo() {
+      Map<String, String> infoMap=new TreeMap<>();
+      infoMap.put("uuid", uuid);
+      infoMap.put("parent_uuid", parent_uuid);
+      return infoMap.entrySet().parallelStream();
    }
    public static void mkain(String[] args) {
       try {

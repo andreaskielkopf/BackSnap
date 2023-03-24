@@ -16,6 +16,8 @@ import javax.swing.*;
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
+import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotLabel;
+import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotPanel;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;

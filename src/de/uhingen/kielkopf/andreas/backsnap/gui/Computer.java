@@ -228,7 +228,7 @@ public class Computer extends JPanel {
          getTestInfo().setText(ok ? "sudo did work" : "you must start this programm with sudo !");
          getTestInfo().setBackground(ok ? Color.GREEN : Color.RED);
       } else { // wir müssen mit ssh arbeiten
-         StringBuilder sb=new StringBuilder("btrfs filesystem show /");
+         StringBuilder sb=new StringBuilder("btrfs filesystem show -d");
          // String cacheKey=extern + ":" + sb.toString();
          sb.insert(0, "ssh " + extern + " '").append("'");
          try (CmdStream sudoTest=Commandline.executeCached(sb, null)) {
@@ -254,6 +254,8 @@ public class Computer extends JPanel {
    private void fillForm() {
       String srcSsh=extern.contains("@") ? extern : "";
       try {
+         getListModell().clear();
+         Commandline.removeFromCache("mount " + extern);
          getListModell().addAll(new SubVolumeList(srcSsh).mountTree().values());
       } catch (IOException e) {
          e.printStackTrace();

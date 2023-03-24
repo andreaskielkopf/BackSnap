@@ -1,25 +1,26 @@
 /**
  * 
  */
-package de.uhingen.kielkopf.andreas.backsnap.btrfs;
+package de.uhingen.kielkopf.andreas.backsnap.gui.part;
 
 import java.awt.*;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
+import java.awt.event.*;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import javax.swing.*;
 
+import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
+
 /**
  * @author Andreas Kielkopf
  *
  */
-public class SnapshotPanel extends JPanel implements ComponentListener {
+public class SnapshotPanel extends JPanel implements ComponentListener, MouseListener {
    private static final long                           serialVersionUID    =-3405881652038164771L;
    private JPanel                                      panelView;
-   private JPanel                                      panelDetail;
+   private SnapshotDetail                              panelDetail;
    private JPanel                                      panelVolumeName;
    private JLabel                                      volumeName;
    private JPanel                                      panel;
@@ -100,7 +101,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener {
       }
       return panelView;
    }
-   private JPanel getPanelDetail() {
+   private SnapshotDetail getPanelDetail() {
       if (panelDetail == null) {
          panelDetail=new SnapshotDetail();
       }
@@ -142,6 +143,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener {
          pv.revalidate();
          for (Snapshot snapshot:sortedTree.values()) {
             SnapshotLabel snapshotLabel=SnapshotLabel.getSnapshotLabel(snapshot);// gespeichertes Label holen
+            snapshotLabel.addMouseListener(this);
             labelTree_UUID.put(snapshot.uuid(), snapshotLabel);// nach UUID sortiert
             labelTree_ParentUuid.put(snapshot.parent_uuid(), snapshotLabel);// parent sortiert (keine doppelten !)
             labelTree_Key.put(snapshot.key(), snapshotLabel);// nach Key sortiert (keine doppelten !)
@@ -196,15 +198,32 @@ public class SnapshotPanel extends JPanel implements ComponentListener {
       });
    }
    @Override
-   public void componentMoved(ComponentEvent e) {/* */ }
+   public void componentMoved(ComponentEvent e) { /* noop */ }
    @Override
-   public void componentShown(ComponentEvent e) {/* */ }
+   public void componentShown(ComponentEvent e) { /* noop */ }
    @Override
-   public void componentHidden(ComponentEvent e) {/* */ }
+   public void componentHidden(ComponentEvent e) { /* noop */ }
    /**
     * @return
     */
    public ConcurrentSkipListMap<String, SnapshotLabel> getLabels() {
       return labelTree_Key;
    }
+   @Override
+   public void mouseClicked(MouseEvent e) { /* noop */ }
+   @Override
+   public void mousePressed(MouseEvent e) { /* noop */ }
+   @Override
+   public void mouseReleased(MouseEvent e) { /* noop */ }
+   @Override
+   public void mouseEntered(MouseEvent e) {
+      Object s=e.getSource();
+      if (s instanceof SnapshotLabel sl) {
+         Snapshot       sn=sl.snapshot;
+         SnapshotDetail pd=getPanelDetail();
+         pd.setInfo("Snapshot " + sl.getText() + ":", sn.getInfo());
+      }
+   }
+   @Override
+   public void mouseExited(MouseEvent e) { /* noop */ }
 }

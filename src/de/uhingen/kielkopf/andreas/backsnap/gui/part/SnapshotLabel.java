@@ -1,7 +1,7 @@
 /**
  * 
  */
-package de.uhingen.kielkopf.andreas.backsnap.btrfs;
+package de.uhingen.kielkopf.andreas.backsnap.gui.part;
 
 import java.awt.Color;
 import java.awt.event.MouseListener;
@@ -10,6 +10,8 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 import javax.swing.border.*;
+
+import de.uhingen.kielkopf.andreas.backsnap.btrfs.Snapshot;
 
 /**
  * @author Andreas Kielkopf
