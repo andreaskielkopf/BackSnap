@@ -15,8 +15,8 @@ import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
  * 
  * @author Andreas Kielkopf
  */
-public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<String, Snapshot> pathMap,
-         TreeMap<String, Snapshot> dateMap) {
+public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<String, Snapshot> rUuidMap,
+         TreeMap<String, Snapshot> pathMap, TreeMap<String, Snapshot> dateMap) {
    final static ConcurrentSkipListMap<String, SnapTree> snapTreeCache=new ConcurrentSkipListMap<>();
    /**
     * Hole ein Verzeichniss in die Map
@@ -25,7 +25,7 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
     * @throws IOException
     */
    public SnapTree(Mount mount) throws IOException {
-      this(mount, new TreeMap<>(), new TreeMap<>(), new TreeMap<>());
+      this(mount, new TreeMap<>(), new TreeMap<>(), new TreeMap<>(), new TreeMap<>());
       populate();
    }
    private void populate() throws IOException {// otime kommt nur bei snapshots
@@ -50,6 +50,8 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
             pathMap.put(snapshot.path().toString(), snapshot);// nach pfad sortiert
             uuidMap.put(snapshot.uuid(), snapshot);
             dateMap.put(snapshot.otime(), snapshot);
+            if (snapshot.isBackup())
+               rUuidMap.put(snapshot.received_uuid(), snapshot);
          });
          for (String line:snapshotList.errList())
             if (line.contains("No route to host") || line.contains("Connection closed")

@@ -161,7 +161,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          Mount         srcVolume =subVolumes.mountTree().get(sourceDir);
          if (srcVolume == null)
             throw new RuntimeException("Could not find srcDir: " + sourceDir);
-         if (srcVolume.snapshotTree().isEmpty())
+         if (srcVolume.snapshotMap().isEmpty())
             throw new RuntimeException("Ingnoring, because there are no snapshots in: " + sourceDir);
          System.out.println("backup snapshots from: " + srcVolume.key());
          // BackupVolume ermitteln
@@ -178,10 +178,10 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          if (!subVolumes.mountTree().isEmpty())
             for (Entry<String, Mount> e:subVolumes.mountTree().entrySet()) {
                Mount subv=e.getValue();
-               if (!subv.snapshotTree().isEmpty()) {// interessant sind nur die Subvolumes mit snapshots
+               if (!subv.snapshotMap().isEmpty()) {// interessant sind nur die Subvolumes mit snapshots
                   String commonName=subv.getCommonName();
                   System.out.println("Found snapshots for: " + e.getKey() + " at (" + commonName + ")");
-                  for (Entry<String, Object> e4:subv.snapshotTree().entrySet())
+                  for (Entry<String, Snapshot> e4:subv.snapshotMap().entrySet())
                      if (e4.getValue() instanceof Snapshot s)
                         System.out.println(" -> " + e4.getKey() + " -> " + s.key()); // System.out.println();
                } else

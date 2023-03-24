@@ -119,7 +119,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
     * @param receivedSnapshots
     * @param srcVolume
     */
-   public void setVolume(Mount subVolume, ConcurrentSkipListMap<String, Object> tree) {
+   public void setVolume(Mount subVolume, Collection<Snapshot> list) {
       String        extern=subVolume.mountList().extern();
       String        mount =subVolume.mountPoint();
       String        device=subVolume.device();
@@ -132,16 +132,16 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
       labelTree_ParentUuid.clear();
       labelTree_Key.clear();
       labelTree_DirName.clear();
-      ConcurrentSkipListMap<String, Snapshot> sortedTree=new ConcurrentSkipListMap<>();
-      for (Object o:tree.values())
+      TreeMap<String, Snapshot> sortedTreeC=new TreeMap<>();
+      for (Object o:list)
          if (o instanceof Snapshot snapshot)
-            sortedTree.put(snapshot.key(), snapshot);// sortierbare Nummern bis 8 Stellen
+            sortedTreeC.put(snapshot.key(), snapshot);// sortierbare Nummern bis 8 Stellen
       synchronized (mixedList) {
-         boolean doShuffle=(mixedList.size() < tree.size() / 2);
+         boolean doShuffle=(mixedList.size() < list.size() / 2);
          JPanel  pv       =getPanelView();
          pv.removeAll(); // alle Labels entfernen
          pv.revalidate();
-         for (Snapshot snapshot:sortedTree.values()) {
+         for (Snapshot snapshot:sortedTreeC.values()) {
             SnapshotLabel snapshotLabel=SnapshotLabel.getSnapshotLabel(snapshot);// gespeichertes Label holen
             snapshotLabel.addMouseListener(this);
             labelTree_UUID.put(snapshot.uuid(), snapshotLabel);// nach UUID sortiert

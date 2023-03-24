@@ -32,7 +32,7 @@ import javax.swing.event.ChangeEvent;
  */
 public class BacksnapGui implements MouseListener {
    private static BacksnapGui                          backSnapGui;
-   public JFrame                                              frame;
+   public JFrame                                       frame;
    private JPanel                                      panel;
    private JLabel                                      lblNewLabel;
    private JPanel                                      panel_1;
@@ -133,7 +133,7 @@ public class BacksnapGui implements MouseListener {
     * @param srcVolume
     */
    public void setSrc(Mount srcVolume) {
-      getPanelSrc().setVolume(srcVolume, srcVolume.snapshotTree());
+      getPanelSrc().setVolume(srcVolume, srcVolume.snapshotMap().values());
       abgleich();
       getPanelSrc().repaint();
    }
@@ -313,20 +313,20 @@ public class BacksnapGui implements MouseListener {
     * @param receivedSnapshots
     * @param backupDir
     */
-   public void setBackup(Mount backupVolume, TreeMap<String, Snapshot> receivedSnapshots, String backupDir) {
-      ConcurrentSkipListMap<String, Object> passendBackups=new ConcurrentSkipListMap<>();
-      String                                mount         =backupVolume.mountPoint();
+   public void setBackup(SnapTree backupTree, String backupDir) {
+      ConcurrentSkipListMap<String, Snapshot> passendBackups=new ConcurrentSkipListMap<>();
+      String                                mount         =backupTree.mount().mountPoint();
       String                                rest          =backupDir.replaceFirst(mount, "");
       if (!rest.startsWith("/"))
          rest="/" + rest;
       if (!rest.endsWith("/"))
          rest+="/";
-      for (Snapshot snapshot:receivedSnapshots.values()) {
+      for (Snapshot snapshot:backupTree.dateMap().values()) { // sortiert nach datum
          String pfad=snapshot.path().toString();
          if (pfad.startsWith(rest))
             passendBackups.put(snapshot.key(), snapshot);
       }
-      getPanelBackup().setVolume(backupVolume, passendBackups);
+      getPanelBackup().setVolume(backupTree.mount(), passendBackups.values());
       abgleich();
       getPanelBackup().repaint();
       for (SnapshotLabel label:getPanelBackup().getLabels().values())

@@ -23,10 +23,10 @@ public record SnapConfig(Mount original, Mount kopie) {
    public static List<SnapConfig> getList(SubVolumeList srcSubVolumes) {
       ArrayList<SnapConfig> l=new ArrayList<>();
       for (Mount original:srcSubVolumes.mountTree().values()) { // über alle subvolumes laufen
-         ConcurrentSkipListMap<String, Object> snapTree=original.snapshotTree();
+         ConcurrentSkipListMap<String, Snapshot> snapTree=original.snapshotMap();
          if (snapTree.size() <= 1)
             continue;
-        o:  for (Object o:original.snapshotTree().values()) {
+        o:  for (Object o:original.snapshotMap().values()) {
             if (o instanceof Snapshot s) {
                // Snapshot v=original.snapshotTree().firstEntry().getValue();
                // if (v == null)
@@ -36,7 +36,7 @@ public record SnapConfig(Mount original, Mount kopie) {
                   if (!original.device().equals(kopie.device())) // nur auf dem selben device kann es snapshots geben
                      continue;
                   String sdir=kopie.subvol();
-                  int    le2 =kopie.snapshotTree().size();
+                  int    le2 =kopie.snapshotMap().size();
                   if (le2 > 1) {// von der kopie darf es keine eigenen snapshots geben
                      // sdir+="/";
                      if (!pfad.startsWith(sdir + "/"))
