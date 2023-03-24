@@ -15,7 +15,8 @@ import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
  * 
  * @author Andreas Kielkopf
  */
-public record SnapTree(Mount mount, TreeMap<String, Snapshot> fileMap) {
+public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<String, Snapshot> pathMap,
+         TreeMap<String, Snapshot> dateMap) {
    final static ConcurrentSkipListMap<String, SnapTree> snapTreeCache=new ConcurrentSkipListMap<>();
    /**
     * Hole ein Verzeichniss in die Map
@@ -24,7 +25,7 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> fileMap) {
     * @throws IOException
     */
    public SnapTree(Mount mount) throws IOException {
-      this(mount, new TreeMap<>());
+      this(mount, new TreeMap<>(), new TreeMap<>(), new TreeMap<>());
       populate();
    }
    private void populate() throws IOException {// otime kommt nur bei snapshots
@@ -46,7 +47,9 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> fileMap) {
             Snapshot snapshot=new Snapshot(mount, line);
             // if (line.contains("srv"))
             // System.out.println(line);
-            fileMap.put(snapshot.path().toString(), snapshot);// nach pfad sortiert
+            pathMap.put(snapshot.path().toString(), snapshot);// nach pfad sortiert
+            uuidMap.put(snapshot.uuid(), snapshot);
+            dateMap.put(snapshot.otime(), snapshot);
          });
          for (String line:snapshotList.errList())
             if (line.contains("No route to host") || line.contains("Connection closed")
@@ -62,7 +65,7 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> fileMap) {
     * @throws IOException
     */
    public static SnapTree getSnapTree(Mount mount2/* , String omountPoint, String oextern2 */) throws IOException {
-      String deviceKey=mount2.oextern()+"->"+ mount2.device(); // +mount2.extern
+      String deviceKey=mount2.oextern() + "->" + mount2.device(); // +mount2.extern
       if (!snapTreeCache.containsKey(deviceKey)) {
          SnapTree st=new SnapTree(mount2/* , omountPoint, oextern2 */);
          snapTreeCache.put(deviceKey, st);// nach deviceKey sortiert
@@ -75,8 +78,8 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> fileMap) {
    public String toString() {
       StringBuilder sb=new StringBuilder("SnapTree [").append(mount.mountList().extern()).append(":")
                .append(mount.device()).append(" -> ").append(mount.mountPoint()).append("[");
-      sb.append(fileMap.size()).append(":");
-      for (Snapshot s:fileMap.values())
+      sb.append(uuidMap.size()).append(":");
+      for (Snapshot s:dateMap.values())
          sb.append(s.dirName()).append(",");
       sb.setLength(sb.length() - 1);
       sb.append("]]");

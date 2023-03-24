@@ -69,7 +69,7 @@ public record Device(SubVolumeList mountList, String device, String mountPoint, 
     */
    void populate() throws IOException {
       SnapTree      snapTree         =SnapTree.getSnapTree(null/* , mountPoint, oextern */);
-      boolean       snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.fileMap().isEmpty() : false;
+      boolean       snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.dateMap().isEmpty() : false;
       StringBuilder btrfsCmd         =new StringBuilder("btrfs subvolume show ").append(mountPoint);
       if ((oextern instanceof String x) && (!x.isBlank()))
          if (x.startsWith("sudo "))
@@ -92,12 +92,12 @@ public record Device(SubVolumeList mountList, String device, String mountPoint, 
                   Snapshot zeiger=null;
                   String   p     ="/" + m.group(1);
                   if (snapTreeVorhanden) {
-                     zeiger=snapTree.fileMap().get(p);
+                     zeiger=snapTree.pathMap().get(p);
                      if (zeiger == null) {
                         System.out.println(p);
                         if (p.startsWith("@/"))
                            p=p.substring(2);
-                        zeiger=snapTree.fileMap().get(p);
+                        zeiger=snapTree.pathMap().get(p);
                         if (zeiger == null)
                            System.out.println(p);
                      }

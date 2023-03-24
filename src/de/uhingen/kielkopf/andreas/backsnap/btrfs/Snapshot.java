@@ -82,6 +82,9 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       System.err.println("§: " + path.toString());
       return path.toString();
    }
+   public String keyO() {
+      return mount().key() + otime();
+   }
    final public static String dir2key(String dir) { // ??? numerisch sortieren ;-)
       return (dir.length() >= SORT_LEN) ? dir : ".".repeat(SORT_LEN - dir.length()).concat(dir);
    }
