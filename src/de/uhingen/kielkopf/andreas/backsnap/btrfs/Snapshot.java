@@ -24,8 +24,7 @@ import de.uhingen.kielkopf.andreas.beans.cli.Flag;
  *
  */
 public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integer parent, Integer top_level, //
-         String otime, String parent_uuid, String received_uuid, String uuid, //
-         Path path) {
+         String otime, String parent_uuid, String received_uuid, String uuid, Path btrfsPath) {
    final static Pattern ID=createPatternFor("ID");
    final static Pattern GEN=createPatternFor("gen");
    final static Pattern CGEN=createPatternFor("cgen");
@@ -35,7 +34,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    final static Pattern PARENT_UUID=createPatternFor("parent_uuid");
    final static Pattern RECEIVED_UUID=createPatternFor("received_uuid");
    final static Pattern UUID=createPatternFor("uuid");
-   final static Pattern PATH=createPatternFor("path");
+   final static Pattern BTRFS_PATH=Pattern.compile("^(?:.*? )path [^>]+>([^ ]+).*?$");
    final static Pattern NUMERIC_DIRNAME=Pattern.compile("([0-9]+)/snapshot$");
    final static Pattern DIRNAME=Pattern.compile("([^/]+)/snapshot$");
    final static Pattern SUBVOLUME=Pattern.compile("^(@[0-9a-zA-Z.]+)/.*[0-9]+/snapshot$");
@@ -44,7 +43,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
                getInt(PARENT.matcher(from_btrfs)), getInt(TOP_LEVEL.matcher(from_btrfs)), //
                getString(OTIME.matcher(from_btrfs)), getString(PARENT_UUID.matcher(from_btrfs)),
                getString(RECEIVED_UUID.matcher(from_btrfs)), getString(UUID.matcher(from_btrfs)),
-               getPath(PATH.matcher(from_btrfs)));
+               getPath(BTRFS_PATH.matcher(from_btrfs)));
    }
    /**
     * @param Matcher
@@ -58,15 +57,17 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
     * @return Integer
     */
    @SuppressWarnings("boxing")
-   public static Integer getInt(Matcher m) {
+   final public static Integer getInt(Matcher m) {
       return (m.find()) ? Integer.parseUnsignedInt(m.group(1)) : null;
    }
    /**
     * @param Matcher
     * @return Path
     */
-   public static Path getPath(Matcher m) {
-      return (m.find()) ? Path.of(m.group(1).replaceAll("<FS_TREE>", "")) : null;
+   final public static Path getPath(Matcher m) {
+      if (m.find())
+         return Path.of(m.group(1));
+      return null;
    }
    private static Pattern createPatternFor(String s) {
       return Pattern.compile("^(?:.*[ \\[])?" + s + "[ =]([^ ,\\]]+)");
@@ -76,11 +77,11 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
     * @return Key um snapshot zu sortieren sofern im Pfad ein numerischer WERT steht
     */
    public String key() {
-      Matcher m=NUMERIC_DIRNAME.matcher(path.toString());
+      Matcher m=NUMERIC_DIRNAME.matcher(btrfsPath.toString());
       if (m.find())
-         return dir2key(m.group(1)) + path.toString(); // ??? numerisch sortieren ;-)
-      System.err.println("§: " + path.toString());
-      return path.toString();
+         return dir2key(m.group(1)) + btrfsPath.toString(); // ??? numerisch sortieren ;-)
+      System.err.println("§: " + btrfsPath.toString());
+      return btrfsPath.toString();
    }
    public String keyO() {
       return mount().key() + otime();
@@ -89,18 +90,24 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       return (dir.length() >= SORT_LEN) ? dir : ".".repeat(SORT_LEN - dir.length()).concat(dir);
    }
    public String dirName() {
-      Matcher m=DIRNAME.matcher(path.toString());
+      Matcher m=DIRNAME.matcher(btrfsPath.toString());
       return (m.find()) ? m.group(1) : null;
    }
    /**
     * @return Mount dieses Snapshots sofern im Pfad enthalten
     */
    public String subvolume() {
-      Matcher m=SUBVOLUME.matcher(path.toString());
+      Matcher m=SUBVOLUME.matcher(btrfsPath.toString());
       return (m.find()) ? m.group(1) : "";
    }
    public boolean isBackup() {
       return received_uuid().length() > 8;
+   }
+   public Path getBtrfsPath() {
+      return null;
+   }
+   public Path getMountPath() {
+      return null;
    }
    public Path getPathOn(String root, List<SnapConfig> snapConfigs) {
       for (SnapConfig snapConfig:snapConfigs) {
@@ -109,13 +116,13 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
             String w=this.dirName();
             if (snapConfig.original().equals(snapConfig.kopie())) {
                Path p2=Paths.get(snapConfig.original().subvol());
-               Path p3=p2.relativize(path).getParent();
+               Path p3=p2.relativize(btrfsPath).getParent();
                Path p4=Paths.get(k).resolve(p3);
                // System.out.println(p3);
                return p4;
             }
             Path p=Path.of(k).resolve(w);
-            // StringBuilder q =new StringBuilder(path.toString());
+            // StringBuilder q =new StringBuilder(btrfsPath.toString());
             return p;
          }
       }
@@ -125,7 +132,8 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       Map<String, String> infoMap=new TreeMap<>();
       infoMap.put("0: mount", mount.mountPoint());
       infoMap.put("1: dirName()", dirName());
-      infoMap.put("2: path", path.toString());
+      infoMap.put("2: btrfsPath", btrfsPath.toString());
+      infoMap.put("3: mountPath", btrfsPath.toString());
       infoMap.put("b: otime", otime);
       infoMap.put("c: uuid", uuid);
       infoMap.put("d: parent_uuid", parent_uuid);

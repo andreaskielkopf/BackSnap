@@ -322,7 +322,7 @@ public class BacksnapGui implements MouseListener {
       if (!rest.endsWith("/"))
          rest+="/";
       for (Snapshot snapshot:backupTree.dateMap().values()) { // sortiert nach datum
-         String pfad=snapshot.path().toString();
+         String pfad=snapshot.btrfsPath().toString();
          if (pfad.startsWith(rest))
             passendBackups.put(snapshot.key(), snapshot);
       }

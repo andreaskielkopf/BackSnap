@@ -47,7 +47,7 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
             Snapshot snapshot=new Snapshot(mount, line);
             // if (line.contains("srv"))
             // System.out.println(line);
-            pathMap.put(snapshot.path().toString(), snapshot);// nach pfad sortiert
+            pathMap.put(snapshot.btrfsPath().toString(), snapshot);// nach pfad sortiert
             uuidMap.put(snapshot.uuid(), snapshot);
             dateMap.put(snapshot.otime(), snapshot);
             if (snapshot.isBackup())

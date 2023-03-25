@@ -26,7 +26,7 @@ public record SnapConfig(Mount original, Mount kopie) {
          if (snapTree.isEmpty())
             continue;
          o: for (Snapshot o:original.snapshotMap().values()) {
-            String pfad=o.path().toString();
+            String pfad=o.btrfsPath().toString();
             for (Mount kopie:srcSubVolumes.mountTree().values()) { // über alle subvolumes laufen
                if (!original.device().equals(kopie.device())) // nur auf dem selben device kann es snapshots geben
                   continue;
