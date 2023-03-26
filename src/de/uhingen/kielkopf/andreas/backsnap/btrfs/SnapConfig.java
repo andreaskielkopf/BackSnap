@@ -3,10 +3,9 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-
-import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * @author Andreas Kielkopf
@@ -22,26 +21,27 @@ public record SnapConfig(Mount original, Mount kopie) {
    public static List<SnapConfig> getList(SubVolumeList srcSubVolumes) {
       ArrayList<SnapConfig> l=new ArrayList<>();
       for (Mount original:srcSubVolumes.mountTree().values()) { // über alle subvolumes laufen
-         ConcurrentSkipListMap<String, Snapshot> snapTree=original.snapshotMap();
-         if (snapTree.isEmpty())
+//         ConcurrentSkipListMap<Path, Snapshot> snapTree=original.snapshotMap();
+         if (original.snapshotMap().isEmpty())
             continue;
          o: for (Snapshot o:original.snapshotMap().values()) {
-            String pfad=o.btrfsPath().toString();
+//            String pfad=o.btrfsPath().toString();
+            Path btrfsPath=o.btrfsPath();
             for (Mount kopie:srcSubVolumes.mountTree().values()) { // über alle subvolumes laufen
-               if (!original.device().equals(kopie.device())) // nur auf dem selben device kann es snapshots geben
+               if (!original.devicePath().equals(kopie.devicePath())) // nur auf dem selben device kann es snapshots geben
                   continue;
-               String sdir=kopie.subvol();
+               Path sdir=kopie.btrfsPath();
                int    le2 =kopie.snapshotMap().size();
                if (le2 > 1) {// von der kopie darf es keine eigenen snapshots geben
                   // sdir+="/";
-                  if (!pfad.startsWith(sdir + "/"))
+                  if (!btrfsPath.startsWith(sdir + "/"))
                      continue;
                   l.add(new SnapConfig(original, kopie));
                   break o;
                }
-               if (sdir.equals(original.subvol())) // das darf nicht das selbe sein
+               if (sdir.equals(original.btrfsPath())) // das darf nicht das selbe sein
                   continue;
-               if (!pfad.startsWith(sdir))
+               if (!btrfsPath.startsWith(sdir))
                   continue;
                l.add(new SnapConfig(original, kopie));
                break o;

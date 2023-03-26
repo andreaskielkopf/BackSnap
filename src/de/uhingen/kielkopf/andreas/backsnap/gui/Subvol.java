@@ -153,11 +153,11 @@ public class Subvol extends JPanel {
       if (mount == mount1)
          return;
       mount=mount1;
-      getDevice().setText(mount.device());
-      getMountpoint().setText(mount.mountPoint());
-      getSubvolume().setText(mount.subvol());
+      getDevice().setText(mount.devicePath().toString());
+      getMountpoint().setText(mount.mountPath().toString());
+      getSubvolume().setText(mount.btrfsPath().toString());
       getOptions().setText(mount.options());
-      getCount().setText(Integer.toString(mount.snapshotMap().size() - 1));
+      getCount().setText(Integer.toString(mount.snapshotMap().size() ));
    }
    public String getLabel() {
       return label;

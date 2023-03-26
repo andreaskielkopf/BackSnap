@@ -21,6 +21,7 @@ import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotPanel;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
 
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeListener;
@@ -315,8 +316,8 @@ public class BacksnapGui implements MouseListener {
     */
    public void setBackup(SnapTree backupTree, String backupDir) {
       ConcurrentSkipListMap<String, Snapshot> passendBackups=new ConcurrentSkipListMap<>();
-      String                                mount         =backupTree.mount().mountPoint();
-      String                                rest          =backupDir.replaceFirst(mount, "");
+      Path                                mount         =backupTree.mount().mountPath();
+      String                                rest          =backupDir.replaceFirst(mount.toString(), "");
       if (!rest.startsWith("/"))
          rest="/" + rest;
       if (!rest.endsWith("/"))

@@ -70,8 +70,7 @@ public class Backsnap {
          Mount         srcVolume    =srcSubVolumes.mountTree().get(srcKey);
          if (srcVolume == null)
             throw new RuntimeException("Could not find srcDir: " + srcDir);
-         int snapshotCount=srcVolume.snapshotMap().size();
-         if (snapshotCount < 1)
+         if (srcVolume.snapshotMap().isEmpty())
             throw new RuntimeException("Ingnoring, because there are no snapshots in: " + srcDir);
          System.out.println("backup snapshots from: " + srcVolume.key());
          // BackupVolume ermitteln
@@ -86,7 +85,7 @@ public class Backsnap {
          Mount         backupVolume    =backupSubVolumes.getBackupVolume(backupKey);
          if (backupVolume == null)
             throw new RuntimeException("Could not find backupDir: " + backupDir);
-         if (backupVolume.device().equals(srcVolume.device()) && samePC)
+         if (backupVolume.devicePath().equals(srcVolume.devicePath()) && samePC)
             throw new RuntimeException("Backup not possible onto same device: " + backupDir + " <= " + srcDir);
          System.out.println("Will try to use backupDir: " + backupVolume.key());
          SnapTree         backupTree =SnapTree.getSnapTree(backupVolume/* , backupVolume.mountPoint(), backupSsh */);
@@ -153,8 +152,8 @@ public class Backsnap {
     */
    private static void refreshGUI(Mount backupVolume, String backupDir, String backupSsh) throws IOException {
       String extern  =backupVolume.mountList().extern();
-      String device  =backupVolume.device();
-      String cacheKey=extern + ":" + device;
+      Path devicePath  =backupVolume.devicePath();
+      String cacheKey=extern + ":" + devicePath;
       Commandline.removeFromCache(cacheKey);
       SnapTree backupTree=new SnapTree(backupVolume);// umgeht den cache
       bs.setBackup(backupTree, backupDir);
@@ -203,7 +202,7 @@ public class Backsnap {
       // return false;
       // }
       // if (!dMap.containsKey(sourceKey))
-      Path sDir=srcSnapshot.getPathOn(srcVolume.mountPoint(), snapConfigs);
+      Path sDir=srcSnapshot.getPathOn(srcVolume.mountPath(), snapConfigs);
       if (sDir == null)
          throw new FileNotFoundException("Could not find dir: " + srcVolume);
       Path bDir=Paths.get(backupDir, srcSnapshot.dirName());
@@ -223,7 +222,7 @@ public class Backsnap {
       boolean       sameSsh =(srcSsh.contains("@") && srcSsh.equals(backupSsh));
       StringBuilder send_cmd=new StringBuilder("/bin/btrfs send ");
       if (parentSnapshot != null) // @todo genauer prüfen
-         send_cmd.append("-p ").append(parentSnapshot.getPathOn(srcVolume.mountPoint(), snapConfigs).resolve(SNAPSHOT))
+         send_cmd.append("-p ").append(parentSnapshot.getPathOn(srcVolume.mountPath(), snapConfigs).resolve(SNAPSHOT))
                   .append(" ");
       out.println();
       send_cmd.append(sDir.resolve(SNAPSHOT));
@@ -317,7 +316,7 @@ public class Backsnap {
    }
    public static void removeSnapshot(Snapshot s) throws IOException {
       StringBuilder remove_cmd=new StringBuilder("/bin/btrfs subvolume delete -Cv ");
-      remove_cmd.append(s.mount().mountPoint());
+      remove_cmd.append(s.mount().mountPath());
       remove_cmd.append(s.btrfsPath());
       if ((s.mount().oextern() instanceof String x) && (!x.isBlank()))
          if (x.startsWith("sudo "))

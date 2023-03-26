@@ -6,9 +6,10 @@ package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 import static de.uhingen.kielkopf.andreas.backsnap.Backsnap.AT_SNAPSHOTS;
 import static de.uhingen.kielkopf.andreas.backsnap.Backsnap.DOT_SNAPSHOTS;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
@@ -21,7 +22,8 @@ import de.uhingen.kielkopf.andreas.beans.cli.Flag;
 
 /**
  * @author Andreas Kielkopf
- *
+ * 
+ *         Snapshot (readony) oder Subvolume (writable)
  */
 public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integer parent, Integer top_level, //
          String otime, String parent_uuid, String received_uuid, String uuid, Path btrfsPath) {
@@ -38,12 +40,14 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    final static Pattern NUMERIC_DIRNAME=Pattern.compile("([0-9]+)/snapshot$");
    final static Pattern DIRNAME=Pattern.compile("([^/]+)/snapshot$");
    final static Pattern SUBVOLUME=Pattern.compile("^(@[0-9a-zA-Z.]+)/.*[0-9]+/snapshot$");
-   public Snapshot(Mount mount, String from_btrfs) {
+   public Snapshot(Mount mount, String from_btrfs) throws FileNotFoundException {
       this(mount, getInt(ID.matcher(from_btrfs)), getInt(GEN.matcher(from_btrfs)), getInt(CGEN.matcher(from_btrfs)),
                getInt(PARENT.matcher(from_btrfs)), getInt(TOP_LEVEL.matcher(from_btrfs)), //
                getString(OTIME.matcher(from_btrfs)), getString(PARENT_UUID.matcher(from_btrfs)),
                getString(RECEIVED_UUID.matcher(from_btrfs)), getString(UUID.matcher(from_btrfs)),
                getPath(BTRFS_PATH.matcher(from_btrfs)));
+      if (btrfsPath == null)
+         throw new FileNotFoundException("btrfs-path is missing for snapshot: " + mount + from_btrfs);
    }
    /**
     * @param Matcher
@@ -103,25 +107,37 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    public boolean isBackup() {
       return received_uuid().length() > 8;
    }
-   public Path getBtrfsPath() {
-      return null;
-   }
+   /**
+    * gibt es einen mount der für diesen snapshot passt ?
+    * 
+    * @return mountpoint oder null
+    */
    public Path getMountPath() {
+      SubVolumeList ml=mount.mountList();
+      for (Mount m:ml.mountTree().values())
+         if (m.devicePath().equals(mount.devicePath())) {
+            Path svp=m.btrfsPath();
+            if (btrfsPath.startsWith(svp)) {
+               Path relativ=svp.relativize(btrfsPath);
+               Path absolut=m.mountPath().resolve(relativ);
+               return absolut;
+            }
+         }
       return null;
    }
-   public Path getPathOn(String root, List<SnapConfig> snapConfigs) {
+   public Path getPathOn(Path root, List<SnapConfig> snapConfigs) {
       for (SnapConfig snapConfig:snapConfigs) {
-         if (snapConfig.original().mountPoint().equals(root)) {
-            String k=snapConfig.kopie().mountPoint();
+         if (snapConfig.original().mountPath().equals(root)) {
+            Path   k=snapConfig.kopie().mountPath();
             String w=this.dirName();
             if (snapConfig.original().equals(snapConfig.kopie())) {
-               Path p2=Paths.get(snapConfig.original().subvol());
+               Path p2=snapConfig.original().btrfsPath();
                Path p3=p2.relativize(btrfsPath).getParent();
-               Path p4=Paths.get(k).resolve(p3);
+               Path p4=k.resolve(p3);
                // System.out.println(p3);
                return p4;
             }
-            Path p=Path.of(k).resolve(w);
+            Path p=k.resolve(w);
             // StringBuilder q =new StringBuilder(btrfsPath.toString());
             return p;
          }
@@ -130,20 +146,20 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    }
    public Stream<Entry<String, String>> getInfo() {
       Map<String, String> infoMap=new TreeMap<>();
-      infoMap.put("0: mount", mount.mountPoint());
-      infoMap.put("1: dirName()", dirName());
-      infoMap.put("2: btrfsPath", btrfsPath.toString());
-      infoMap.put("3: mountPath", btrfsPath.toString());
-      infoMap.put("b: otime", otime);
-      infoMap.put("c: uuid", uuid);
-      infoMap.put("d: parent_uuid", parent_uuid);
-      infoMap.put("e: received_uuid", received_uuid);
-      infoMap.put("g: gen", gen.toString());
-      infoMap.put("h: cgen", cgen.toString());
-      infoMap.put("i: id", id.toString());
-      infoMap.put("j: top_level", top_level.toString());
-      infoMap.put("k: parent", parent.toString());
-      infoMap.put("m: key", key());
+      infoMap.put("0 mount", mount.mountPath().toString());
+      infoMap.put("1 dirName()", dirName());
+      infoMap.put("2 btrfsPath", btrfsPath.toString());
+      infoMap.put("3 mountPath", getMountPath().toString());
+      infoMap.put("b otime", otime);
+      infoMap.put("c uuid", uuid);
+      infoMap.put("d parent_uuid", parent_uuid);
+      infoMap.put("e received_uuid", received_uuid);
+      infoMap.put("g gen", gen.toString());
+      infoMap.put("h cgen", cgen.toString());
+      infoMap.put("i id", id.toString());
+      infoMap.put("j top_level", top_level.toString());
+      infoMap.put("k parent", parent.toString());
+      infoMap.put("m key", key());
       return infoMap.entrySet().parallelStream();
    }
    public static void mkain(String[] args) {
@@ -189,8 +205,8 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
                if (!subv.snapshotMap().isEmpty()) {// interessant sind nur die Subvolumes mit snapshots
                   String commonName=subv.getCommonName();
                   System.out.println("Found snapshots for: " + e.getKey() + " at (" + commonName + ")");
-                  for (Entry<String, Snapshot> e4:subv.snapshotMap().entrySet())
-                     if (e4.getValue() instanceof Snapshot s)
+                  for (Entry<Path, Snapshot> e4:subv.snapshotMap().entrySet())
+                     if (e4.getValue() instanceof Snapshot s) // @Todo obsolet ?
                         System.out.println(" -> " + e4.getKey() + " -> " + s.key()); // System.out.println();
                } else
                   System.out.println("NO snapshots of: " + e.getKey());

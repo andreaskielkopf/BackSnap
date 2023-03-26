@@ -5,6 +5,7 @@ package de.uhingen.kielkopf.andreas.backsnap.gui.part;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -121,9 +122,9 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
     */
    public void setVolume(Mount subVolume, Collection<Snapshot> list) {
       String        extern=subVolume.mountList().extern();
-      String        mount =subVolume.mountPoint();
-      String        device=subVolume.device();
-      StringBuilder sb    =new StringBuilder(mount).append(" (on ").append(device).append(")");
+      Path        mount =subVolume.mountPath();
+      Path        device=subVolume.devicePath();
+      StringBuilder sb    =new StringBuilder(mount.toString()).append(" (on ").append(device).append(")");
       if (!extern.isBlank())
          sb.insert(0, " : ").insert(0, extern);
       getVolumeName().setText(sb.toString());

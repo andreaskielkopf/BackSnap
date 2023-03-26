@@ -3,9 +3,10 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 
-import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Snapshot.getString;
+import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Snapshot.*;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.regex.Matcher;
@@ -18,8 +19,8 @@ import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
  * @author Andreas Kielkopf
  *
  */
-public record Mount(SubVolumeList mountList, String device, String mountPoint, String subvol, String options,
-         String oextern, ConcurrentSkipListMap<String, Snapshot> snapshotMap, ConcurrentSkipListSet<String> namen) {
+public record Mount(SubVolumeList mountList, Path devicePath, Path mountPath, Path btrfsPath, String options,
+         String oextern, ConcurrentSkipListMap<Path, Snapshot> snapshotMap, ConcurrentSkipListSet<String> namen) {
    final static Pattern DEVICE=Pattern.compile("^(?:.*[ \\[]device=)?([^ ,]+)");
    final static Pattern MOUNTPOINT=Pattern.compile("(?: on |[ \\[]mountPoint=)([^ ,]+)");
    final static Pattern SUBVOLUME=Pattern.compile("(?:, ?subvol=)([^ ,)\\]]+)");
@@ -33,11 +34,11 @@ public record Mount(SubVolumeList mountList, String device, String mountPoint, S
    public String getCommonName() {
       if (snapshotMap.isEmpty())
          return null;
-      Matcher m=COMMON.matcher(snapshotMap.firstEntry().getKey());
+      Matcher m=COMMON.matcher(snapshotMap.firstEntry().getKey().toString());
       if (!m.find())
          return null;
       String c=m.group(1);
-      for (String key:snapshotMap.keySet())
+      for (Path key:snapshotMap.keySet())
          if (!key.startsWith(c))
             return null;
       return c;
@@ -46,7 +47,7 @@ public record Mount(SubVolumeList mountList, String device, String mountPoint, S
     * @return key zum sortieren
     */
    public String key() {
-      return mountList.extern() + ":" + mountPoint;
+      return mountList.extern() + ":" + mountPath;
    }
    /**
     * @param line
@@ -56,8 +57,8 @@ public record Mount(SubVolumeList mountList, String device, String mountPoint, S
     * @throws IOException
     */
    public Mount(SubVolumeList mountList, String line, String extern) throws IOException {
-      this(mountList, getString(DEVICE.matcher(line)), getString(MOUNTPOINT.matcher(line)),
-               getString(SUBVOLUME.matcher(line)), getString(OPTIONS.matcher(line)), extern,
+      this(mountList, getPath(DEVICE.matcher(line)), getPath(MOUNTPOINT.matcher(line)),
+               getPath(SUBVOLUME.matcher(line)), getString(OPTIONS.matcher(line)), extern,
                new ConcurrentSkipListMap<>(), new ConcurrentSkipListSet<>());
       populate();
    }
@@ -70,7 +71,7 @@ public record Mount(SubVolumeList mountList, String device, String mountPoint, S
    void populate() throws IOException {
       SnapTree      snapTree         =SnapTree.getSnapTree(this/* , mountPoint, oextern */);
       boolean       snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.dateMap().isEmpty() : false;
-      StringBuilder btrfsCmd         =new StringBuilder("btrfs subvolume show ").append(mountPoint);
+      StringBuilder btrfsCmd         =new StringBuilder("btrfs subvolume show ").append(mountPath);
       if ((oextern instanceof String x) && (!x.isBlank()))
          if (x.startsWith("sudo "))
             btrfsCmd.insert(0, x);
@@ -78,7 +79,7 @@ public record Mount(SubVolumeList mountList, String device, String mountPoint, S
             btrfsCmd.insert(0, "ssh " + x + " '").append("'");
       System.out.println(btrfsCmd);
       String extern  =mountList.extern();
-      String cacheKey=extern + ":" + mountPoint;
+      String cacheKey=extern + ":" + mountPath;
       try (CmdStream snapshotList=Commandline.executeCached(btrfsCmd, cacheKey)) {
          snapshotList.backgroundErr();
          snapshotList.erg().forEach(line -> {
@@ -89,20 +90,21 @@ public record Mount(SubVolumeList mountList, String device, String mountPoint, S
             } else {
                Matcher m=SNAPSHOT.matcher(line);
                if (m.find()) {
-                  Snapshot zeiger=null;
-                  String   p     ="/" + m.group(1);
+                  Snapshot zeiger   =null;
+                  // String p ="/" + m.group(1);
+                  Path     btrfsPath1=Path.of("/", m.group(1));
                   if (snapTreeVorhanden) {
-                     zeiger=snapTree.pathMap().get(p);
+                     zeiger=snapTree.btrfsPathMap().get(btrfsPath1);
                      if (zeiger == null) {
-                        System.out.println(p);
-                        if (p.startsWith("@/"))
-                           p=p.substring(2);
-                        zeiger=snapTree.pathMap().get(p);
+                        System.out.println(btrfsPath1);
+                        if (btrfsPath1.startsWith("@/"))
+                      System.out.println("p=p.substring(2)");
+                        zeiger=snapTree.btrfsPathMap().get(btrfsPath1);
                         if (zeiger == null)
-                           System.out.println(p);
+                           System.out.println(btrfsPath1);
                      }
                   }
-                  snapshotMap.put(p, zeiger);
+                  snapshotMap.put(btrfsPath1, zeiger);
                }
             }
          });
@@ -115,8 +117,8 @@ public record Mount(SubVolumeList mountList, String device, String mountPoint, S
    }
    @Override
    public String toString() {
-      StringBuilder sb=new StringBuilder("Mount [").append(mountList.extern()).append(":").append(device).append(" -> ")
-               .append(mountPoint);
+      StringBuilder sb=new StringBuilder("Mount [").append(mountList.extern()).append(":").append(devicePath).append(" -> ")
+               .append(mountPath);
       if (!namen.isEmpty()) {
          sb.append("(").append(namen.first()).append(":").append(snapshotMap.size()).append(")");
       }
