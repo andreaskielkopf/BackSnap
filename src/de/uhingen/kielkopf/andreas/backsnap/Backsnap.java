@@ -72,7 +72,7 @@ public class Backsnap {
             throw new RuntimeException("Could not find srcDir: " + srcDir);
          if (srcVolume.snapshotMap().isEmpty())
             throw new RuntimeException("Ingnoring, because there are no snapshots in: " + srcDir);
-         System.out.println("backup snapshots from: " + srcVolume.key());
+         System.out.println("backup snapshots from: " + srcVolume.keyM());
          // BackupVolume ermitteln
          String backup   =Flag.getParameterOrDefault(1, "@BackSnap");
          String backupSsh=backup.contains(":") ? backup.substring(0, backup.indexOf(":")) : "";
@@ -87,7 +87,7 @@ public class Backsnap {
             throw new RuntimeException("Could not find backupDir: " + backupDir);
          if (backupVolume.devicePath().equals(srcVolume.devicePath()) && samePC)
             throw new RuntimeException("Backup not possible onto same device: " + backupDir + " <= " + srcDir);
-         System.out.println("Will try to use backupDir: " + backupVolume.key());
+         System.out.println("Will try to use backupDir: " + backupVolume.keyM());
          SnapTree         backupTree =SnapTree.getSnapTree(backupVolume/* , backupVolume.mountPoint(), backupSsh */);
          List<SnapConfig> snapConfigs=SnapConfig.getList(srcSubVolumes);
          if (GUI.get()) {
@@ -318,7 +318,7 @@ public class Backsnap {
       StringBuilder remove_cmd=new StringBuilder("/bin/btrfs subvolume delete -Cv ");
       remove_cmd.append(s.mount().mountPath());
       remove_cmd.append(s.btrfsPath());
-      if ((s.mount().oextern() instanceof String x) && (!x.isBlank()))
+      if ((s.mount().mountList().extern() instanceof String x) && (!x.isBlank()))
          if (x.startsWith("sudo "))
             remove_cmd.insert(0, x);
          else

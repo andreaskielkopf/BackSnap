@@ -13,7 +13,9 @@ import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 
 /**
- * Alle Snapshots eines bestimmten Subvolumes sortiert in einem Tree show
+ * For one Subvolume that is mounted,
+ * 
+ * collect all Snapshots of this Volume(device) in sorted trees
  * 
  * @author Andreas Kielkopf
  */
@@ -21,7 +23,7 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
          TreeMap<Path, Snapshot> btrfsPathMap, TreeMap<String, Snapshot> dateMap) {
    final static ConcurrentSkipListMap<String, SnapTree> snapTreeCache=new ConcurrentSkipListMap<>();
    /**
-    * Hole ein Verzeichniss in die Map
+    * create record and populate all Maps
     * 
     * @param mount
     * @throws IOException
@@ -31,21 +33,17 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
       populate();
    }
    private void populate() throws IOException {// otime kommt nur bei snapshots
-      String        extern  =mount.mountList().extern();
-      Path        devicePath  =mount.devicePath();
-      String        cacheKey=extern + ":" + devicePath;
-      Path      dirName =mount.mountPath();
       // mit -a bekommt man alle Snapshots für dieses Device
-      StringBuilder btrfsCmd=new StringBuilder("btrfs subvolume list -aspcguqR ").append(dirName);
+      StringBuilder btrfsCmd=new StringBuilder("btrfs subvolume list -aspcguqR ").append(mount.mountPath());
       if ((mount.mountList().extern() instanceof String x) && (!x.isBlank()))
          if (x.startsWith("sudo "))
             btrfsCmd.insert(0, x);
          else
             btrfsCmd.insert(0, "ssh " + x + " '").append("'");
       System.out.println(btrfsCmd);
-      try (CmdStream snapshotList=Commandline.executeCached(btrfsCmd, cacheKey)) {
+      try (CmdStream snapshotList=Commandline.executeCached(btrfsCmd, mount.keyD())) {
          snapshotList.backgroundErr();
-         snapshotList.erg().forEachOrdered(line -> { 
+         snapshotList.erg().forEachOrdered(line -> {
             try {
                Snapshot snapshot=new Snapshot(mount, line);
                btrfsPathMap.put(snapshot.btrfsPath(), snapshot);// nach pfad sortiert
@@ -64,17 +62,19 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
       }
    }
    /**
+    * Look for Snapshots of the specified mounted subvolume (But we get all snapshots of the underlying Volume, so this
+    * is worth caching)
+    * 
     * @param mount2
     * @param mountPoint
     * @param oextern2
-    * @return
+    * @return a SnapTree
     * @throws IOException
     */
-   public static SnapTree getSnapTree(Mount mount2/* , String omountPoint, String oextern2 */) throws IOException {
-      String deviceKey=mount2.oextern() + "->" + mount2.devicePath(); // +mount2.extern
+   public static SnapTree getSnapTree(Mount mount2) throws IOException {
+      String deviceKey=mount2.keyD();
       if (!snapTreeCache.containsKey(deviceKey)) {
-         SnapTree st=new SnapTree(mount2/* , omountPoint, oextern2 */);
-         snapTreeCache.put(deviceKey, st);// nach deviceKey sortiert
+         snapTreeCache.put(deviceKey, new SnapTree(mount2));
          System.out.println("set " + deviceKey + " into treeCache");
       } else
          System.err.println("take " + deviceKey + " from treeCache");

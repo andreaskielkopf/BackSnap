@@ -29,6 +29,10 @@ public class Commandline {
    public static CmdStream executeCached(StringBuilder cmd, String key) throws IOException {
       return executeCached(cmd.toString(), key);
    }
+   public static CmdStream executeCached(StringBuilder cmd1) throws IOException {
+      String cmd=cmd1.toString();
+      return executeCached(cmd, cmd);
+   }
    // /**
    // * Einen Befehl ausführen, Fehlermeldungen direkt ausgeben, stdout als stream zurückgeben
    // *

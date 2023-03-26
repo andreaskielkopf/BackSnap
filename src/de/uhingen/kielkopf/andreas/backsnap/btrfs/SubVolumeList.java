@@ -17,7 +17,7 @@ import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 
 /**
- * Ene Liste der Subvolumes eines Rechners
+ * Create a List of all subVolumes of this pc, that are mounted explicit
  * 
  * @author Andreas Kielkopf
  *
@@ -48,13 +48,12 @@ public record SubVolumeList(String extern, ConcurrentSkipListMap<String, Mount> 
          else
             mountCmd.insert(0, "ssh " + extern + " '").append("'");
       System.out.println(mountCmd);
-      String key="mount " + extern;
-      try (CmdStream mountList=Commandline.executeCached(mountCmd, key)) {
+      try (CmdStream mountList=Commandline.executeCached(mountCmd)) {
          mountList.backgroundErr();
-         for (String line:mountList.erg().toList()) {
-            Mount mount=new Mount(this, line, extern);
-            mountTree.put(mount.key(), mount);
-         }
+         for (String line:mountList.erg().toList())
+            mountTree.put(new Mount(this, line).keyM(), new Mount(this, line));
+         for (Mount mount:mountTree.values())
+            mount.populate(); // Snapshots zuweisen
          mountList.waitFor();
          for (String line:mountList.errList())
             if (line.contains("No route to host") || line.contains("Connection closed")

@@ -41,14 +41,18 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    final static Pattern DIRNAME=Pattern.compile("([^/]+)/snapshot$");
    final static Pattern SUBVOLUME=Pattern.compile("^(@[0-9a-zA-Z.]+)/.*[0-9]+/snapshot$");
    public Snapshot(Mount mount, String from_btrfs) throws FileNotFoundException {
-      this(mount, getInt(ID.matcher(from_btrfs)), getInt(GEN.matcher(from_btrfs)), getInt(CGEN.matcher(from_btrfs)),
-               getInt(PARENT.matcher(from_btrfs)), getInt(TOP_LEVEL.matcher(from_btrfs)), //
+      this(getMount(mount, getPath(BTRFS_PATH.matcher(from_btrfs))), getInt(ID.matcher(from_btrfs)),
+               getInt(GEN.matcher(from_btrfs)), getInt(CGEN.matcher(from_btrfs)), getInt(PARENT.matcher(from_btrfs)),
+               getInt(TOP_LEVEL.matcher(from_btrfs)), //
                getString(OTIME.matcher(from_btrfs)), getString(PARENT_UUID.matcher(from_btrfs)),
                getString(RECEIVED_UUID.matcher(from_btrfs)), getString(UUID.matcher(from_btrfs)),
                getPath(BTRFS_PATH.matcher(from_btrfs)));
-      if (btrfsPath == null)
+      if ((btrfsPath == null)||(mount==null))
          throw new FileNotFoundException("btrfs-path is missing for snapshot: " + mount + from_btrfs);
    }
+   // public Snapshot(String from_btrfs) throws FileNotFoundException {
+   // this(null, from_btrfs);
+   // }
    /**
     * @param Matcher
     * @return String
@@ -88,7 +92,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       return btrfsPath.toString();
    }
    public String keyO() {
-      return mount().key() + otime();
+      return mount().keyM() + otime();
    }
    final public static String dir2key(String dir) { // ??? numerisch sortieren ;-)
       return (dir.length() >= SORT_LEN) ? dir : ".".repeat(SORT_LEN - dir.length()).concat(dir);
@@ -123,6 +127,19 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
                return absolut;
             }
          }
+      return null;
+   }
+   /**
+    * Search a mountpoint that fits for this snapshot
+    * @param mount0     suggested mountpoint
+    * @param btrfsPath1 needed path
+    * @return
+    */
+   static private Mount getMount(Mount mount0, Path btrfsPath1) {
+      for (Mount mount1:mount0.mountList().mountTree().values())
+         if (mount0.devicePath().equals(mount1.devicePath())) // only from same device
+            if (btrfsPath1.startsWith(mount1.btrfsPath())) // only if same path or starts with the same path
+               return mount1;
       return null;
    }
    public Path getPathOn(Path root, List<SnapConfig> snapConfigs) {
@@ -187,15 +204,15 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
             throw new RuntimeException("Could not find srcDir: " + sourceDir);
          if (srcVolume.snapshotMap().isEmpty())
             throw new RuntimeException("Ingnoring, because there are no snapshots in: " + sourceDir);
-         System.out.println("backup snapshots from: " + srcVolume.key());
+         System.out.println("backup snapshots from: " + srcVolume.keyM());
          // BackupVolume ermitteln
          Mount backupVolume=subVolumes.getBackupVolume(backupDir);
          if (backupVolume == null)
             throw new RuntimeException("Could not find backupDir: " + backupDir);
-         System.out.println("Will try to use backupDir: " + backupVolume.key());
+         System.out.println("Will try to use backupDir: " + backupVolume.keyM());
          // Subdir ermitteln
          Path pbd =Path.of(backupDir);
-         Path pbv =Path.of(backupVolume.key());
+         Path pbv =backupVolume.mountPath();
          Path pbsd=pbv.relativize(pbd);
          System.out.println(pbsd);
          // Verifizieren !#
