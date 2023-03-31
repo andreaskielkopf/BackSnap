@@ -16,7 +16,6 @@ import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
 
 /**
  * @author Andreas Kielkopf
- *
  */
 public class SnapshotPanel extends JPanel implements ComponentListener, MouseListener {
    private static final long                           serialVersionUID    =-3405881652038164771L;
@@ -28,10 +27,9 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    private JScrollPane                                 scrollPane;
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_UUID      =new ConcurrentSkipListMap<>();
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_ParentUuid=new ConcurrentSkipListMap<>();
-   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_Key       =new ConcurrentSkipListMap<>();
+   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_KeyO      =new ConcurrentSkipListMap<>();
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_DirName   =new ConcurrentSkipListMap<>();
    public ArrayList<SnapshotLabel>                     mixedList           =new ArrayList<>();
-//   public ConcurrentSkipListMap<String, Object>        sTree;
    public SnapshotPanel() {
       initialize();
       getPanelView().add(new SnapshotLabel(null));
@@ -122,8 +120,8 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
     */
    public void setVolume(Mount subVolume, Collection<Snapshot> list) {
       String        extern=subVolume.mountList().extern();
-      Path        mount =subVolume.mountPath();
-      Path        device=subVolume.devicePath();
+      Path          mount =subVolume.mountPath();
+      Path          device=subVolume.devicePath();
       StringBuilder sb    =new StringBuilder(mount.toString()).append(" (on ").append(device).append(")");
       if (!extern.isBlank())
          sb.insert(0, " : ").insert(0, extern);
@@ -131,23 +129,19 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
       repaint(100);
       labelTree_UUID.clear();
       labelTree_ParentUuid.clear();
-      labelTree_Key.clear();
+      labelTree_KeyO.clear();
       labelTree_DirName.clear();
-      TreeMap<String, Snapshot> sortedTreeC=new TreeMap<>();
-      for (Snapshot o:list)
-         if (o instanceof Snapshot snapshot)
-            sortedTreeC.put(snapshot.key(), snapshot);// sortierbare Nummern bis 8 Stellen
       synchronized (mixedList) {
          boolean doShuffle=(mixedList.size() < list.size() / 2);
          JPanel  pv       =getPanelView();
          pv.removeAll(); // alle Labels entfernen
          pv.revalidate();
-         for (Snapshot snapshot:sortedTreeC.values()) {
+         for (Snapshot snapshot:list) {
             SnapshotLabel snapshotLabel=SnapshotLabel.getSnapshotLabel(snapshot);// gespeichertes Label holen
             snapshotLabel.addMouseListener(this);
             labelTree_UUID.put(snapshot.uuid(), snapshotLabel);// nach UUID sortiert
             labelTree_ParentUuid.put(snapshot.parent_uuid(), snapshotLabel);// parent sortiert (keine doppelten !)
-            labelTree_Key.put(snapshot.key(), snapshotLabel);// nach Key sortiert (keine doppelten !)
+            labelTree_KeyO.put(snapshot.keyO(), snapshotLabel);// nach Key sortiert (keine doppelten !)
             labelTree_DirName.put(snapshot.dirName(), snapshotLabel);// nach Key sortiert (keine doppelten !)
             if (!mixedList.contains(snapshotLabel))
                mixedList.add(snapshotLabel);
@@ -186,8 +180,10 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    }
    @Override
    public void componentResized(ComponentEvent e) {
+      final int w=getScrollPane().getWidth();
+      if (w == 0)
+         return;
       final JPanel pv=getPanelView();
-      final int    w =getScrollPane().getWidth();
       long         v =pv.getComponentCount() * 2000L;
       final int    c =(int) (v / w);
       SwingUtilities.invokeLater(new Runnable() {
@@ -208,7 +204,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
     * @return
     */
    public ConcurrentSkipListMap<String, SnapshotLabel> getLabels() {
-      return labelTree_Key;
+      return labelTree_KeyO;
    }
    @Override
    public void mouseClicked(MouseEvent e) { /* noop */ }

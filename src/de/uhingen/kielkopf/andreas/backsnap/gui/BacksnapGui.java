@@ -131,10 +131,10 @@ public class BacksnapGui implements MouseListener {
       return panelSrc;
    }
    /**
-    * @param srcVolume
+    * @param srcConfig.original()
     */
-   public void setSrc(Mount srcVolume) {
-      getPanelSrc().setVolume(srcVolume, srcVolume.snapshotMap().values());
+   public void setSrc(SnapConfig srcConfig) {
+      getPanelSrc().setVolume(srcConfig.original(), srcConfig.original().otimeMap().values());
       abgleich();
       getPanelSrc().repaint();
    }
@@ -144,29 +144,26 @@ public class BacksnapGui implements MouseListener {
    private void abgleich() {
       ConcurrentSkipListMap<String, SnapshotLabel>  snapshotLabels_Uuid=getPanelSrc().labelTree_UUID;
       ConcurrentSkipListMap<String, SnapshotLabel>  backupLabels_Uuid  =getPanelBackup().labelTree_UUID;
-      ConcurrentSkipListMap<String, SnapshotLabel>  backupLabels_Key   =getPanelBackup().labelTree_Key;
-      // ConcurrentSkipListMap<String, SnapshotLabel> keepLabels =new ConcurrentSkipListMap<>();
+      ConcurrentSkipListMap<String, SnapshotLabel>  backupLabels_KeyO  =getPanelBackup().labelTree_KeyO;
       ConcurrentSkipListMap<String, SnapshotLabel>  deleteLabels       =new ConcurrentSkipListMap<>();
       ConcurrentSkipListMap<String, SnapshotLabel>  keineSackgasse     =new ConcurrentSkipListMap<>();
-      // ConcurrentSkipListMap<String, SnapshotLabel> restLabels =new ConcurrentSkipListMap<>();
       ConcurrentNavigableMap<String, SnapshotLabel> toDeleteOld        =new ConcurrentSkipListMap<>();
       ArrayList<SnapshotLabel>                      deleteList         =new ArrayList<>();
       // SINGLESNAPSHOT make or delete only one(1) snapshot per call
       // DELETEOLD delete all snapshots that are "o=999" older than the newest one
       if (Backsnap.DELETEOLD.get()) {
-         if (getPanelSrc().labelTree_Key.lastEntry() instanceof Entry<String, SnapshotLabel> lastEntry) {
+         if (getPanelSrc().labelTree_KeyO.lastEntry() instanceof Entry<String, SnapshotLabel> lastEntry) {
             int           deleteOld=parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), 2999);
             SnapshotLabel last     =lastEntry.getValue();
             int           firstNr  =parseIntOrDefault(last.snapshot.dirName(), deleteOld) - deleteOld;
             if (firstNr > 0)
-               toDeleteOld=backupLabels_Key.headMap(Snapshot.dir2key(Integer.toString(firstNr)));
+               toDeleteOld=backupLabels_KeyO.headMap(Snapshot.dir2key(Integer.toString(firstNr)));
          }
       }
-      recolor(backupLabels_Key, deleteLabels, toDeleteOld, deleteList);
+      recolor(backupLabels_KeyO, deleteLabels, toDeleteOld, deleteList);
       // suche Sackgassen
-      // ConcurrentNavigableMap<String, SnapshotLabel> reverseSorted=backupLabels_Key.descendingMap();
-      if (!backupLabels_Key.isEmpty()) {
-         SnapshotLabel child=backupLabels_Key.lastEntry().getValue();
+      if (!backupLabels_KeyO.isEmpty()) {
+         SnapshotLabel child=backupLabels_KeyO.lastEntry().getValue();
          while (child != null) {
             Snapshot s=child.snapshot;
             keineSackgasse.put(s.key(), child);
@@ -226,12 +223,11 @@ public class BacksnapGui implements MouseListener {
          }
       }
       // Show status of snapshots
-      recolor(backupLabels_Key, deleteLabels, toDeleteOld, deleteList);
+      recolor(backupLabels_KeyO, deleteLabels, toDeleteOld, deleteList);
       System.out.println("Show Backups");
    }
    private void delete(final JButton jButton, Color deleteColor) {
-      ConcurrentSkipListMap<String, SnapshotLabel> alle    =getPanelBackup().labelTree_Key;
-      // bv=getPanelBackup().
+      ConcurrentSkipListMap<String, SnapshotLabel> alle    =getPanelBackup().labelTree_KeyO;
       final ArrayList<Snapshot>                    toRemove=new ArrayList<>();
       for (Entry<String, SnapshotLabel> entry:alle.entrySet())
          if (entry.getValue() instanceof SnapshotLabel label)
@@ -316,14 +312,11 @@ public class BacksnapGui implements MouseListener {
     */
    public void setBackup(SnapTree backupTree, String backupDir) {
       ConcurrentSkipListMap<String, Snapshot> passendBackups=new ConcurrentSkipListMap<>();
-      Path                                mount         =backupTree.mount().mountPath();
-      String                                rest          =backupDir.replaceFirst(mount.toString(), "");
-      if (!rest.startsWith("/"))
-         rest="/" + rest;
-      if (!rest.endsWith("/"))
-         rest+="/";
+      Path                                    rest          =Path.of("/", backupDir);
       for (Snapshot snapshot:backupTree.dateMap().values()) { // sortiert nach datum
-         String pfad=snapshot.btrfsPath().toString();
+         Path pfad=snapshot.getMountPath();
+         if (pfad == null)
+            continue;
          if (pfad.startsWith(rest))
             passendBackups.put(snapshot.key(), snapshot);
       }

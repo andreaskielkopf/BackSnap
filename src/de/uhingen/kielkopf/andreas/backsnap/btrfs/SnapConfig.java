@@ -4,8 +4,7 @@
 package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author Andreas Kielkopf
@@ -21,17 +20,16 @@ public record SnapConfig(Mount original, Mount kopie) {
    public static List<SnapConfig> getList(SubVolumeList srcSubVolumes) {
       ArrayList<SnapConfig> l=new ArrayList<>();
       for (Mount original:srcSubVolumes.mountTree().values()) { // über alle subvolumes laufen
-//         ConcurrentSkipListMap<Path, Snapshot> snapTree=original.snapshotMap();
-         if (original.snapshotMap().isEmpty())
+         if (original.btrfsMap().isEmpty())
             continue;
-         o: for (Snapshot o:original.snapshotMap().values()) {
-//            String pfad=o.btrfsPath().toString();
+         o: for (Snapshot o:original.btrfsMap().values()) {
             Path btrfsPath=o.btrfsPath();
             for (Mount kopie:srcSubVolumes.mountTree().values()) { // über alle subvolumes laufen
-               if (!original.devicePath().equals(kopie.devicePath())) // nur auf dem selben device kann es snapshots geben
+               if (!original.devicePath().equals(kopie.devicePath())) // nur auf dem selben device kann es snapshots
+                                                                      // geben
                   continue;
                Path sdir=kopie.btrfsPath();
-               int    le2 =kopie.snapshotMap().size();
+               int  le2 =kopie.btrfsMap().size();
                if (le2 > 1) {// von der kopie darf es keine eigenen snapshots geben
                   // sdir+="/";
                   if (!btrfsPath.startsWith(sdir + "/"))
@@ -51,5 +49,13 @@ public record SnapConfig(Mount original, Mount kopie) {
          }
       }
       return l;
+   }
+   public static SnapConfig getConfig(List<SnapConfig> list, Path srcDir) {
+      for (SnapConfig snapConfig:list) {
+         if (snapConfig.original.mountPath().equals(srcDir))
+            return snapConfig;
+         if (snapConfig.kopie.mountPath().equals(srcDir))
+            return snapConfig;
+      }return null;
    }
 }

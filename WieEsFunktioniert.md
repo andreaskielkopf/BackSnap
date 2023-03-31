@@ -1,7 +1,7 @@
 # Wie es funktioniert:
 [ReadMe](./backsnap.md),  [english](./HowItWorks.md) 
 
-`java -jar /usr/local/bin/backsnap.jar /.snapshots /mnt/BACKUP/manjaro21`
+`java -jar /usr/local/bin/backsnap.jar /.snapshots /mnt/BackSnap/manjaro21`
 
 1. startet java
 2. Verwende eine JAR-Datei

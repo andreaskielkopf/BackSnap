@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.TreeMap;
 import java.util.concurrent.*;
 import java.util.regex.Pattern;
 
@@ -40,8 +39,6 @@ public class Backsnap {
    public final static Flag   SINGLESNAPSHOT     =new Flag('s', "singlesnapshot"); // make one s
    public final static Flag   DELETEOLD          =new Flag('o', "deleteold");      // delete older s
    public final static Flag   MINIMUMSNAPSHOTS   =new Flag('m', "keepminimum");    // keep at least
-   // final static String srcSsH ="root@localhost";
-   // final static String backupSsH =srcSsH;
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
       StringBuilder sb=new StringBuilder("args > ");
@@ -57,22 +54,20 @@ public class Backsnap {
       // Parameter sammeln für SOURCE
       String source=Flag.getParameterOrDefault(0, "sudo:/" + DOT_SNAPSHOTS);
       String srcSsh=source.contains(":") ? source.substring(0, source.indexOf(":")) : "";
-      String srcDir=srcSsh.isBlank() ? source : source.substring(srcSsh.length() + 1);
+      Path   srcDir=Path.of("/", srcSsh.isBlank() ? source : source.substring(srcSsh.length() + 1));
       if (srcSsh.startsWith("sudo"))
          srcSsh="sudo ";
       if (srcDir.endsWith(DOT_SNAPSHOTS))
-         srcDir=srcDir.substring(0, srcDir.length() - DOT_SNAPSHOTS.length());
-      if ((srcDir.length() > 1) && srcDir.endsWith("/"))
-         srcDir=srcDir.substring(0, srcDir.length() - 1);
+         srcDir=srcDir.getParent();
       try {
-         SubVolumeList srcSubVolumes=new SubVolumeList(srcSsh);
-         String        srcKey       =srcSsh + ":" + srcDir;
-         Mount         srcVolume    =srcSubVolumes.mountTree().get(srcKey);
-         if (srcVolume == null)
+         SubVolumeList    srcSubVolumes=new SubVolumeList(srcSsh);
+         List<SnapConfig> snapConfigs  =SnapConfig.getList(srcSubVolumes);
+         SnapConfig       srcConfig    =SnapConfig.getConfig(snapConfigs, srcDir);
+         if (srcConfig == null)
             throw new RuntimeException("Could not find srcDir: " + srcDir);
-         if (srcVolume.snapshotMap().isEmpty())
+         if (srcConfig.original().btrfsMap().isEmpty())
             throw new RuntimeException("Ingnoring, because there are no snapshots in: " + srcDir);
-         System.out.println("backup snapshots from: " + srcVolume.keyM());
+         System.out.println("Backup snapshots from: " + srcConfig.original().keyM());
          // BackupVolume ermitteln
          String backup   =Flag.getParameterOrDefault(1, "@BackSnap");
          String backupSsh=backup.contains(":") ? backup.substring(0, backup.indexOf(":")) : "";
@@ -85,20 +80,17 @@ public class Backsnap {
          Mount         backupVolume    =backupSubVolumes.getBackupVolume(backupKey);
          if (backupVolume == null)
             throw new RuntimeException("Could not find backupDir: " + backupDir);
-         if (backupVolume.devicePath().equals(srcVolume.devicePath()) && samePC)
+         if (backupVolume.devicePath().equals(srcConfig.original().devicePath()) && samePC)
             throw new RuntimeException("Backup not possible onto same device: " + backupDir + " <= " + srcDir);
-         System.out.println("Will try to use backupDir: " + backupVolume.keyM());
-         SnapTree         backupTree =SnapTree.getSnapTree(backupVolume/* , backupVolume.mountPoint(), backupSsh */);
-         List<SnapConfig> snapConfigs=SnapConfig.getList(srcSubVolumes);
+         System.out.println("Try to use backupDir : " + backupVolume.keyM());
+         SnapTree backupTree=SnapTree.getSnapTree(backupVolume/* , backupVolume.mountPoint(), backupSsh */);
          if (GUI.get()) {
             bs=new BacksnapGui();
             BacksnapGui.setGui(bs);
             BacksnapGui.main2(args);
-            bs.setSrc(srcVolume);
+            bs.setSrc(srcConfig);
             bs.setBackup(backupTree, backupDir);
          }
-         out.println("Backup Snapshots from " + srcSsh + (srcSsh.contains("@") ? ":" : "") + srcDir + " to " + backupDir
-                  + " ");
          try {
             usePv=Paths.get("/bin/pv").toFile().canExecute();
          } catch (Exception e1) {/* */}
@@ -108,10 +100,7 @@ public class Backsnap {
             ende("X");
             System.exit(0);
          }
-         TreeMap<String, Snapshot> sortedSnapshots=new TreeMap<>();
-         for (Snapshot s:srcVolume.snapshotMap().values())
-            sortedSnapshots.put(s.keyO(), s); // sortieren nach Mountpoint und datum
-         for (Snapshot sourceSnapshot:sortedSnapshots.values()) {
+         for (Snapshot sourceSnapshot:srcConfig.original().otimeMap().values()) {
             if (canNotFindParent != null) {
                err.println("Please remove " + backupDir + "/" + canNotFindParent + "/" + SNAPSHOT + " !");
                ende("X");
@@ -125,7 +114,7 @@ public class Backsnap {
             try {
                // ende("A");
                out.print(".");
-               if (!backup(sourceSnapshot, srcVolume, backupTree, backupDir, srcSsh, backupSsh, snapConfigs))
+               if (!backup(sourceSnapshot, srcConfig.kopie(), backupTree, backupDir, srcSsh, backupSsh, snapConfigs))
                   continue;
                if (GUI.get())
                   refreshGUI(backupVolume, backupDir, backupSsh);
@@ -151,9 +140,9 @@ public class Backsnap {
     * 
     */
    private static void refreshGUI(Mount backupVolume, String backupDir, String backupSsh) throws IOException {
-      String extern  =backupVolume.mountList().extern();
-      Path devicePath  =backupVolume.devicePath();
-      String cacheKey=extern + ":" + devicePath;
+      String extern    =backupVolume.mountList().extern();
+      Path   devicePath=backupVolume.devicePath();
+      String cacheKey  =extern + ":" + devicePath;
       Commandline.removeFromCache(cacheKey);
       SnapTree backupTree=new SnapTree(backupVolume);// umgeht den cache
       bs.setBackup(backupTree, backupDir);
@@ -180,28 +169,15 @@ public class Backsnap {
     */
    private static boolean backup(Snapshot srcSnapshot, Mount srcVolume, SnapTree backupMap, String backupDir,
             String srcSsh, String backupSsh, List<SnapConfig> snapConfigs) throws IOException {
-      // String sourceName=srcSnapshot.path().toString();
-      // boolean existAlready=false;
-      String uuid=srcSnapshot.uuid();
       if (srcSnapshot.isBackup()) {
          err.println("Überspringe backup vom backup: " + srcSnapshot.dirName());
-         return false; // Backups von backups verhindern
+         return false;
       }
-      if (backupMap.rUuidMap().containsKey(uuid)) { // Den Snapshot gibt es bereits im Backup -> überspringen
+      if (backupMap.rUuidMap().containsKey(srcSnapshot.uuid())) {
          out.println("Überspringe bereits vorhandenen Snapshot: " + srcSnapshot.dirName());
          parentSnapshot=srcSnapshot;
          return false;
       }
-      // if (dMap.containsKey(sourceKey)) {
-      // Path p=Paths.get(destDir, dMap.get(sourceKey), SNAPSHOT);
-      // if (Files.isDirectory(p))
-      // existAlready=true;
-      // }
-      // if (existAlready) {
-      // parentKey=sourceKey;
-      // return false;
-      // }
-      // if (!dMap.containsKey(sourceKey))
       Path sDir=srcSnapshot.getPathOn(srcVolume.mountPath(), snapConfigs);
       if (sDir == null)
          throw new FileNotFoundException("Could not find dir: " + srcVolume);
@@ -209,8 +185,8 @@ public class Backsnap {
       out.print("Backup of " + srcSnapshot.dirName());
       if (parentSnapshot != null) // @todo genauer prüfen
          out.println(" based on " + parentSnapshot.dirName());
-      rsyncFiles(srcSsh, backupSsh, sDir, bDir);
       mkDirs(bDir, backupSsh);
+      rsyncFiles(srcSsh, backupSsh, sDir, bDir);
       sendBtrfs(srcVolume, srcSsh, backupSsh, sDir, bDir, snapConfigs);
       parentSnapshot=srcSnapshot;
       // ende("Xstop");
@@ -222,10 +198,9 @@ public class Backsnap {
       boolean       sameSsh =(srcSsh.contains("@") && srcSsh.equals(backupSsh));
       StringBuilder send_cmd=new StringBuilder("/bin/btrfs send ");
       if (parentSnapshot != null) // @todo genauer prüfen
-         send_cmd.append("-p ").append(parentSnapshot.getPathOn(srcVolume.mountPath(), snapConfigs).resolve(SNAPSHOT))
-                  .append(" ");
+         send_cmd.append("-p ").append(parentSnapshot.getPathOn(srcVolume.mountPath(), snapConfigs)).append(" ");
       out.println();
-      send_cmd.append(sDir.resolve(SNAPSHOT));
+      send_cmd.append(sDir);
       if (!sameSsh)
          if (srcSsh.contains("@"))
             send_cmd.insert(0, "ssh " + srcSsh + " '").append("'");
@@ -296,7 +271,7 @@ public class Backsnap {
       if (!srcSsh.equals(backupSsh))
          if (srcSsh.contains("@"))
             copyCmd.append(srcSsh).append(":");
-      copyCmd.append(sDir).append("/* ").append(bDir).append("/");
+      copyCmd.append(sDir.getParent()).append("/* ").append(bDir).append("/");
       if (srcSsh.equals(backupSsh))
          if (srcSsh.contains("@"))
             copyCmd.insert(0, "ssh " + srcSsh + " '").append("'"); // gesamten Befehl senden ;-)

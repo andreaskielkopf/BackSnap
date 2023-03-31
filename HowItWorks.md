@@ -12,14 +12,13 @@
 # What it does
 
 ## Collect information about sourcedir
-* List all files in the source directory (/bin/ls sourcedir)
-* Filter for numeric filenames
-* Save in a numerically sorted source-map
+* List all snapshots in the source directory 
+* Save in a sorted source-map
 
 ## Gather information about the target directory
-* List all files in backup (/bin/ls target directory)
-* Filter for numeric filenames
-* Save in a numerically sorted dest-map
+* List all snaüshots in backup
+* Filter for real backups (received-uuid exists)
+* Save in a sorted dest-map
 
 ## Loop through snapshots in source map
 ### Try sending this one snapshot to destdir

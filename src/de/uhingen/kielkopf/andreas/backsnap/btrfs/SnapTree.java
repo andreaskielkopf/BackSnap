@@ -48,9 +48,10 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
                Snapshot snapshot=new Snapshot(mount, line);
                btrfsPathMap.put(snapshot.btrfsPath(), snapshot);// nach pfad sortiert
                uuidMap.put(snapshot.uuid(), snapshot);
-               dateMap.put(snapshot.otime(), snapshot);
+               dateMap.put(snapshot.keyO(), snapshot);
                if (snapshot.isBackup())
                   rUuidMap.put(snapshot.received_uuid(), snapshot);
+               // System.out.print(".");
             } catch (FileNotFoundException e) {
                e.printStackTrace();
             }

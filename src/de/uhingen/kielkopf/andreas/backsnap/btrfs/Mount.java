@@ -19,25 +19,26 @@ import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
  * @author Andreas Kielkopf results of mount | grep -E 'btrfs' as records
  */
 public record Mount(SubVolumeList mountList, Path devicePath, Path mountPath, Path btrfsPath, String options,
-         ConcurrentSkipListMap<Path, Snapshot> snapshotMap, ConcurrentSkipListSet<String> name) {
+         ConcurrentSkipListMap<Path, Snapshot> btrfsMap, ConcurrentSkipListMap<String, Snapshot> otimeMap,
+         ConcurrentSkipListSet<String> name) {
    final static Pattern DEVICE=Pattern.compile("^(?:.*[ \\[]device=)?([^ ,]+)");
    final static Pattern MOUNTPOINT=Pattern.compile("(?: on |[ \\[]mountPoint=)([^ ,]+)");
    final static Pattern SUBVOLUME=Pattern.compile("(?:, ?subvol=)([^ ,)\\]]+)");
    final static Pattern OPTIONS=Pattern.compile("(?:[\\[]options=| )(\\(.+\\))");
    final static Pattern SNAPSHOT=Pattern.compile("^\t\t+([^ \t]+)");
-   final static Pattern NAME=Pattern.compile("Name:[ \\t]+([^ \\t]+)");
+   final static Pattern NAME=Pattern.compile("Name:[ \\t]+([^< \\t]+)");
    final static Pattern COMMON=Pattern.compile("^(/@[^/]*/)");
    /**
     * @return gemeinsamen Start des Pfads
     */
    public String getCommonName() {
-      if (snapshotMap.isEmpty())
+      if (btrfsMap.isEmpty())
          return null;
-      Matcher m=COMMON.matcher(snapshotMap.firstEntry().getKey().toString());
+      Matcher m=COMMON.matcher(btrfsMap.firstEntry().getKey().toString());
       if (!m.find())
          return null;
       String c=m.group(1);
-      for (Path key:snapshotMap.keySet())
+      for (Path key:btrfsMap.keySet())
          if (!key.startsWith(c))
             return null;
       return c;
@@ -64,7 +65,7 @@ public record Mount(SubVolumeList mountList, Path devicePath, Path mountPath, Pa
    public Mount(SubVolumeList mountList, String line) throws IOException {
       this(mountList, getPath(DEVICE.matcher(line)), getPath(MOUNTPOINT.matcher(line)),
                getPath(SUBVOLUME.matcher(line)), getString(OPTIONS.matcher(line)), new ConcurrentSkipListMap<>(),
-               new ConcurrentSkipListSet<>());
+               new ConcurrentSkipListMap<>(), new ConcurrentSkipListSet<>());
       // populate(); erstmal unvollständig erzeugen
    }
    /**
@@ -88,22 +89,25 @@ public record Mount(SubVolumeList mountList, Path devicePath, Path mountPath, Pa
          snapshotList.erg().forEach(line -> {
             Matcher mn=NAME.matcher(line);
             if (mn.find())
-               name.add(mn.group(1));// store Name: ...
+               name.add("/" + mn.group(1));// store Name: ...
             else
                if (snapTreeVorhanden) {
                   Matcher ms=SNAPSHOT.matcher(line);
                   if (ms.find()) {
                      Path     btrfsPath1=Path.of("/", ms.group(1));
-                     Snapshot zeiger    =snapTree.btrfsPathMap().get(btrfsPath1);
-                     if (zeiger != null) {
-                        if (!zeiger.mount().mountPath.startsWith(this.mountPath))
-                           System.err.println("Mount passt nicht für: " + this + " -> " + zeiger);
-                        snapshotMap.put(btrfsPath1, zeiger);
+                     Snapshot snapshot  =snapTree.btrfsPathMap().get(btrfsPath1);
+                     if (snapshot != null) {
+                        if (!snapshot.mount().mountPath.startsWith(this.mountPath))
+                           System.err.println("Mount passt nicht für: " + this + " -> " + snapshot);
+                        btrfsMap.put(btrfsPath1, snapshot);
+                        otimeMap.put(snapshot.keyO(), snapshot);
                      } else
                         System.out.println("Not visible: " + btrfsPath1);
                   }
                }
          });
+         if (name.isEmpty())
+            name.add("/");
          snapshotList.waitFor();
          for (String line:snapshotList.errList())
             if (line.contains("No route to host") || line.contains("Connection closed")
@@ -114,10 +118,10 @@ public record Mount(SubVolumeList mountList, Path devicePath, Path mountPath, Pa
    @Override
    public String toString() {
       StringBuilder sb=new StringBuilder("Mount [").append(mountList.extern()).append(":").append(devicePath)
-               .append(" -> ").append(mountPath);
+               .append(" -> ").append(mountPath).append("(");
       if (!name.isEmpty())
-         sb.append("(").append(name.first()).append(":").append(snapshotMap.size()).append(")");
-      sb.append("]");
+         sb.append(name.first());
+      sb.append(":").append(btrfsMap.size()).append(")").append("]");
       return sb.toString();
    }
 }

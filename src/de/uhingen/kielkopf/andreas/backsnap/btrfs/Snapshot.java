@@ -36,7 +36,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    final static Pattern PARENT_UUID=createPatternFor("parent_uuid");
    final static Pattern RECEIVED_UUID=createPatternFor("received_uuid");
    final static Pattern UUID=createPatternFor("uuid");
-   final static Pattern BTRFS_PATH=Pattern.compile("^(?:.*? )path [^>]+>([^ ]+).*?$");
+   final static Pattern BTRFS_PATH=Pattern.compile("^(?:.*? )path (?:<[^>]+>)?([^ ]+).*?$");
    final static Pattern NUMERIC_DIRNAME=Pattern.compile("([0-9]+)/snapshot$");
    final static Pattern DIRNAME=Pattern.compile("([^/]+)/snapshot$");
    final static Pattern SUBVOLUME=Pattern.compile("^(@[0-9a-zA-Z.]+)/.*[0-9]+/snapshot$");
@@ -47,7 +47,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
                getString(OTIME.matcher(from_btrfs)), getString(PARENT_UUID.matcher(from_btrfs)),
                getString(RECEIVED_UUID.matcher(from_btrfs)), getString(UUID.matcher(from_btrfs)),
                getPath(BTRFS_PATH.matcher(from_btrfs)));
-      if ((btrfsPath == null)||(mount==null))
+      if ((btrfsPath == null) || (mount == null))
          throw new FileNotFoundException("btrfs-path is missing for snapshot: " + mount + from_btrfs);
    }
    // public Snapshot(String from_btrfs) throws FileNotFoundException {
@@ -70,11 +70,12 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    }
    /**
     * @param Matcher
-    * @return Path
+    * @return Path (ansolut)
     */
    final public static Path getPath(Matcher m) {
       if (m.find())
-         return Path.of(m.group(1));
+         return Path.of("/", m.group(1)); // absolut Path
+      // System.out.println(m.toString());
       return null;
    }
    private static Pattern createPatternFor(String s) {
@@ -92,7 +93,14 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       return btrfsPath.toString();
    }
    public String keyO() {
-      return mount().keyM() + otime()+id().toString();
+      StringBuilder sb=new StringBuilder();
+      if (mount == null)
+         sb.append("null:");
+      else
+         sb.append(mount().keyM());
+      sb.append(otime());
+      sb.append(id());
+      return sb.toString();
    }
    final public static String dir2key(String dir) { // ??? numerisch sortieren ;-)
       return (dir.length() >= SORT_LEN) ? dir : ".".repeat(SORT_LEN - dir.length()).concat(dir);
@@ -117,49 +125,41 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
     * @return mountpoint oder null
     */
    public Path getMountPath() {
-      SubVolumeList ml=mount.mountList();
-      for (Mount m:ml.mountTree().values())
-         if (m.devicePath().equals(mount.devicePath())) {
-            Path svp=m.btrfsPath();
-            if (btrfsPath.startsWith(svp)) {
-               Path relativ=svp.relativize(btrfsPath);
-               Path absolut=m.mountPath().resolve(relativ);
-               return absolut;
-            }
-         }
-      return null;
+      if (mount == null)
+         return null;
+      Path rel=mount.btrfsPath().relativize(btrfsPath);
+      Path abs=mount.mountPath().resolve(rel);
+      return abs;
    }
    /**
     * Search a mountpoint that fits for this snapshot
-    * @param mount0     suggested mountpoint
-    * @param btrfsPath1 needed path
+    * 
+    * @param mount0
+    *           suggested mountpoint
+    * @param btrfsPath1
+    *           needed path
     * @return
     */
    static private Mount getMount(Mount mount0, Path btrfsPath1) {
+      if (btrfsPath1 == null)
+         return null;
+//      if (btrfsPath1.toString().contains("20318"))
+//         System.out.println(btrfsPath1);
+      Path  b2 =btrfsPath1;
+      Mount erg=null;
       for (Mount mount1:mount0.mountList().mountTree().values())
          if (mount0.devicePath().equals(mount1.devicePath())) // only from same device
-            if (btrfsPath1.startsWith(mount1.btrfsPath())) // only if same path or starts with the same path
-               return mount1;
-      return null;
+            if (b2.startsWith(mount1.btrfsPath())) // only if same path or starts with the same path
+               if ((erg == null) || (erg.btrfsPath().getNameCount() < mount1.btrfsPath().getNameCount()))
+                  erg=mount1;
+//      if ((erg == null) && (btrfsPath1.toString().contains("20318")))
+//         return null;
+      return erg;
    }
    public Path getPathOn(Path root, List<SnapConfig> snapConfigs) {
-      for (SnapConfig snapConfig:snapConfigs) {
-         if (snapConfig.original().mountPath().equals(root)) {
-            Path   k=snapConfig.kopie().mountPath();
-            String w=this.dirName();
-            if (snapConfig.original().equals(snapConfig.kopie())) {
-               Path p2=snapConfig.original().btrfsPath();
-               Path p3=p2.relativize(btrfsPath).getParent();
-               Path p4=k.resolve(p3);
-               // System.out.println(p3);
-               return p4;
-            }
-            Path p=k.resolve(w);
-            // StringBuilder q =new StringBuilder(btrfsPath.toString());
-            return p;
-         }
-      }
-      return null;
+      Path rp=mount.btrfsPath().relativize(btrfsPath());
+      Path ap=mount.mountPath().resolve(rp);
+      return ap;
    }
    public Stream<Entry<String, String>> getInfo() {
       Map<String, String> infoMap=new TreeMap<>();
@@ -184,7 +184,6 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " /mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro");// Parameter
                                                                                                     // sammeln
          String backupDir=Flag.getParameterOrDefault(1, "@BackSnap");
-         // List<Mount> quellen =new ArrayList<>();
          String source   =Flag.getParameter(0);
          String externSsh=source.contains(":") ? source.substring(0, source.indexOf(":")) : "";
          String sourceDir=externSsh.isBlank() ? source : source.substring(externSsh.length() + 1);
@@ -192,7 +191,6 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
             externSsh="sudo ";
          if (externSsh.isBlank())
             externSsh="root@localhost";
-         // SnapTree snapTree=new SnapTree("/", externSsh);
          if (sourceDir.endsWith(DOT_SNAPSHOTS))
             sourceDir=sourceDir.substring(0, sourceDir.length() - DOT_SNAPSHOTS.length());
          if (sourceDir.endsWith("//"))
@@ -202,7 +200,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          Mount         srcVolume =subVolumes.mountTree().get(sourceDir);
          if (srcVolume == null)
             throw new RuntimeException("Could not find srcDir: " + sourceDir);
-         if (srcVolume.snapshotMap().isEmpty())
+         if (srcVolume.btrfsMap().isEmpty())
             throw new RuntimeException("Ingnoring, because there are no snapshots in: " + sourceDir);
          System.out.println("backup snapshots from: " + srcVolume.keyM());
          // BackupVolume ermitteln
@@ -219,10 +217,10 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          if (!subVolumes.mountTree().isEmpty())
             for (Entry<String, Mount> e:subVolumes.mountTree().entrySet()) {
                Mount subv=e.getValue();
-               if (!subv.snapshotMap().isEmpty()) {// interessant sind nur die Subvolumes mit snapshots
+               if (!subv.btrfsMap().isEmpty()) {// interessant sind nur die Subvolumes mit snapshots
                   String commonName=subv.getCommonName();
                   System.out.println("Found snapshots for: " + e.getKey() + " at (" + commonName + ")");
-                  for (Entry<Path, Snapshot> e4:subv.snapshotMap().entrySet())
+                  for (Entry<Path, Snapshot> e4:subv.btrfsMap().entrySet())
                      if (e4.getValue() instanceof Snapshot s) // @Todo obsolet ?
                         System.out.println(" -> " + e4.getKey() + " -> " + s.key()); // System.out.println();
                } else
@@ -256,7 +254,6 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          }
          for (Snapshot snapshot:snapshots) {
             if (snapshot.received_uuid() instanceof String ru)
-               // if (!ru.startsWith("-"))
                System.out.println(snapshot.key() + " => " + snapshot.toString());
          }
          Commandline.cleanup();
