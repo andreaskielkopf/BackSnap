@@ -46,7 +46,7 @@ public class Backsnap {
          sb.append(" ").append(s);
       System.out.println(sb);
       if (VERSION.get()) {
-         System.out.println("BackSnap Version 0.4.1  (2023/01/14)");
+         System.out.println("BackSnap Version 0.5.0  (2023/04/01)");
          System.exit(0);
       }
       if (DRYRUN.get())
