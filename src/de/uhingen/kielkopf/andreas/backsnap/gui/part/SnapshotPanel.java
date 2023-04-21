@@ -117,8 +117,9 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    /**
     * @param receivedSnapshots
     * @param srcVolume
+    * @return 
     */
-   public void setVolume(Mount subVolume, Collection<Snapshot> list) {
+   public ConcurrentSkipListMap<String,Snapshot> setVolume(Mount subVolume, Collection<Snapshot> list) {
       String        extern=subVolume.mountList().extern();
       Path          mount =subVolume.mountPath();
       Path          device=subVolume.devicePath();
@@ -126,6 +127,10 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
       if (!extern.isBlank())
          sb.insert(0, " : ").insert(0, extern);
       getVolumeName().setText(sb.toString());
+      ConcurrentSkipListMap<String, Snapshot> neuList=new ConcurrentSkipListMap<>();
+      for (Snapshot snap:list)
+         if (!labelTree_UUID.containsKey(snap.uuid()))
+            neuList.put(snap.keyO(), snap);
       repaint(100);
       labelTree_UUID.clear();
       labelTree_ParentUuid.clear();
@@ -146,12 +151,13 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
             if (!mixedList.contains(snapshotLabel))
                mixedList.add(snapshotLabel);
             pv.add(snapshotLabel);
-            pv.revalidate();
          }
+         pv.revalidate();
          if (doShuffle)
             Collections.shuffle(mixedList);
       }
       componentResized(null);
+      return neuList;
    }
    private JLabel getVolumeName() {
       if (volumeName == null) {

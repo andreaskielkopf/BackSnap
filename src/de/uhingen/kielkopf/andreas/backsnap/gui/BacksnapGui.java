@@ -111,10 +111,10 @@ public class BacksnapGui implements MouseListener {
       return lblNewLabel;
    }
    /**
-    * @param bs
+    * @param bsGui
     */
-   public static void setGui(BacksnapGui bs) {
-      backSnapGui=bs;
+   public static void setGui(BacksnapGui bsGui) {
+      backSnapGui=bsGui;
    }
    private JPanel getPanel_1() {
       if (panel_1 == null) {
@@ -134,7 +134,18 @@ public class BacksnapGui implements MouseListener {
     * @param srcConfig.original()
     */
    public void setSrc(SnapConfig srcConfig) {
-      getPanelSrc().setVolume(srcConfig.original(), srcConfig.original().otimeMap().values());
+      int                                     linefeeds=0;
+      StringBuilder                           sb       =new StringBuilder("Src:");
+      ConcurrentSkipListMap<String, Snapshot> neuList  =getPanelSrc().setVolume(srcConfig.original(),
+               srcConfig.original().otimeKeyMap().values());
+      for (Snapshot snap:neuList.values()) {
+         sb.append(" ").append(snap.dirName());
+         if ((sb.length() / 120) > linefeeds) {
+            sb.append("\n");
+            linefeeds++;
+         }
+      }
+      System.out.println(sb.toString());
       abgleich();
       getPanelSrc().repaint();
    }
@@ -224,7 +235,7 @@ public class BacksnapGui implements MouseListener {
       }
       // Show status of snapshots
       recolor(backupLabels_KeyO, deleteLabels, toDeleteOld, deleteList);
-      System.out.println("Show Backups");
+      // System.out.println("Show Backups:");
    }
    private void delete(final JButton jButton, Color deleteColor) {
       ConcurrentSkipListMap<String, SnapshotLabel> alle    =getPanelBackup().labelTree_KeyO;
@@ -313,18 +324,29 @@ public class BacksnapGui implements MouseListener {
    public void setBackup(SnapTree backupTree, String backupDir) {
       ConcurrentSkipListMap<String, Snapshot> passendBackups=new ConcurrentSkipListMap<>();
       Path                                    rest          =Path.of("/", backupDir);
-      for (Snapshot snapshot:backupTree.dateMap().values()) { // sortiert nach datum
+      for (Snapshot snapshot:backupTree.dateMap().values()) { // sortiert nach otime
          Path pfad=snapshot.getMountPath();
          if (pfad == null)
             continue;
          if (pfad.startsWith(rest))
-            passendBackups.put(snapshot.key(), snapshot);
+            passendBackups.put(snapshot.keyO(), snapshot);
       }
-      getPanelBackup().setVolume(backupTree.mount(), passendBackups.values());
-      abgleich();
-      getPanelBackup().repaint();
+      ConcurrentSkipListMap<String, Snapshot> neuList=getPanelBackup().setVolume(backupTree.mount(),
+               passendBackups.values());
       for (SnapshotLabel label:getPanelBackup().getLabels().values())
          label.addMouseListener(this);
+      int           linefeeds=0;
+      StringBuilder sb       =new StringBuilder("Bkup:");
+      for (Snapshot snap:neuList.values()) {
+         sb.append(" ").append(snap.dirName());
+         if ((sb.length() / 120) > linefeeds) {
+            sb.append("\n");
+            linefeeds++;
+         }
+      }
+      System.out.println(sb.toString());
+      abgleich();
+      getPanelBackup().repaint();
    }
    private JSplitPane getSplitPane() {
       if (splitPane == null) {

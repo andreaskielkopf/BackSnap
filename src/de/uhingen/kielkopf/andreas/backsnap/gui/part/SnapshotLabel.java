@@ -77,7 +77,7 @@ public class SnapshotLabel extends JLabel {
       for (MouseListener mouseListener:wl)
          if (mouseListener == l)
             return;
-      System.out.print(" "+this);
+//      System.out.print(" "+this);
       super.addMouseListener(l);
    }
 }

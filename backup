@@ -1,8 +1,8 @@
 #!/bin/zsh
 # Sichern aller aufgelisteten Rechner auf ein angestecktes Laufwerk
 # BS_UUID=03417033-3745-4ae7-9451-efafcbb9124e
-# BS_MOUNT=/mnt/BackSnap 
-BS_MOUNT=/mnt/@BackSnap
+BS_MOUNT=/mnt/BackSnap 
+# BS_MOUNT=/mnt/@BackSnap
 BS_JAR=/usr/local/bin/backsnap.jar
 BS_HOST=manjaro18
 # mount aus fstab ;-)
@@ -17,7 +17,7 @@ function backup {
     BS_DEST="$BS_MOUNT/$2"
 #    echo "java -jar $BS_JAR $BS_SOURCE $BS_DEST"
 # This script has to be run in a terminal with sudo to get the grapical version !
-    java -jar $BS_JAR -g -o -m $BS_SOURCE $BS_DEST || exit
+    java -jar $BS_JAR -g -a -o -m $BS_SOURCE $BS_DEST || exit
 # alternative cli-version is called:    
 #   java -jar $BS_JAR $BS_SOURCE $BS_DEST || exit    
     echo  "OK"
