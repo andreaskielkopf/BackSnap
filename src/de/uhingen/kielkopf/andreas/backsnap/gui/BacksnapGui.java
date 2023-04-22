@@ -22,11 +22,12 @@ import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotPanel;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
-import java.text.DecimalFormat;
+
 
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
+import javax.swing.border.EmptyBorder;
 
 /**
  * @author Andreas Kielkopf
@@ -98,7 +99,7 @@ public class BacksnapGui implements MouseListener {
     */
    private void initialize() {
       frame=new JFrame();
-      frame.setBounds(100, 100, 800, 650);
+      frame.setBounds(100, 100, 1280, 960);
       frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
       frame.getContentPane().add(getPanel(), BorderLayout.NORTH);
       frame.getContentPane().add(getPanelMain(), BorderLayout.CENTER);
@@ -247,16 +248,16 @@ public class BacksnapGui implements MouseListener {
       }
       // Show status of snapshots
       recolor(backupLabels_KeyO, deleteLabels, toDeleteOld, deleteList);
-      if (!getPanelSrc().labelTree_KeyO.isEmpty()) {
-         float readyCounter=0;
-         for (SnapshotLabel snapshotLabel:getPanelSrc().labelTree_KeyO.values())
-            if (snapshotLabel.getBackground() == SnapshotLabel.backupColor)
-               readyCounter++;
-         float progress=readyCounter / panelSrc.labelTree_KeyO.size();
-         getProgressBar().setValue((int) (progress * 1000f));
-         DecimalFormat df=new DecimalFormat("0.000");
-         getProgressBar().setString(df.format(progress));
-      }
+//      if (!getPanelSrc().labelTree_KeyO.isEmpty()) {
+//         float readyCounter=0;
+//         for (SnapshotLabel snapshotLabel:getPanelSrc().labelTree_KeyO.values())
+//            if (snapshotLabel.getBackground() == SnapshotLabel.backupColor)
+//               readyCounter++;
+//         float progress=readyCounter / panelSrc.labelTree_KeyO.size();
+//         getProgressBar().setValue((int) (progress * 1000f));
+//         DecimalFormat df=new DecimalFormat("0.000");
+//         getProgressBar().setString(df.format(progress));
+//      }
       // System.out.println("Show Backups:");
    }
    private void delete(final JButton jButton, Color deleteColor) {
@@ -559,7 +560,7 @@ public class BacksnapGui implements MouseListener {
    private JPanel getPanelInfo() {
       if (panelInfo == null) {
          panelInfo=new JPanel();
-         panelInfo.setBorder(new TitledBorder(null, "Progress:", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+         panelInfo.setBorder(new TitledBorder(null, "Backup Progress:", TitledBorder.LEADING, TitledBorder.TOP, null, null));
          panelInfo.setLayout(new BorderLayout(0, 0));
          panelInfo.add(getPanelProgress(), BorderLayout.WEST);
          panelInfo.add(getPanelPv());
@@ -570,6 +571,7 @@ public class BacksnapGui implements MouseListener {
    private JPanel getPanelProgress() {
       if (panelProgress == null) {
          panelProgress=new JPanel();
+         panelProgress.setBorder(new EmptyBorder(0, 10, 0, 5));
          panelProgress.setLayout(new BorderLayout(0, 0));
          panelProgress.add(getProgressBar(), BorderLayout.CENTER);
       }
@@ -578,12 +580,13 @@ public class BacksnapGui implements MouseListener {
    private JPanel getPanelPv() {
       if (panelPv == null) {
          panelPv=new JPanel();
+         panelPv.setBorder(new EmptyBorder(2, 5, 2, 5));
          panelPv.setLayout(new BorderLayout(0, 0));
          panelPv.add(getLblPv(), BorderLayout.CENTER);
       }
       return panelPv;
    }
-   private JProgressBar getProgressBar() {
+   public JProgressBar getProgressBar() {
       if (progressBar == null) {
         
          progressBar=new JProgressBar();
@@ -595,15 +598,16 @@ public class BacksnapGui implements MouseListener {
       }
       return progressBar;
    }
-   private JLabel getLblPv() {
+   public JLabel getLblPv() {
       if (lblPv == null) {
-         lblPv=new JLabel("New label");
+         lblPv=new JLabel("- Infozeile -");
       }
       return lblPv;
    }
    private JPanel getPanelSpeed() {
       if (panelSpeed == null) {
          panelSpeed=new JPanel();
+         panelSpeed.setBorder(new EmptyBorder(0, 5, 0, 10));
          panelSpeed.setLayout(new BorderLayout(0, 0));
          panelSpeed.add(getSpeedBar(), BorderLayout.NORTH);
       }
