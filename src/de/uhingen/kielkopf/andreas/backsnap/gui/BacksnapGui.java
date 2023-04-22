@@ -22,6 +22,7 @@ import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotPanel;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
+import java.text.DecimalFormat;
 
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeListener;
@@ -77,6 +78,8 @@ public class BacksnapGui implements MouseListener {
     * @wbp.parser.entryPoint
     */
    public BacksnapGui() {
+      UIManager.put("ProgressBar.selectionForeground", Color.black);
+      UIManager.put("ProgressBar.selectionBackground", Color.black);
       initialize();
    }
    /**
@@ -249,7 +252,10 @@ public class BacksnapGui implements MouseListener {
          for (SnapshotLabel snapshotLabel:getPanelSrc().labelTree_KeyO.values())
             if (snapshotLabel.getBackground() == SnapshotLabel.backupColor)
                readyCounter++;
-         getProgressBar().setValue((int) ((readyCounter * 1000f) / panelSrc.labelTree_KeyO.size()));
+         float progress=readyCounter / panelSrc.labelTree_KeyO.size();
+         getProgressBar().setValue((int) (progress * 1000f));
+         DecimalFormat df=new DecimalFormat("0.000");
+         getProgressBar().setString(df.format(progress));
       }
       // System.out.println("Show Backups:");
    }
@@ -579,11 +585,13 @@ public class BacksnapGui implements MouseListener {
    }
    private JProgressBar getProgressBar() {
       if (progressBar == null) {
+        
          progressBar=new JProgressBar();
          progressBar.setForeground(SnapshotLabel.backupColor);
          progressBar.setBackground(SnapshotLabel.naheColor);
          progressBar.setMaximum(1000);
          progressBar.setValue(25);
+         progressBar.setStringPainted(true);
       }
       return progressBar;
    }
