@@ -135,9 +135,9 @@ public class Computer extends JPanel {
     */
    protected void updateSubvolumeInfo(ListSelectionEvent ev) {
       if (ev.getSource() instanceof JList<?> l)
-         if (l.getSelectedValue() instanceof Mount m) {
-            System.out.println(m);
-            getSubvol().setMount(m);
+         if (l.getSelectedValue() instanceof Mount mount) {
+            System.out.println(mount);
+            getSubvol().setMount(mount);
          }
    }
    private Subvol getSubvol() {

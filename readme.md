@@ -142,7 +142,7 @@ The call is then made as root.
 or
 
 `sudo java -jar /usr/local/bin/backsnap.jar / /mnt/BackSnap/manjaro21`
-or
+(recomended) or
 
 `ssh root@localhost java -jar /usr/local/bin/backsnap.jar / /mnt/BackSnap/manjaro21`
 or

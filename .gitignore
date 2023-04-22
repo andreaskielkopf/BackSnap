@@ -1,8 +1,7 @@
-/Backsnap.class
+/.settings/
+/data/
 /modules/
-.settings
-.classpath
-.project
-data
-/backup_laptop
+/.classpath
+/.project
 /backsnap230217_173344.mkv
+/backup_laptop

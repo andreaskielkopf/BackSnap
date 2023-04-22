@@ -19,7 +19,7 @@ import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
  * @author Andreas Kielkopf results of mount | grep -E 'btrfs' as records
  */
 public record Mount(SubVolumeList mountList, Path devicePath, Path mountPath, Path btrfsPath, String options,
-         ConcurrentSkipListMap<Path, Snapshot> btrfsMap, ConcurrentSkipListMap<String, Snapshot> otimeMap,
+         ConcurrentSkipListMap<Path, Snapshot> btrfsMap, ConcurrentSkipListMap<String, Snapshot> otimeKeyMap,
          ConcurrentSkipListSet<String> name) {
    final static Pattern DEVICE=Pattern.compile("^(?:.*[ \\[]device=)?([^ ,]+)");
    final static Pattern MOUNTPOINT=Pattern.compile("(?: on |[ \\[]mountPoint=)([^ ,]+)");
@@ -100,7 +100,7 @@ public record Mount(SubVolumeList mountList, Path devicePath, Path mountPath, Pa
                         if (!snapshot.mount().mountPath.startsWith(this.mountPath))
                            System.err.println("Mount passt nicht für: " + this + " -> " + snapshot);
                         btrfsMap.put(btrfsPath1, snapshot);
-                        otimeMap.put(snapshot.keyO(), snapshot);
+                        otimeKeyMap.put(snapshot.keyO(), snapshot);
                      } else
                         System.out.println("Not visible: " + btrfsPath1);
                   }

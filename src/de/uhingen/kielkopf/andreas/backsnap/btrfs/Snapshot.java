@@ -209,10 +209,8 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
             throw new RuntimeException("Could not find backupDir: " + backupDir);
          System.out.println("Will try to use backupDir: " + backupVolume.keyM());
          // Subdir ermitteln
-         Path pbd =Path.of(backupDir);
-         Path pbv =backupVolume.mountPath();
-         Path pbsd=pbv.relativize(pbd);
-         System.out.println(pbsd);
+         Path pathBackupDir=backupVolume.mountPath().relativize(Path.of(backupDir));
+         System.out.println(pathBackupDir);
          // Verifizieren !#
          if (!subVolumes.mountTree().isEmpty())
             for (Entry<String, Mount> e:subVolumes.mountTree().entrySet()) {
@@ -226,8 +224,8 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
                } else
                   System.out.println("NO snapshots of: " + e.getKey());
             }
-         Mount bbv=subVolumes.getBackupVolume(null);
-         System.out.println(bbv);
+         Mount backupVolumeMount=subVolumes.getBackupVolume(null);
+         System.out.println(backupVolumeMount);
          System.exit(-9);
          List<Snapshot> snapshots=new ArrayList<>();
          StringBuilder  cmd      =new StringBuilder("btrfs subvolume list -aspuqR ").append(backupDir);
