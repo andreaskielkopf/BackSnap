@@ -30,18 +30,19 @@ public class Backsnap {
    private static Mount       refreshBackupVolume=null;
    private static String      refreshBackupDir   =null;
    private static int         textVorhanden      =0;
-   final static Flag          GUI                =new Flag('g', "gui");            // show and wait for gui
-   final static Flag          AUTO               =new Flag('a', "auto");           // automatic close on end
-   final static Flag          DRYRUN             =new Flag('d', "dryrun");         // do not do anythimg
+   final static Flag          GUI                =new Flag('g', "gui");                      // show and wait for gui
+   final static Flag          AUTO               =new Flag('a', "auto");                     // automatic close on end
+   final static Flag          DRYRUN             =new Flag('d', "dryrun");                   // do not do anythimg
    final static Flag          VERBOSE            =new Flag('v', "verbose");
-   final static Flag          HELP               =new Flag('h', "help");           // show usage
-   final static Flag          VERSION            =new Flag('x', "version");        // show version info
+   final static Flag          HELP               =new Flag('h', "help");                     // show usage
+   final static Flag          VERSION            =new Flag('x', "version");                  // show version info
    final public static String SNAPSHOT           ="snapshot";
    final public static String DOT_SNAPSHOTS      =".snapshots";
    final public static String AT_SNAPSHOTS       ="@snapshots";
-   public final static Flag   SINGLESNAPSHOT     =new Flag('s', "singlesnapshot"); // make one s
-   public final static Flag   DELETEOLD          =new Flag('o', "deleteold");      // delete older s
-   public final static Flag   MINIMUMSNAPSHOTS   =new Flag('m', "keepminimum");    // keep at least
+   public final static Flag   SINGLESNAPSHOT     =new Flag('s', "singlesnapshot");           // make one s
+   public final static Flag   DELETEOLD          =new Flag('o', "deleteold");                // delete older s
+   public final static Flag   MINIMUMSNAPSHOTS   =new Flag('m', "keepminimum");              // keep at least
+   public static final String BACK_SNAP_VERSION  ="<html>BackSnap<br>Version 0.5.1<br>(2023/04/22)";
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
       StringBuilder argLine=new StringBuilder("args > ");
@@ -49,7 +50,7 @@ public class Backsnap {
          argLine.append(" ").append(s);
       System.out.println(argLine);
       if (VERSION.get()) {
-         System.out.println("BackSnap Version 0.5.0  (2023/04/01)");
+         System.out.println(BACK_SNAP_VERSION);
          System.exit(0);
       }
       if (DRYRUN.get())
@@ -212,8 +213,7 @@ public class Backsnap {
       mkDirs(bDir, backupSsh);
       rsyncFiles(srcSsh, backupSsh, sDir, bDir);
       if (sendBtrfs(srcVolume, srcSsh, backupSsh, sDir, bDir, snapConfigs))
-         
-      parentSnapshot=srcSnapshot;
+         parentSnapshot=srcSnapshot;
       // ende("Xstop");
       // System.exit(-11);
       return true;
@@ -390,7 +390,7 @@ public class Backsnap {
                if ((bsGui != null) && (bsGui.frame instanceof Frame frame)) {
                   try {
                      Thread.sleep(5000);
-                  } catch (InterruptedException ignore) {}
+                  } catch (InterruptedException ignore) {/* ignore */}
                   frame.setVisible(false);
                   frame.dispose();
                }
