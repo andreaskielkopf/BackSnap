@@ -12,16 +12,22 @@ BS_HOST=manjaro18
 # [ -d $BS_MOUNT/@snapshots ] || { echo "Das mounten war nicht erfolgreich"; exit; }
 [ -d $BS_MOUNT/$BS_HOST ] || { echo "Für $BS_HOST gibt es keinen mountpoint"; exit; }
 
+# add ssh-key to ssh-agent, and keep it for 60 min 
+export SSH_ASKPASS_REQUIRE="prefer"
+#ssh-add ~/.ssh/andreas_kielkopf20.key -t 600      
+
 function backup {
     BS_SOURCE="$1"
     BS_DEST="$BS_MOUNT/$2"
 #    echo "java -jar $BS_JAR $BS_SOURCE $BS_DEST"
 # This script has to be run in a terminal with sudo to get the grapical version !
-    java -jar $BS_JAR -g -a -o -m $BS_SOURCE $BS_DEST || exit
+    java -jar $BS_JAR -g -a=10 -o -m $BS_SOURCE $BS_DEST || exit
 # alternative cli-version is called:    
 #   java -jar $BS_JAR $BS_SOURCE $BS_DEST || exit    
     echo  "OK"
 }
+
+ 
 
 # lokal sichern
 backup /     manjaro18
