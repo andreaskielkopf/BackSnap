@@ -17,8 +17,9 @@ Es ist empfehlenswert das Device mit einer `GPT`-Partitionstabelle zu versehen. 
 
 ### 3. Subvolume @BackSnap anlegen
 #### UUID ermitteln
-`sudo btrfs filesystem show -d`
 ```
+sudo btrfs filesystem show -d`
+
 Label: none  uuid: 34a7ba3d-4cdc-a043-1cba-c420ebca2aca
 	Total devices 2 FS bytes used 598.86GiB
 	devid    1 size 900.00GiB used 621.03GiB path /dev/sda2
@@ -32,19 +33,24 @@ Label: '4'  uuid: eb6a5c31-0cd4-43a5-90b4-077b6d98cd70
 	Total devices 1 FS bytes used 144.00KiB
 	devid    1 size 1000.00GiB used 2.02GiB path /dev/sdc6
 ```
-Mein Device ist offensichtlich das mit `Label: 'Backup'`und die uuid: ist **` 03417033-4ae7-9451-3745-efafcbb9124e`**
+Mein Device ist offensichtlich das mit `Label: 'Backup'`und die uuid: ist **`03417033-4ae7-9451-3745-efafcbb9124e`**
 
 #### btrfs-root mounten
 ##### Wir mounten jetzt btrfs-root nach /mnt
-`sudo mount -t btrfs -o subvol=/,compress=zstd:9 --uuid 03417033-4ae7-9451-3745-efafcbb9124e  /mnt`
+```
+sudo mount -t btrfs -o subvol=/,compress=zstd:9 --uuid 03417033-4ae7-9451-3745-efafcbb9124e  /mnt`
+```
 
 #### Subvolumes anlegen
 ##### Für den Fall dass auch andere Daten auf das Volume sollen, legen wir ein default btrfs-Subvolume `/@` an.
-`sudo btrfs subvolume create /mnt/@` 
-`sudo btrfs subvolume set-default /mnt/@` 
-
+```
+sudo btrfs subvolume create /mnt/@
+sudo btrfs subvolume set-default /mnt/@
+```
 ##### Für BackSnap legen wir ein Subvolume `/@BackSnap` an.
- `sudo btrfs subvolume create /mnt/@BackSnap` 
+```
+sudo btrfs subvolume create /mnt/@BackSnap
+```
 
 ### 4. Verzeichnisse für die Sicherung der Volumes anlegen
 Um auf unserem Backup eine gewisse Ordnung einzuhalten, ist es dringend angeraten für jeden PC und jedes Subvolume das gesichert wird einen eigenen Bereich anzulegen.
@@ -67,33 +73,39 @@ Weitere Verzeichnisse können später jederzeit ergänzt werden.
 ### 5. Den Betrieb vorbereiten
 
 ##### Unmounten  (auf keinen Fall vergessen ! ) 
-`sudo umount /mnt`
-
+```
+sudo umount /mnt
+```
 ##### Den Mountpoint `/mnt/Backsnap` (ohne @ !) für den späteren Betrieb anlegen
-`sudo mkdir -v /mnt/Backsnap`
-
+```
+sudo mkdir -v /mnt/Backsnap
+```
 Eine Zeile in die /etc/fstab einfügen die einen mout erleichtert. Die fstab kann z.B. mit `nano` oder `mc` editiert werden. 
 
 Die Zeile könnte wie folgt aussehen. wobei du natürlich die UUID deiner eigenen Partition verwenden mußt. ;-) (siehe oben). Bitte achte genau darauf wo **`BackSnap`** verwendet wird, und wo **`@Backsnap`** verwendet werden muß. Das sind keine Tippfehler.
-
-`UUID=03417033-4ae7-9451-3745-efafcbb9124e /mnt/BackSnap	btrfs	noauto,rw,noatime,compress=zstd:9,subvol=/@BackSnap	0 0`
-
+```
+UUID=03417033-4ae7-9451-3745-efafcbb9124e /mnt/BackSnap	btrfs	noauto,rw,noatime,compress=zstd:9,subvol=/@BackSnap	0 0
+```
 * Jetzt mußt du dich auch für einen Kompressionslevel entscheiden. Alles zwischen 3 und 13 ist OK. **Ich habe mit `9` gute Erfahrungen gemacht.**.
 * `noauto` verhindert dass die Platte beim Booten automatisch gemountet wird.
 
 ### 5. Abschließen und Kontrolle
 ##### Muß leer sein:
-`sudo ls -lA /mnt/BackSnap`
-
+```
+sudo ls -lA /mnt/BackSnap
+```
 ##### Bringt keine Fehlermeldung:
-`sudo mount /mnt/BackSnap`
-
+```
+sudo mount /mnt/BackSnap
+```
 ##### Muß die angelegten Verzeichnisse zeigen:
-`sudo ls -lA /mnt/BackSnap`
-
+```
+sudo ls -lA /mnt/BackSnap
+```
 ##### Bringt keine Fehlermeldung:
-`sudo umount /mnt/BackSnap`
-
+```
+sudo umount /mnt/BackSnap
+```
 ----
 Sonntag, 30. April 2023 07:01 
 
