@@ -34,17 +34,20 @@ Label: '4'  uuid: eb6a5c31-0cd4-43a5-90b4-077b6d98cd70
 ```
 Mein Device ist offensichtlich das mit `Label: 'Backup'`und die uuid: ist **` 03417033-4ae7-9451-3745-efafcbb9124e`**
 
-#### Partition btrfs-root mounten
+#### btrfs-root mounten
 Wir mounten jetzt btrfs-root nach /mnt
+
 `sudo mount -t btrfs -o subvol=/,compress=zstd:9 --uuid 03417033-4ae7-9451-3745-efafcbb9124e  /mnt`
 
 #### Subvolumes anlegen
 Für den Fall dass dauch andere Daten auf das Volume sollen, legen wir ein btrfs-Subvolume `/@` an. Das erklären wir zum Default.
+
 `sudo btrfs subvolume create /mnt/@` 
+
 `sudo btrfs subvolume set-default /mnt/@` 
 
 Für BackSnap legen wir ein Subvolume `/@BackSnap` an.
-`sudo btrfs subvolume create /mnt/@BackSnap` 
+ `sudo btrfs subvolume create /mnt/@BackSnap` 
 
 ### 4. Verzeichnisse für die Sicherung der Volumes anlegen
 Um auf unserem Backup eine gewisse Ordnung einzuhalten, ist es dringend angeraten für jeden PC und jedes Subvolume das gesichert wird einen eigenen Bereich anzulegen.
