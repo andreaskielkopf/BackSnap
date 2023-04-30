@@ -35,18 +35,15 @@ Label: '4'  uuid: eb6a5c31-0cd4-43a5-90b4-077b6d98cd70
 Mein Device ist offensichtlich das mit `Label: 'Backup'`und die uuid: ist **` 03417033-4ae7-9451-3745-efafcbb9124e`**
 
 #### btrfs-root mounten
-Wir mounten jetzt btrfs-root nach /mnt
-
+##### Wir mounten jetzt btrfs-root nach /mnt
 `sudo mount -t btrfs -o subvol=/,compress=zstd:9 --uuid 03417033-4ae7-9451-3745-efafcbb9124e  /mnt`
 
 #### Subvolumes anlegen
-Für den Fall dass dauch andere Daten auf das Volume sollen, legen wir ein btrfs-Subvolume `/@` an. Das erklären wir zum Default.
-
+##### Für den Fall dass auch andere Daten auf das Volume sollen, legen wir ein default btrfs-Subvolume `/@` an.
 `sudo btrfs subvolume create /mnt/@` 
-
 `sudo btrfs subvolume set-default /mnt/@` 
 
-Für BackSnap legen wir ein Subvolume `/@BackSnap` an.
+##### Für BackSnap legen wir ein Subvolume `/@BackSnap` an.
  `sudo btrfs subvolume create /mnt/@BackSnap` 
 
 ### 4. Verzeichnisse für die Sicherung der Volumes anlegen
@@ -72,7 +69,7 @@ Weitere Verzeichnisse können später jederzeit ergänzt werden.
 ##### Unmounten  (auf keinen Fall vergessen ! ) 
 `sudo umount /mnt`
 
-Den Mountpoint `/mnt/Backsnap` (ohne @ !) für den späteren Betrieb anlegen
+##### Den Mountpoint `/mnt/Backsnap` (ohne @ !) für den späteren Betrieb anlegen
 `sudo mkdir -v /mnt/Backsnap`
 
 Eine Zeile in die /etc/fstab einfügen die einen mout erleichtert. Die fstab kann z.B. mit `nano` oder `mc` editiert werden. 
