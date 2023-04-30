@@ -27,8 +27,6 @@ function backup {
     echo  "OK"
 }
 
- 
-
 # lokal sichern
 backup /     manjaro18
 backup /home manjaro18.home
