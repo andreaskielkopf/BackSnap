@@ -21,8 +21,6 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    private static final long                           serialVersionUID    =-3405881652038164771L;
    private JPanel                                      panelView;
    private SnapshotDetail                              panelDetail;
-   // private JPanel panelVolumeName;
-   // private JLabel volumeName;
    private JPanel                                      panel;
    private JScrollPane                                 scrollPane;
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_UUID      =new ConcurrentSkipListMap<>();
@@ -109,27 +107,13 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
       }
       return panelDetail;
    }
-   // private JPanel getPanelVolumeName() {
-   // if (panelVolumeName == null) {
-   // panelVolumeName=new JPanel();
-   // panelVolumeName.setLayout(new BorderLayout(0, 0));
-   //// panelVolumeName.add(getVolumeName(), BorderLayout.NORTH);
-   // }
-   // return panelVolumeName;
-   // }
    /**
     * @param receivedSnapshots
     * @param srcVolume
     * @return
     */
    public ConcurrentSkipListMap<String, Snapshot> setVolume(Mount subVolume, Collection<Snapshot> list) {
-      // String extern =subVolume.mountList().extern();
-      // Path mount =subVolume.mountPath();
-      // Path device =subVolume.devicePath();
-      // StringBuilder sb =new StringBuilder(mount.toString()).append(" (on ").append(device).append(")");
-      // if (!extern.isBlank())
-      // sb.insert(0, " : ").insert(0, extern);
-      // getVolumeName().setText(sb.toString());
+    
       ConcurrentSkipListMap<String, Snapshot> neuList=new ConcurrentSkipListMap<>();
       for (Snapshot snap:list)
          if (!labelTree_UUID.containsKey(snap.uuid()))
@@ -142,7 +126,6 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
          boolean doShuffle=(mixedList.size() < list.size() / 2);
          JPanel  pv       =getPanelView();
          pv.removeAll(); // alle Labels entfernen
-         // pv.revalidate();
          for (Snapshot snapshot:list) {
             SnapshotLabel snapshotLabel=SnapshotLabel.getSnapshotLabel(snapshot);// gespeichertes Label holen
             snapshotLabel.addMouseListener(this);
@@ -162,13 +145,6 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
       repaint(100);
       return neuList;
    }
-   // private JLabel getVolumeName() {
-   // if (volumeName == null) {
-   // volumeName=new JLabel("Vname");
-   // volumeName.setHorizontalAlignment(SwingConstants.CENTER);
-   // }
-   // return volumeName;
-   // }
    private JPanel getPanel() {
       if (panel == null) {
          panel=new JPanel();

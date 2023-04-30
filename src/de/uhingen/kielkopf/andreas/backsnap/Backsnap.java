@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.regex.Pattern;
 
-import javax.swing.JProgressBar;
+import javax.swing.*;
 
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
@@ -195,6 +195,11 @@ public class Backsnap {
     */
    private static boolean backup(Snapshot srcSnapshot, Mount srcVolume, SnapTree backupMap, String backupDir,
             String srcSsh, String backupSsh, List<SnapConfig> snapConfigs) throws IOException {
+      if (bsGui != null) {
+         JLabel sl=bsGui.getSnapshotName();
+         sl.setText(srcSnapshot.btrfsPath().toString());
+         sl.repaint(100);
+      }
       if (srcSnapshot.isBackup()) {
          err.println("Überspringe backup vom backup: " + srcSnapshot.dirName());
          return false;
@@ -318,12 +323,8 @@ public class Backsnap {
    private final static void show(String line) {
       if (bsGui == null)
          return;
-      if (line.equals("\n") || line.equals("\r")) {
-         // pv.setLength(0);
-         // bsGui.getLblPv().setText("");
+      if (line.equals("\n") || line.equals("\r"))
          return;
-      }
-      // pv.append(line);
       bsGui.getLblPv().setText(line);
       bsGui.getLblPv().repaint(50);
    }
@@ -423,11 +424,28 @@ public class Backsnap {
       if (t.startsWith("X")) {
          out.print(" ready");
          if (GUI.get()) {
+            if (bsGui != null) {
+               JLabel sl=bsGui.getSnapshotName();
+               sl.setText("Ready to exit".toString());
+               sl.repaint(100);
+            }
             if (AUTO.get()) {
                if ((bsGui != null) && (bsGui.frame instanceof Frame frame)) {
-                  try {
-                     Thread.sleep(5000);
-                  } catch (InterruptedException ignore) {/* ignore */}
+                  JProgressBar  exitBar    =bsGui.getSpeedBar();
+                  JToggleButton pauseButton=bsGui.getTglPause();
+                  int           countdown  =10;
+                  if (AUTO.getParameterOrDefault("10") instanceof Integer n)
+                     countdown=n;
+                  exitBar.setMaximum(countdown);
+                  while (countdown-- > 0) {
+                     exitBar.setString(Integer.toString(countdown) + " sec till exit");
+                     exitBar.setValue(countdown);
+                     do {
+                        try {
+                           Thread.sleep(1000);
+                        } catch (InterruptedException ignore) {/* ignore */}
+                     } while (pauseButton.isSelected());
+                  }
                   frame.setVisible(false);
                   frame.dispose();
                }

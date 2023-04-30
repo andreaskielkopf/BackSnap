@@ -58,6 +58,7 @@ public class BacksnapGui implements MouseListener {
    private JPanel                                      panelSpeed;
    private JProgressBar                                speedBar;
    private JLabel                                      SnapshotName;
+   private JToggleButton tglPause;
    /**
     * @param args
     */
@@ -623,20 +624,33 @@ public class BacksnapGui implements MouseListener {
          panelSpeed=new JPanel();
          panelSpeed.setBorder(new EmptyBorder(0, 5, 0, 10));
          panelSpeed.setLayout(new BorderLayout(0, 0));
-         panelSpeed.add(getSpeedBar(), BorderLayout.NORTH);
+         panelSpeed.add(getSpeedBar(), BorderLayout.CENTER);
+         panelSpeed.add(getTglPause(), BorderLayout.EAST);
       }
       return panelSpeed;
    }
-   private JProgressBar getSpeedBar() {
+   public JProgressBar getSpeedBar() {
       if (speedBar == null) {
          speedBar=new JProgressBar();
+         speedBar.setForeground(SnapshotLabel.naheColor);
+         speedBar.setBackground(SnapshotLabel.deleteColor);
+         speedBar.setMaximum(100);
+         speedBar.setValue(100);
+         speedBar.setStringPainted(true);
+         speedBar.setString(" running ");
       }
       return speedBar;
    }
-   private JLabel getSnapshotName() {
+   public JLabel getSnapshotName() {
       if (SnapshotName == null) {
          SnapshotName=new JLabel("this Snapshot ;-)");
       }
       return SnapshotName;
+   }
+   public JToggleButton getTglPause() {
+      if (tglPause == null) {
+      	tglPause = new JToggleButton("pause");
+      }
+      return tglPause;
    }
 }
