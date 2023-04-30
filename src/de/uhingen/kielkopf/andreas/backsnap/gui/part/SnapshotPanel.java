@@ -5,7 +5,6 @@ package de.uhingen.kielkopf.andreas.backsnap.gui.part;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -22,8 +21,8 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    private static final long                           serialVersionUID    =-3405881652038164771L;
    private JPanel                                      panelView;
    private SnapshotDetail                              panelDetail;
-   private JPanel                                      panelVolumeName;
-   private JLabel                                      volumeName;
+   // private JPanel panelVolumeName;
+   // private JLabel volumeName;
    private JPanel                                      panel;
    private JScrollPane                                 scrollPane;
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_UUID      =new ConcurrentSkipListMap<>();
@@ -31,8 +30,10 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_KeyO      =new ConcurrentSkipListMap<>();
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_DirName   =new ConcurrentSkipListMap<>();
    public ArrayList<SnapshotLabel>                     mixedList           =new ArrayList<>();
+   private TitledBorder                                tBorder             =new TitledBorder(null, "Snapshots of ...",
+            TitledBorder.LEADING, TitledBorder.TOP, null, null);
    public SnapshotPanel() {
-      setBorder(new TitledBorder(null, "Snapshots of ...", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+      setBorder(tBorder);
       initialize();
    }
    private void initialize() {
@@ -122,12 +123,12 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
     * @return
     */
    public ConcurrentSkipListMap<String, Snapshot> setVolume(Mount subVolume, Collection<Snapshot> list) {
-      String        extern=subVolume.mountList().extern();
-      Path          mount =subVolume.mountPath();
-      Path          device=subVolume.devicePath();
-      StringBuilder sb    =new StringBuilder(mount.toString()).append(" (on ").append(device).append(")");
-      if (!extern.isBlank())
-         sb.insert(0, " : ").insert(0, extern);
+      // String extern =subVolume.mountList().extern();
+      // Path mount =subVolume.mountPath();
+      // Path device =subVolume.devicePath();
+      // StringBuilder sb =new StringBuilder(mount.toString()).append(" (on ").append(device).append(")");
+      // if (!extern.isBlank())
+      // sb.insert(0, " : ").insert(0, extern);
       // getVolumeName().setText(sb.toString());
       ConcurrentSkipListMap<String, Snapshot> neuList=new ConcurrentSkipListMap<>();
       for (Snapshot snap:list)
@@ -230,4 +231,10 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    }
    @Override
    public void mouseExited(MouseEvent e) { /* noop */ }
+   /**
+    * @param string
+    */
+   public void setTitle(String string) {
+      tBorder.setTitle(string);
+   }
 }

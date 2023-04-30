@@ -11,8 +11,8 @@
         </sealing>
     </manifest>
     <selectedElements exportClassFiles="true" exportJavaFiles="true" exportOutputFolder="false">
-        <javaElement handleIdentifier="=Beans/src&lt;de.uhingen.kielkopf.andreas.beans.cli{Flag.java"/>
         <file path="/backsnap/backup"/>
+        <javaElement handleIdentifier="=Beans/src&lt;de.uhingen.kielkopf.andreas.beans.cli{Flag.java"/>
         <file path="/backsnap/backsnap.md"/>
         <file path="/backsnap/Examples.md"/>
         <file path="/backsnap/readme.md"/>

@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 
-
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
@@ -58,7 +57,7 @@ public class BacksnapGui implements MouseListener {
    private JLabel                                      lblPv;
    private JPanel                                      panelSpeed;
    private JProgressBar                                speedBar;
-   private JLabel SnapshotName;
+   private JLabel                                      SnapshotName;
    /**
     * @param args
     */
@@ -161,8 +160,12 @@ public class BacksnapGui implements MouseListener {
       }
       System.out.println(sb.toString());
       abgleich();
-      
-      
+      sb.setLength(0);
+      sb.append("Snapshots of ").append(srcConfig.original().mountList().extern());
+      sb.append(": ").append(srcConfig.original().devicePath());
+      sb.append(" subvolume->").append(srcConfig.original().btrfsPath());
+      sb.append(" (mounted as ").append(srcConfig.original().mountPath()).append(")");
+      getPanelSrc().setTitle(sb.toString());
       getPanelSrc().repaint();
    }
    /**
@@ -251,16 +254,16 @@ public class BacksnapGui implements MouseListener {
       }
       // Show status of snapshots
       recolor(backupLabels_KeyO, deleteLabels, toDeleteOld, deleteList);
-//      if (!getPanelSrc().labelTree_KeyO.isEmpty()) {
-//         float readyCounter=0;
-//         for (SnapshotLabel snapshotLabel:getPanelSrc().labelTree_KeyO.values())
-//            if (snapshotLabel.getBackground() == SnapshotLabel.backupColor)
-//               readyCounter++;
-//         float progress=readyCounter / panelSrc.labelTree_KeyO.size();
-//         getProgressBar().setValue((int) (progress * 1000f));
-//         DecimalFormat df=new DecimalFormat("0.000");
-//         getProgressBar().setString(df.format(progress));
-//      }
+      // if (!getPanelSrc().labelTree_KeyO.isEmpty()) {
+      // float readyCounter=0;
+      // for (SnapshotLabel snapshotLabel:getPanelSrc().labelTree_KeyO.values())
+      // if (snapshotLabel.getBackground() == SnapshotLabel.backupColor)
+      // readyCounter++;
+      // float progress=readyCounter / panelSrc.labelTree_KeyO.size();
+      // getProgressBar().setValue((int) (progress * 1000f));
+      // DecimalFormat df=new DecimalFormat("0.000");
+      // getProgressBar().setString(df.format(progress));
+      // }
       // System.out.println("Show Backups:");
    }
    private void delete(final JButton jButton, Color deleteColor) {
@@ -382,6 +385,12 @@ public class BacksnapGui implements MouseListener {
       }
       System.out.println(sb.toString());
       abgleich();
+      sb.setLength(0);
+      sb.append("Backups on ").append(backupTree.mount().mountList().extern());
+      sb.append(": ").append(backupTree.mount().devicePath());
+      sb.append(" subvolume->").append(backupTree.mount().btrfsPath());
+      sb.append(" (mounted as ").append(backupTree.mount().mountPath()).append(")");
+      getPanelBackup().setTitle(sb.toString());
       getPanelBackup().repaint();
    }
    private JSplitPane getSplitPane() {
@@ -563,7 +572,8 @@ public class BacksnapGui implements MouseListener {
    private JPanel getPanelInfo() {
       if (panelInfo == null) {
          panelInfo=new JPanel();
-         panelInfo.setBorder(new TitledBorder(null, "Backup Progress:", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+         panelInfo.setBorder(
+                  new TitledBorder(null, "Backup Progress:", TitledBorder.LEADING, TitledBorder.TOP, null, null));
          panelInfo.setLayout(new BorderLayout(0, 0));
          panelInfo.add(getPanelProgress(), BorderLayout.WEST);
          panelInfo.add(getPanelPv());
@@ -592,7 +602,6 @@ public class BacksnapGui implements MouseListener {
    }
    public JProgressBar getProgressBar() {
       if (progressBar == null) {
-        
          progressBar=new JProgressBar();
          progressBar.setForeground(SnapshotLabel.backupColor);
          progressBar.setBackground(SnapshotLabel.naheColor);
@@ -626,7 +635,7 @@ public class BacksnapGui implements MouseListener {
    }
    private JLabel getSnapshotName() {
       if (SnapshotName == null) {
-      	SnapshotName = new JLabel("this Snapshot ;-)");
+         SnapshotName=new JLabel("this Snapshot ;-)");
       }
       return SnapshotName;
    }

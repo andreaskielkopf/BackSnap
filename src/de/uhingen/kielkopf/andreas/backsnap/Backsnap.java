@@ -34,22 +34,27 @@ public class Backsnap {
    private static Mount       refreshBackupVolume=null;
    private static String      refreshBackupDir   =null;
    private static int         textVorhanden      =0;
-   final static Flag          GUI                =new Flag('g', "gui");                             // show and wait for
-                                                                                                    // gui
-   final static Flag          AUTO               =new Flag('a', "auto");                            // automatic close
-                                                                                                    // on end
-   final static Flag          DRYRUN             =new Flag('d', "dryrun");                          // do not do
-                                                                                                    // anythimg
+   final static Flag          GUI                =new Flag('g', "gui");                                  // show and
+                                                                                                         // wait for
+                                                                                                         // gui
+   final static Flag          AUTO               =new Flag('a', "auto");                                 // automatic
+                                                                                                         // close
+                                                                                                         // on end
+   final static Flag          DRYRUN             =new Flag('d', "dryrun");                               // do not do
+                                                                                                         // anythimg
    final static Flag          VERBOSE            =new Flag('v', "verbose");
-   final static Flag          HELP               =new Flag('h', "help");                            // show usage
-   final static Flag          VERSION            =new Flag('x', "version");                         // show version info
+   final static Flag          HELP               =new Flag('h', "help");                                 // show usage
+   final static Flag          VERSION            =new Flag('x', "version");                              // show version
+                                                                                                         // info
    final public static String SNAPSHOT           ="snapshot";
    final public static String DOT_SNAPSHOTS      =".snapshots";
    final public static String AT_SNAPSHOTS       ="@snapshots";
-   public final static Flag   SINGLESNAPSHOT     =new Flag('s', "singlesnapshot");                  // make one s
-   public final static Flag   DELETEOLD          =new Flag('o', "deleteold");                       // delete older s
-   public final static Flag   MINIMUMSNAPSHOTS   =new Flag('m', "keepminimum");                     // keep at least
-   public static final String BACK_SNAP_VERSION  ="<html>BackSnap<br>Version 0.5.2<br>(2023/04/25)";
+   public final static Flag   SINGLESNAPSHOT     =new Flag('s', "singlesnapshot");                       // make one s
+   public final static Flag   DELETEOLD          =new Flag('o', "deleteold");                            // delete older
+                                                                                                         // s
+   public final static Flag   MINIMUMSNAPSHOTS   =new Flag('m', "keepminimum");                          // keep at
+                                                                                                         // least
+   public static final String BACK_SNAP_VERSION  ="<html> BackSnap <br> Version 0.5.3 <br> (2023/04/27)";
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
       StringBuilder argLine=new StringBuilder("args > ");
@@ -427,10 +432,12 @@ public class Backsnap {
                   frame.dispose();
                }
             } else
-               while (bsGui != null) {
-                  if (bsGui.frame == null)
-                     break;
-               }
+               while (bsGui != null)
+                  try {
+                     if (bsGui.frame == null)
+                        break;
+                     Thread.sleep(1000);
+                  } catch (InterruptedException ignore) {}
          }
          out.print(" to");
          Commandline.background.shutdown();
