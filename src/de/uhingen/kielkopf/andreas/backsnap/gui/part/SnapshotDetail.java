@@ -69,6 +69,6 @@ public class SnapshotDetail extends JPanel {
          pi.add(new JLabel(e.getValue()));
       });
       pi.revalidate();
-      repaint(100);
+      repaint(50);
    }
 }

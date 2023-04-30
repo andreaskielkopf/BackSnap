@@ -58,6 +58,7 @@ public class BacksnapGui implements MouseListener {
    private JLabel                                      lblPv;
    private JPanel                                      panelSpeed;
    private JProgressBar                                speedBar;
+   private JLabel SnapshotName;
    /**
     * @param args
     */
@@ -160,6 +161,8 @@ public class BacksnapGui implements MouseListener {
       }
       System.out.println(sb.toString());
       abgleich();
+      
+      
       getPanelSrc().repaint();
    }
    /**
@@ -581,8 +584,9 @@ public class BacksnapGui implements MouseListener {
       if (panelPv == null) {
          panelPv=new JPanel();
          panelPv.setBorder(new EmptyBorder(2, 5, 2, 5));
-         panelPv.setLayout(new BorderLayout(0, 0));
-         panelPv.add(getLblPv(), BorderLayout.CENTER);
+         panelPv.setLayout(new BoxLayout(panelPv, BoxLayout.X_AXIS));
+         panelPv.add(getSnapshotName());
+         panelPv.add(getLblPv());
       }
       return panelPv;
    }
@@ -601,6 +605,7 @@ public class BacksnapGui implements MouseListener {
    public JLabel getLblPv() {
       if (lblPv == null) {
          lblPv=new JLabel("- Infozeile -");
+         lblPv.setBorder(new EmptyBorder(0, 10, 0, 0));
       }
       return lblPv;
    }
@@ -618,5 +623,11 @@ public class BacksnapGui implements MouseListener {
          speedBar=new JProgressBar();
       }
       return speedBar;
+   }
+   private JLabel getSnapshotName() {
+      if (SnapshotName == null) {
+      	SnapshotName = new JLabel("this Snapshot ;-)");
+      }
+      return SnapshotName;
    }
 }

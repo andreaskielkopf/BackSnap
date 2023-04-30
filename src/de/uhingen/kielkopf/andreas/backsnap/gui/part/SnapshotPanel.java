@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import javax.swing.*;
 
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
+import javax.swing.border.TitledBorder;
 
 /**
  * @author Andreas Kielkopf
@@ -31,14 +32,15 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_DirName   =new ConcurrentSkipListMap<>();
    public ArrayList<SnapshotLabel>                     mixedList           =new ArrayList<>();
    public SnapshotPanel() {
+      setBorder(new TitledBorder(null, "Snapshots of ...", TitledBorder.LEADING, TitledBorder.TOP, null, null));
       initialize();
-      getPanelView().add(new SnapshotLabel(null));
-      add(getPanel(), BorderLayout.CENTER);
    }
    private void initialize() {
       setLayout(new BorderLayout(0, 0));
       add(getPanelDetail(), BorderLayout.SOUTH);
-      add(getPanelVolumeName(), BorderLayout.NORTH);
+      // add(getPanelVolumeName(), BorderLayout.NORTH);
+      getPanelView().add(new SnapshotLabel(null));
+      add(getPanel(), BorderLayout.CENTER);
    }
    public JPanel getPanelView() {
       if (panelView == null) {
@@ -106,32 +108,31 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
       }
       return panelDetail;
    }
-   private JPanel getPanelVolumeName() {
-      if (panelVolumeName == null) {
-         panelVolumeName=new JPanel();
-         panelVolumeName.setLayout(new BorderLayout(0, 0));
-         panelVolumeName.add(getVolumeName(), BorderLayout.NORTH);
-      }
-      return panelVolumeName;
-   }
+   // private JPanel getPanelVolumeName() {
+   // if (panelVolumeName == null) {
+   // panelVolumeName=new JPanel();
+   // panelVolumeName.setLayout(new BorderLayout(0, 0));
+   //// panelVolumeName.add(getVolumeName(), BorderLayout.NORTH);
+   // }
+   // return panelVolumeName;
+   // }
    /**
     * @param receivedSnapshots
     * @param srcVolume
-    * @return 
+    * @return
     */
-   public ConcurrentSkipListMap<String,Snapshot> setVolume(Mount subVolume, Collection<Snapshot> list) {
+   public ConcurrentSkipListMap<String, Snapshot> setVolume(Mount subVolume, Collection<Snapshot> list) {
       String        extern=subVolume.mountList().extern();
       Path          mount =subVolume.mountPath();
       Path          device=subVolume.devicePath();
       StringBuilder sb    =new StringBuilder(mount.toString()).append(" (on ").append(device).append(")");
       if (!extern.isBlank())
          sb.insert(0, " : ").insert(0, extern);
-      getVolumeName().setText(sb.toString());
+      // getVolumeName().setText(sb.toString());
       ConcurrentSkipListMap<String, Snapshot> neuList=new ConcurrentSkipListMap<>();
       for (Snapshot snap:list)
          if (!labelTree_UUID.containsKey(snap.uuid()))
             neuList.put(snap.keyO(), snap);
-      repaint(100);
       labelTree_UUID.clear();
       labelTree_ParentUuid.clear();
       labelTree_KeyO.clear();
@@ -140,7 +141,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
          boolean doShuffle=(mixedList.size() < list.size() / 2);
          JPanel  pv       =getPanelView();
          pv.removeAll(); // alle Labels entfernen
-         pv.revalidate();
+         // pv.revalidate();
          for (Snapshot snapshot:list) {
             SnapshotLabel snapshotLabel=SnapshotLabel.getSnapshotLabel(snapshot);// gespeichertes Label holen
             snapshotLabel.addMouseListener(this);
@@ -157,15 +158,16 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
             Collections.shuffle(mixedList);
       }
       componentResized(null);
+      repaint(100);
       return neuList;
    }
-   private JLabel getVolumeName() {
-      if (volumeName == null) {
-         volumeName=new JLabel("Vname");
-         volumeName.setHorizontalAlignment(SwingConstants.CENTER);
-      }
-      return volumeName;
-   }
+   // private JLabel getVolumeName() {
+   // if (volumeName == null) {
+   // volumeName=new JLabel("Vname");
+   // volumeName.setHorizontalAlignment(SwingConstants.CENTER);
+   // }
+   // return volumeName;
+   // }
    private JPanel getPanel() {
       if (panel == null) {
          panel=new JPanel();

@@ -49,7 +49,7 @@ public class Backsnap {
    public final static Flag   SINGLESNAPSHOT     =new Flag('s', "singlesnapshot");                  // make one s
    public final static Flag   DELETEOLD          =new Flag('o', "deleteold");                       // delete older s
    public final static Flag   MINIMUMSNAPSHOTS   =new Flag('m', "keepminimum");                     // keep at least
-   public static final String BACK_SNAP_VERSION  ="<html>BackSnap<br>Version 0.5.1<br>(2023/04/22)";
+   public static final String BACK_SNAP_VERSION  ="<html>BackSnap<br>Version 0.5.2<br>(2023/04/25)";
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
       StringBuilder argLine=new StringBuilder("args > ");
