@@ -1,62 +1,85 @@
-# [HowTo] Backup btrfs snapshots mit send/recieve
+# [HowTo] Backup snapshots mit btrfs send/recieve
 [english](./readme.md), [Wie es funktioniert](./WieEsFunktioniert.md) 
 ## Prolog
 
-###### Ein Snapshot ist kein Backup !
+##### Ein Snapshot ist kein Backup !
 
 Das hab ich schon öfters gelesen. Im Prinzip richtig, aber ein btrfs-snapshot ist **so gut wie jedes andere In-System-Backup**.
 Btrfs kann für Privatanwender ein hohes Maß an Sicherheit vor Datenverlust bringen. 
-Mit etwas zusätzlicher Arbeit kann auch das externe Backup für btrfs erreicht werden. Dann ist Backup 3-2-1 mit btrfs einfach möglich
+Mit etwas zusätzlicher Arbeit kann auch ein externes Backup für btrfs erreicht werden. Dann ist Backup 3-2-1 mit btrfs einfach möglich.
 
-## Die Verantwortung für Backups liegt nie bei einem Programm, sondern immer beim Nutzer !
+#### Die Verantwortung für Backups liegt nie bei einem Programm, sondern immer beim Nutzer !
 
 ##### In-System Backup (n-snapshots 1)
-Btrfs mit RAID0 und **readonly snapshots** durch snapper sind wie ein im selben System untergebrachtes Backup der Original-Dateien. Es schützt vor:
-* kleineren Problemen, wie dem versehentlichen Löschen einer Datei 
-* löschen eines ganzen Dateibaums (z.B. /home/hans/* )
-* vor dem ungewollten Ändern von Dateirechten vieler Dateien
-* ungewollt veränderten Dateien
+Btrfs mit `RAID0` und **readonly snapshots** durch snapper sind wie ein im selben System untergebrachtes Backup der Original-Dateien. Es schützt vor:
+* Kleineren Problemen, wie dem versehentlichen `Löschen` einer Datei (oops)
+* Löschen eines ganzen `Dateibaums` (z.B. /home/hans/* )
+* Ungewolltem Ändern von `Dateirechten` (z.B. Systemweit)
+* Ungewollt veränderten `Dateien` (Sichern auf den falschen Dateinamen)
 
-##### In-System Backup mit RAID (+1)
-Wird btrfs mit `RAID1` auf mindestens 2 verschiedenen Devices betrieben, ist das so gut wie **ein lokales Backup**. 
+##### In-System Backup mit RAID1 (+1)
+Wird btrfs mit `RAID1` auf mindestens 2 verschiedenen Devices betrieben, ist das so gut wie **ein vollständiges lokales Backup**. 
 Das schützt zusätzlich vor:
-* Ausfall eines kompletten Device
-* Beschädigung des Dateisystems auf einem Device
-* Verlust der Partitionstabelle auf einem Device
-* überschreiben eines Device mit dd ;-)
+* `Ausfall` eines kompletten Device
+* `Beschädigung` des Dateisystems auf einem Device
+* `Verlust` der Partitionstabelle auf einem Device
+* `Überschreiben` eines Device mit dd ;-)
 
 ##### Out-Of-System Backup (+1)
-Werden die snapshots zusätzlich auf einer externen Platte gesichert, ist das ein weiteres ECHTES **externes Backup**. 
+Werden die snapshots zusätzlich auf einer `externen` Platte gesichert, ist das ein weiteres ECHTES **externes Backup**. 
 Bestenfalls sollte die externe Platte nur kurzzeitig am Rechner angeschlossen werden. Das schützt zusätzlich vor:
-* Komplettausfall des Rechners
-* Verlust vergangener Backups bis zur Kapazitätsgrenze der extenen Platte
-* gezieltem Löschen der internen Backups (z.B. durch Mallware)
+* `Komplettausfall` des Rechners
+* `Verlust` vergangener Backups bis zur Kapazitätsgrenze der extenen Platte
+* gezieltem `bösartigem Löschen` der internen Backups (z.B. durch Mallware)
 
-Btrfs entspricht dann 3-2-1 Backup (Near CDP)
+Btrfs entspricht dann `3-2-1 Backup` (Near CDP)
 
 ## Ziele von backsnap: 
-**Einfaches externes Backup** eines kompletten (btrfs-)Subvolumes
+*  **Einfaches externes Backup** eines kompletten (btrfs-)Subvolumes
+Backsnap soll den Schritt zum exterenen Backup soweit  vereinfachen, dass auch das externe Backup für Privatnutzer zur `Gewohnheit` werden kann.
+* **Alle** vorhandenen Snapshots sichern
+* **Differentiell** sichern 
+Damit es schnell geht eine Sicherung durchzuführen. Bei Wiederholung des Backups nach einigen Tagen/Wochen/Monaten jeweils nur die Änderungen zur Sicherung hinzufügen
+* **Speicherplatzverbrauch** niedrig 
+Den Speicherplatzverbrauch auf dem Sicherungsmedium so gering wie möglich halten. 
+*  **Backups verschiedener Computer** 
+Das Backupmedium kann zur Sicherung verschiedenr Computer genutzt werden. Die Sicherungen stören sich nicht gegenseitig.
+* **In Scripte einbindbar**
+Als Kommandozeilenprogramm kann es in eigne Scripte eingebunden werden. Es kann dann z.B. täglich/wöchentlich automatisch gestartet werden. Oder es kann durch ein selbst geschriebenes backup-script gesteuert werden.
+* **Unschädlich**
 
-* **Alle** Snapshots sichern
-* **Differentielle Sicherung** der einzelnen Snapshots (schnell). Bei wiederholung des Backups nach einigen Tagen/Wochen/Monaten
-* So **wenig Speicherplatzverbrauch** auf dem Sicherungsmedium wie möglich
-* Das Backupmedium kann für **Backups verschiedener Computer** benutzt werden
-* Kommandozeilenprogramm ohne GUI
-* KISS
+     Es sind Sicherungen eingebaut, so dass backsnap:
+     * Niemals lokale Snapshots löscht
+     * Backups nur nach ausdrücklicher Benutzerbestätigung löscht
+     * Niemals Backups löscht, die einem noch vorhandenen Snapshot entsprechen
+    Im **schlimmsten Fall** kann backsnap kein Backup eines Snapshots erstellen weil:
+     * Bereits ein abgebrochenes Backup dieses Snapshots vorhanden ist
+     * Der Platz für das Backup nicht ausreicht
+     * Die Verbindung zu einem der Medien mitten im Backup abgerissen ist
+     
+* **KISS**
+    * Einfach zu installieren
+    * Einfache Syntax
 
-* mit GUI -g anschaliche Darstellung der vorhandenen Backups
+##### Erwünschte Nebeneffekte
+* Die **Backup-Strategie** ist bereits in snapper/Timeshift festgelegt, und wirkt bis ins backup
+* Das Backup ist zwar komprimiert, aber gleichzeitig sind alle Snapshots im Backup **immer voll readonly zugreifbar**
+
+#### Erweiterungen die in Arbeit sind:
+* -g GUI-Anzeige der Snapshots und Backups
 * GUI-gesteuertes löschen alter Backups
 * GUI-gesteuertes ausdünnen der Backups
-* Anzeige der Snapshots und Backups
+* Fortschrittsanzeige durch die GUI
+* -a Automatische Beenden der GUI nach timeout
 
-##### Nicht Ziel:
+#### Nicht Ziel:
 * Automatische Verwaltung der Backups nach Alter
 * Automatisches löschen alter Backups bei Platznot
 * Sicherung des aktuellen Zustands eines Subvolumes
 
-##### Erwünschte Nebeneffekte
-* Die **Backup-Strategie** ist bereits in snapper/Timeshift festgelegt, und wirkt hier mit
-* Das Backup ist zwar komprimiert, aber gleichzeitig sind alle Snapshots im Backup **immer voll readonly zugreifbar**
+# Backsnap:
+Das Java-Programm Backsnap sichert ALLE Snapshots aus einem angegebenen Verzeichnis in ein anderes Verzeichnis auf einem Backupmedium. 
+Dazu benutzt es **btrfs send** und **btrfs receive**.
 
 ## Vorraussetzungen:
 * **Java 17** oder neuer auf dem Computer
@@ -64,14 +87,10 @@ Btrfs entspricht dann 3-2-1 Backup (Near CDP)
 * BTRFS sowohl auf dem Computer (empfohlen als **RAID 1** mit 2 devices) als auch auf dem Backupmedium (single)
 * **snapper**-Layout der Snapshots (Das programm kann auch mit anderen Layouts arbeiten)
 * Die Snapshots müssen **readonly** sein sonst kann btrfs sie nicht übertragen.
-* Empfohlen: externes Backupmedium z.B. USB3-Festplatte
-* Empfohlen: ein eigenes bash-script um das backup leicht zu starten
+* Empfohlen: **externes Backupmedium* z.B. USB3-Festplatte
+* Empfohlen: ein **eigenes bash-script* um das backup leicht zu starten oder zu automatisieren
 
-# Backsnap:
-Das Java-Programm Backsnap sichert ALLE Snapshots aus einem angegebenen Verzeichnis in ein anderes Verzeichnis auf einem
-Backupmedium. Dazu benutzt es **btrfs send** und **btrfs receive**.
-
-##### Quelle (snapshots)
+#### Quelle (snapshots)
 Der 1. übergebene Parameter zeigt auf den **QUELL-Pfad** an dem die Snapshots 
 von Snapper erreichbar sind. Snapper legt alle Snapshots in Verzeichnisse mit aufsteigender Nummerierung an. 
 Der eigentliche Snapshot dort heißt dann einfach "snapshot".  
@@ -81,12 +100,12 @@ Der eigentliche Snapshot dort heißt dann einfach "snapshot".
 * /.snapshots (alternativ)
 * /home/.snapshots (alternativ)
 
-##### Ziel (backups)
+#### Ziel (backups)
 Der 2. Parameter zeigt auf die Stelle an der die Snapshots gesichert werden sollen. 
 Dazu muß vor dem Programmaufruf das **Backupmedium gemountet** werden. 
-Ideal ist ein Backup-Subvolume mit Namen **/@BackSnap** und ein Verzeichnis mit einem individuellen 
+Ideal ist ein **Subvolume** mit Namen **`/@BackSnap`** und ein Verzeichnis mit einem individuellen 
 Namen für jedes Subvolume von jedem PC. 
-Der Pfad zu diesem gemounteten Verzeichnis wird als **ZIEL-Pfad** für die Sicherung angegeben.
+Der Pfad zum gemounteten Subvolume wird als **ZIEL-Pfad** für die Sicherung angegeben.
 
 * **/mnt/BackSnap/manjaro21** (wenn **/@BackSnap** nach /mnt/BackSnap gemounted wurde)
 * **/mnt/BackSnap/manjaro21.home** (wenn **/@BackSnap** nach /mnt/BackSnap gemounted wurde)

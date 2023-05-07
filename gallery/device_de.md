@@ -107,5 +107,6 @@ sudo ls -lA /mnt/BackSnap
 sudo umount /mnt/BackSnap
 ```
 ----
+[Weitere Infos zu btrfs](https://wiki.manjaro.org/index.php/Btrfs) 
 Sonntag, 30. April 2023 07:01 
 

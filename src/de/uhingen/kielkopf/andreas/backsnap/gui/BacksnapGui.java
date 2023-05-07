@@ -30,6 +30,8 @@ import javax.swing.border.EmptyBorder;
 
 /**
  * @author Andreas Kielkopf
+ * 
+ *         Eine GUI um BackSnap zu beobachten und Zusatzfunktionen auszulösen
  *
  */
 public class BacksnapGui implements MouseListener {
@@ -58,7 +60,11 @@ public class BacksnapGui implements MouseListener {
    private JPanel                                      panelSpeed;
    private JProgressBar                                speedBar;
    private JLabel                                      SnapshotName;
-   private JToggleButton tglPause;
+   private JToggleButton                               tglPause;
+  public final static String                                 BLUE        ="<font size=+1 color=\"3333ff\">";
+  public final static String                                 NORMAL      ="</font>";
+   private JLabel lblSpace;
+   private JLabel lblMeta;
    /**
     * @param args
     */
@@ -69,8 +75,8 @@ public class BacksnapGui implements MouseListener {
          EventQueue.invokeLater(() -> {
             try {
                backSnapGui.frame.setVisible(true);
-            } catch (final Exception e2) {
-               e2.printStackTrace();
+            } catch (final Exception e) {
+               e.printStackTrace();
             }
          });
    }
@@ -162,40 +168,44 @@ public class BacksnapGui implements MouseListener {
       System.out.println(sb.toString());
       abgleich();
       sb.setLength(0);
-      sb.append("Snapshots of ").append(srcConfig.original().mountList().extern());
+      sb.append("<html>Snapshots of ").append(BLUE).append(srcConfig.original().mountList().extern()).append(NORMAL);
       sb.append(": ").append(srcConfig.original().devicePath());
       sb.append(" subvolume->").append(srcConfig.original().btrfsPath());
-      sb.append(" (mounted as ").append(srcConfig.original().mountPath()).append(")");
+      sb.append(" (mounted as ").append(BLUE).append(srcConfig.original().mountPath()).append(NORMAL).append(")");
       getPanelSrc().setTitle(sb.toString());
       getPanelSrc().repaint();
+      // System.out.println(sb.toString());
    }
    /**
     * Bereite das einfärben vor
     */
    private void abgleich() {
-      ConcurrentSkipListMap<String, SnapshotLabel>  snapshotLabels_Uuid=getPanelSrc().labelTree_UUID;
-      ConcurrentSkipListMap<String, SnapshotLabel>  backupLabels_Uuid  =getPanelBackup().labelTree_UUID;
-      ConcurrentSkipListMap<String, SnapshotLabel>  backupLabels_KeyO  =getPanelBackup().labelTree_KeyO;
-      ConcurrentSkipListMap<String, SnapshotLabel>  deleteLabels       =new ConcurrentSkipListMap<>();
-      ConcurrentSkipListMap<String, SnapshotLabel>  keineSackgasse     =new ConcurrentSkipListMap<>();
-      ConcurrentNavigableMap<String, SnapshotLabel> toDeleteOld        =new ConcurrentSkipListMap<>();
-      ArrayList<SnapshotLabel>                      deleteList         =new ArrayList<>();
+      ConcurrentSkipListMap<String, SnapshotLabel>  snapshotLabels_Uuid =getPanelSrc().labelTree_UUID;
+      ConcurrentSkipListMap<String, SnapshotLabel>  backupLabels_Uuid   =getPanelBackup().labelTree_UUID;
+      ConcurrentSkipListMap<String, SnapshotLabel>  backupLabels_KeyO   =getPanelBackup().labelTree_KeyO;
+      ConcurrentSkipListMap<String, SnapshotLabel>  backupLabels_DirName=getPanelBackup().labelTree_DirName;
+//      ConcurrentSkipListMap<String, SnapshotLabel>  deleteLabels        =new ConcurrentSkipListMap<>();
       // SINGLESNAPSHOT make or delete only one(1) snapshot per call
-      // DELETEOLD delete all snapshots that are "o=999" older than the newest one
+      // for DELETEOLD get all old snapshots that are "o=999" older than the newest one
+      ConcurrentNavigableMap<String, SnapshotLabel> toDeleteOld         =new ConcurrentSkipListMap<>();
       if (Backsnap.DELETEOLD.get()) {
-         if (getPanelSrc().labelTree_KeyO.lastEntry() instanceof Entry<String, SnapshotLabel> lastEntry) {
+         if (getPanelSrc().labelTree_DirName.lastEntry() instanceof Entry<String, SnapshotLabel> lastEntry) {
             int           deleteOld=parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), 2999);
+//            System.out.println("delOld: "+deleteOld);
             SnapshotLabel last     =lastEntry.getValue();
             int           firstNr  =parseIntOrDefault(last.snapshot.dirName(), deleteOld) - deleteOld;
-            if (firstNr > 0)
-               toDeleteOld=backupLabels_KeyO.headMap(Snapshot.dir2key(Integer.toString(firstNr)));
+            if (firstNr > 0) {
+               toDeleteOld=backupLabels_DirName.headMap(Integer.toString(firstNr));
+            }
          }
       }
-      // recolor(backupLabels_KeyO, deleteLabels, toDeleteOld, deleteList);
-      // suche Sackgassen
+      ConcurrentSkipListMap<String, SnapshotLabel> keineSackgasse=new ConcurrentSkipListMap<>();
+      // suche Sackgassen um sie bevorzugt zu löschen
       if (!backupLabels_KeyO.isEmpty()) {
          SnapshotLabel child=backupLabels_KeyO.lastEntry().getValue();
          while (child != null) {
+            if (keineSackgasse.containsValue(child))
+               break; // Bloß keine Endlosschleife !
             Snapshot s=child.snapshot;
             keineSackgasse.put(s.key(), child);
             String        parent_uuid=s.parent_uuid();
@@ -204,68 +214,72 @@ public class BacksnapGui implements MouseListener {
          }
       }
       // MINIMUMSNAPSHOTS
-      if (Backsnap.MINIMUMSNAPSHOTS.get()) {
-         ArrayList<SnapshotLabel> mixedList2;
-         synchronized (getPanelBackup().mixedList) {
-            mixedList2=new ArrayList<>(getPanelBackup().mixedList);
-         }
-         int minimum  =parseIntOrDefault(Backsnap.MINIMUMSNAPSHOTS.getParameter(), 499);
-         int deletable=mixedList2.size() - minimum - snapshotLabels_Uuid.size() - toDeleteOld.size();
-         for (SnapshotLabel snapshotLabel:mixedList2) { // zuerst manuell gelöschte anbieten
-            if (deletable < 1)
-               break;
-            if (!manualDelete.containsValue(snapshotLabel))
-               continue;
-            if (toDeleteOld.containsValue(snapshotLabel))
-               continue; // wird eh schon gelöscht
-            if (getPanelSrc().labelTree_UUID.containsKey(snapshotLabel.snapshot.received_uuid()))
-               continue;// aktuell
-            deleteList.add(snapshotLabel);
-            snapshotLabel.setBackground(SnapshotLabel.delete2Color);
-            deletable--;
-         }
-         for (SnapshotLabel snapshotLabel:mixedList2) { // zuerst Sackgassen anbieten
-            if (deletable < 1)
-               break;
-            if (deleteList.contains(snapshotLabel))
-               continue;
-            if (keineSackgasse.containsValue(snapshotLabel))
-               continue;
-            if (toDeleteOld.containsValue(snapshotLabel))
-               continue; // wird eh schon gelöscht
-            if (getPanelSrc().labelTree_UUID.containsKey(snapshotLabel.snapshot.received_uuid()))
-               continue; // aktuell
-            deleteList.add(snapshotLabel);
-            snapshotLabel.setBackground(SnapshotLabel.delete2Color);
-            deletable--;
-         }
-         for (SnapshotLabel snapshotLabel:mixedList2) { // reguläre Snapshots anbieten
-            if (deletable < 1)
-               break;
-            if (deleteList.contains(snapshotLabel))
-               continue;
-            if (toDeleteOld.containsValue(snapshotLabel))
-               continue; // wird eh schon gelöscht
-            if (getPanelSrc().labelTree_UUID.containsKey(snapshotLabel.snapshot.received_uuid()))
-               continue;
-            deleteList.add(snapshotLabel);
-            snapshotLabel.setBackground(SnapshotLabel.delete2Color);
-            deletable--;
-         }
+      int minimum=0;
+      if (Backsnap.MINIMUMSNAPSHOTS.get())
+         minimum=parseIntOrDefault(Backsnap.MINIMUMSNAPSHOTS.getParameter(), 499);
+      ArrayList<SnapshotLabel> mixedList2;
+      synchronized (getPanelBackup().mixedList) {
+         mixedList2=new ArrayList<>(getPanelBackup().mixedList);
       }
-      // Show status of snapshots
-      recolor(backupLabels_KeyO, deleteLabels, toDeleteOld, deleteList);
-      // if (!getPanelSrc().labelTree_KeyO.isEmpty()) {
-      // float readyCounter=0;
-      // for (SnapshotLabel snapshotLabel:getPanelSrc().labelTree_KeyO.values())
-      // if (snapshotLabel.getBackground() == SnapshotLabel.backupColor)
-      // readyCounter++;
-      // float progress=readyCounter / panelSrc.labelTree_KeyO.size();
-      // getProgressBar().setValue((int) (progress * 1000f));
-      // DecimalFormat df=new DecimalFormat("0.000");
-      // getProgressBar().setString(df.format(progress));
-      // }
-      // System.out.println("Show Backups:");
+      int deletable=mixedList2.size() - minimum;
+      for (SnapshotLabel sl:backupLabels_DirName.values()) { // GrundFarbe setzen
+         if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid())) {
+            sl.setBackground(SnapshotLabel.backupColor);// Das ist ein aktuelles Backup ! (unlöschbar)
+            snapshotLabels_Uuid.get(sl.snapshot.received_uuid()).setBackground(SnapshotLabel.backupColor);
+         } else
+            sl.setBackground(SnapshotLabel.naheColor);
+         panelBackup.repaint(100);
+      }
+      ArrayList<SnapshotLabel> deleteList=new ArrayList<>();
+      // Schauen was gelöscht werden könnte von den alten Backups
+      for (SnapshotLabel sl:toDeleteOld.values()) {
+         if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid()))
+            continue;// aktuell, unlöschbar
+         deleteList.add(sl);
+         sl.setBackground(SnapshotLabel.deleteColor);// rot
+         deletable--;
+         panelBackup.repaint(100);
+      }
+      for (SnapshotLabel sl:mixedList2) { // manuell gelöschte anbieten
+         if (deletable < 1)
+            break;
+         if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid()))
+            continue;// aktuell, unlöschbar
+         if (deleteList.contains(sl))
+            continue;// wird schon gelöscht
+         if (!manualDelete.containsValue(sl))
+            continue; // nicht angeklickt
+         deleteList.add(sl);
+         sl.setBackground(SnapshotLabel.delete2Color); // orange
+         deletable--;
+         panelBackup.repaint(100);
+      }
+      for (SnapshotLabel sl:mixedList2) { // dann Sackgassen anbieten
+         if (deletable < 1)
+            break;
+         if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid()))
+            continue;// aktuell, unlöschbar
+         if (deleteList.contains(sl))
+            continue;
+         if (keineSackgasse.containsValue(sl))
+            continue;
+         deleteList.add(sl);
+         sl.setBackground(SnapshotLabel.delete2Color);
+         deletable--;
+         panelBackup.repaint(100);
+      }
+      for (SnapshotLabel sl:mixedList2) { // zuletzt reguläre Snapshots anbieten
+         if (deletable < 1)
+            break;
+         if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid()))
+            continue;// aktuell, unlöschbar
+         if (deleteList.contains(sl))
+            continue;
+         deleteList.add(sl);
+         sl.setBackground(SnapshotLabel.delete2Color);
+         deletable--;
+         panelBackup.repaint(100);
+      }
    }
    private void delete(final JButton jButton, Color deleteColor) {
       ConcurrentSkipListMap<String, SnapshotLabel> alle    =getPanelBackup().labelTree_KeyO;
@@ -305,39 +319,6 @@ public class BacksnapGui implements MouseListener {
             jButton.setEnabled(true);
          }
       });
-   }
-   /**
-    * Färbe die Labels passend ein
-    * 
-    * @param backupLabels_Key
-    * @param deleteLabels
-    * @param toDelete
-    * @param deleteList
-    */
-   private void recolor(ConcurrentSkipListMap<String, SnapshotLabel> backupLabels_Key,
-            ConcurrentSkipListMap<String, SnapshotLabel> deleteLabels,
-            ConcurrentNavigableMap<String, SnapshotLabel> toDelete, ArrayList<SnapshotLabel> deleteList) {
-      for (Entry<String, SnapshotLabel> entry:backupLabels_Key.entrySet()) {
-         String        key          =entry.getKey();
-         SnapshotLabel snl          =entry.getValue();
-         String        received_uuid=snl.snapshot.received_uuid();
-         boolean       istAktuell   =getPanelSrc().labelTree_UUID.containsKey(received_uuid);
-         boolean       loeschen     =toDelete.containsKey(key);
-         if (loeschen & !istAktuell)
-            deleteLabels.put(key, snl);
-         if (istAktuell) {
-            getPanelSrc().labelTree_UUID.get(received_uuid).setBackground(SnapshotLabel.backupColor);
-            snl.setBackground(SnapshotLabel.backupColor);
-         } else
-            if (loeschen)
-               snl.setBackground(SnapshotLabel.deleteColor);
-            else
-               if (deleteList.contains(snl))
-                  snl.setBackground(SnapshotLabel.delete2Color);
-               else
-                  snl.setBackground(SnapshotLabel.keepColor);
-         getPanelBackup().repaint();
-      }
    }
    final static public int parseIntOrDefault(String s, int or) {
       if (s != null)
@@ -387,12 +368,14 @@ public class BacksnapGui implements MouseListener {
       System.out.println(sb.toString());
       abgleich();
       sb.setLength(0);
-      sb.append("Backups on ").append(backupTree.mount().mountList().extern());
+      sb.append("<html>Backup to ").append(BLUE).append(rest.getFileName()).append(NORMAL);
+      sb.append(" on ").append(backupTree.mount().mountList().extern());
       sb.append(": ").append(backupTree.mount().devicePath());
       sb.append(" subvolume->").append(backupTree.mount().btrfsPath());
-      sb.append(" (mounted as ").append(backupTree.mount().mountPath()).append(")");
+      sb.append(" (mounted as ").append(BLUE).append(backupTree.mount().mountPath()).append(NORMAL).append(")");
       getPanelBackup().setTitle(sb.toString());
       getPanelBackup().repaint();
+      // System.out.println(sb.toString());
    }
    private JSplitPane getSplitPane() {
       if (splitPane == null) {
@@ -438,6 +421,7 @@ public class BacksnapGui implements MouseListener {
          panelSpace.add(getChckSpace(), BorderLayout.WEST);
          panelSpace.add(getSliderSpace(), BorderLayout.SOUTH);
          panelSpace.add(getBtnSpace(), BorderLayout.EAST);
+         panelSpace.add(getLblSpace(), BorderLayout.CENTER);
       }
       return panelSpace;
    }
@@ -450,6 +434,7 @@ public class BacksnapGui implements MouseListener {
          panelMeta.add(getChckMeta(), BorderLayout.WEST);
          panelMeta.add(getSliderMeta(), BorderLayout.SOUTH);
          panelMeta.add(getBtnMeta(), BorderLayout.EAST);
+         panelMeta.add(getLblMeta(), BorderLayout.CENTER);
       }
       return panelMeta;
    }
@@ -501,14 +486,14 @@ public class BacksnapGui implements MouseListener {
       if (sliderSpace == null) {
          sliderSpace=new JSlider();
          sliderSpace.setEnabled(Backsnap.DELETEOLD.get());
-         sliderSpace.setMaximum(10000);
+         sliderSpace.setMaximum(5000);
          sliderSpace.setMajorTickSpacing(1000);
          sliderSpace.setMinorTickSpacing(200);
          sliderSpace.setPaintTicks(true);
          sliderSpace.setPaintLabels(true);
-         sliderSpace.setValue(2999);
+         sliderSpace.setValue(999);
          Dictionary<Integer, JLabel> labelTable=new Hashtable<>();
-         for (int i=0; i <= 10; i++)
+         for (int i=0; i <= 5; i++)
             labelTable.put(Integer.valueOf(i * 1000), new JLabel((i == 0) ? "0" : Integer.toString(i) + "T"));
          sliderSpace.setLabelTable(labelTable);
          sliderSpace.addChangeListener(new ChangeListener() {
@@ -516,8 +501,8 @@ public class BacksnapGui implements MouseListener {
             public void stateChanged(final ChangeEvent e) {
                if (!getSliderSpace().getValueIsAdjusting()) {
                   int v=getSliderSpace().getValue();
-                  System.out.println("getSliderSpace() changed " + v);
                   Backsnap.DELETEOLD.setParameter(Integer.toString(v));
+                  getLblSpace().setText(Integer.toString(v));
                   abgleich();
                }
             }
@@ -529,10 +514,10 @@ public class BacksnapGui implements MouseListener {
       if (sliderMeta == null) {
          sliderMeta=new JSlider();
          sliderMeta.setEnabled(false);
-         sliderMeta.setMaximum(1000);
+         sliderMeta.setMaximum(500);
          sliderMeta.setMajorTickSpacing(100);
          sliderMeta.setMinorTickSpacing(20);
-         sliderMeta.setValue(499);
+         sliderMeta.setValue(249);
          sliderMeta.setPaintLabels(true);
          sliderMeta.setPaintTicks(true);
          sliderMeta.addChangeListener(new ChangeListener() {
@@ -540,8 +525,8 @@ public class BacksnapGui implements MouseListener {
             public void stateChanged(final ChangeEvent e) {
                if (!getSliderMeta().getValueIsAdjusting()) {
                   int v=getSliderMeta().getValue();
-                  System.out.println("getSliderMeta() changed " + v);
                   Backsnap.MINIMUMSNAPSHOTS.setParameter(Integer.toString(v));
+                  getLblMeta().setText(Integer.toString(v));
                   abgleich();
                }
             }
@@ -607,7 +592,7 @@ public class BacksnapGui implements MouseListener {
          progressBar.setForeground(SnapshotLabel.backupColor);
          progressBar.setBackground(SnapshotLabel.naheColor);
          progressBar.setMaximum(1000);
-         progressBar.setValue(25);
+         progressBar.setValue(1);
          progressBar.setStringPainted(true);
       }
       return progressBar;
@@ -649,8 +634,22 @@ public class BacksnapGui implements MouseListener {
    }
    public JToggleButton getTglPause() {
       if (tglPause == null) {
-      	tglPause = new JToggleButton("pause");
+         tglPause=new JToggleButton("pause");
       }
       return tglPause;
+   }
+   private JLabel getLblSpace() {
+      if (lblSpace == null) {
+      	lblSpace = new JLabel("?");
+      	lblSpace.setHorizontalAlignment(SwingConstants.CENTER);
+      }
+      return lblSpace;
+   }
+   private JLabel getLblMeta() {
+      if (lblMeta == null) {
+      	lblMeta = new JLabel("?");
+      	lblMeta.setHorizontalAlignment(SwingConstants.CENTER);
+      }
+      return lblMeta;
    }
 }

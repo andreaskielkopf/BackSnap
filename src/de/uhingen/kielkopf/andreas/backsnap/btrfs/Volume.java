@@ -3,9 +3,10 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 
-import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Snapshot.getString;
+import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Snapshot.*;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.regex.Pattern;
@@ -17,12 +18,10 @@ import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
  * @author Andreas Kielkopf
  *
  */
-public record Volume(String extern, String device, String label, String uuid) {
-   final static Pattern VOLUMELABEL=Pattern.compile("^Label: ('.+')");
+public record Volume(String extern, Path device, String label, String uuid) {
+   final static Pattern VOLUMELABEL=Pattern.compile("^Label: ('.+'|none)");
    final static Pattern UUID=Pattern.compile("uuid: ([-0-9a-f]{36})");
-   final static Pattern DEVICE=Pattern.compile("devid:.+ (/dev/.+)");
-   /** @return key zum sortieren */
-   // public String key() { return mountList.extern() + ":" + mountPoint; }
+   final static Pattern DEVICE=Pattern.compile("devid .+ path (/dev/.+)");
    /**
     * @param line
     *           Eine Zeile die filesystem show geliefert hat
@@ -31,7 +30,7 @@ public record Volume(String extern, String device, String label, String uuid) {
     * @throws IOException
     */
    public Volume(String extern, String line1, String line3) throws IOException {
-      this(extern, getString(DEVICE.matcher(line3)), getString(VOLUMELABEL.matcher(line1)),
+      this(extern, getPath(DEVICE.matcher(line3)), getString(VOLUMELABEL.matcher(line1)),
                getString(UUID.matcher(line1)));
       populate();
    }
@@ -44,10 +43,16 @@ public record Volume(String extern, String device, String label, String uuid) {
    void populate() throws IOException {
       System.out.println(this);
    }
+   public String extern() {
+      return (extern != null) ? extern : "local";
+   }
    @Override
    public String toString() {
-      StringBuilder sb=new StringBuilder("Volume [").append(extern).append(":").append(device).append(" uuid[")
-               .append(uuid).append("]");
+      StringBuilder sb=new StringBuilder("Volume [")//
+               .append("uuid=").append(uuid()).append(" ")//
+               .append(extern()).append(":").append(device())//
+               .append(" ").append(label()).append("]")//
+      ;
       return sb.toString();
    }
    public static ConcurrentSkipListMap<String, Volume> getList(String extern, boolean onlyMounted) {
@@ -61,16 +66,20 @@ public record Volume(String extern, String device, String label, String uuid) {
       try (CmdStream volumeList=Commandline.executeCached(filesystemShowCmd, cacheKey)) {
          volumeList.backgroundErr();
          List<String> lines=volumeList.erg().toList();
-         for (int i=0; i < lines.size() - 3; i++)
-            if (lines.get(i).startsWith("Label:")) {
+         for (int i=0; i < lines.size() - 3; i++) {
+            String line1=lines.get(i);
+            if (line1.startsWith("Label:")) {
                try {
+                  String line3=lines.get(i + 2);
                   Volume v;
-                  v=new Volume(extern, lines.get(i), lines.get(i + 2));
-                  list.put(v.device, v);
+                  v=new Volume(extern, line1, line3);
+                  String key=v.uuid() + v.device();
+                  list.put(key, v);
                } catch (IOException e) {
                   e.printStackTrace();
                }
             }
+         }
       } catch (IOException e1) {
          e1.printStackTrace();
       }

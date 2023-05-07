@@ -47,8 +47,8 @@ backup root@notebook: notebook
 backup root@notebook:/home notebook.home
 
 # gast sichern
-# backup root@gast:/ gast
-# backup root@gast:/home gast.home
+backup root@gast:/ gast
+backup root@gast:/home gast.home
 
 sync
 # umount $BS_MOUNT

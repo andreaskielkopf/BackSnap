@@ -355,8 +355,7 @@ public class Backsnap {
    }
    public static void removeSnapshot(Snapshot s) throws IOException {
       StringBuilder remove_cmd=new StringBuilder("/bin/btrfs subvolume delete -Cv ");
-      remove_cmd.append(s.mount().mountPath());
-      remove_cmd.append(s.btrfsPath());
+      remove_cmd.append(s.getMountPath());
       if ((s.mount().mountList().extern() instanceof String x) && (!x.isBlank()))
          if (x.startsWith("sudo "))
             remove_cmd.insert(0, x);
