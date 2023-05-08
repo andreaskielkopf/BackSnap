@@ -61,10 +61,12 @@ public class BacksnapGui implements MouseListener {
    private JProgressBar                                speedBar;
    private JLabel                                      SnapshotName;
    private JToggleButton                               tglPause;
-  public final static String                                 BLUE        ="<font size=+1 color=\"3333ff\">";
-  public final static String                                 NORMAL      ="</font>";
-   private JLabel lblSpace;
-   private JLabel lblMeta;
+   public final static String                          BLUE        ="<font size=+1 color=\"3333ff\">";
+   public final static String                          NORMAL      ="</font>";
+   public final static String                          IGEL1       ="<=>";
+   public final static String                          IGEL2       =BLUE + IGEL1 + NORMAL;
+   private JLabel                                      lblSpace;
+   private JLabel                                      lblMeta;
    /**
     * @param args
     */
@@ -89,6 +91,10 @@ public class BacksnapGui implements MouseListener {
       UIManager.put("ProgressBar.selectionForeground", Color.black);
       UIManager.put("ProgressBar.selectionBackground", Color.black);
       initialize();
+      if (Backsnap.DELETEOLD.get())
+         getSliderSpace().setValue(parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), 999));
+      if (Backsnap.MINIMUMSNAPSHOTS.get())
+         getSliderMeta().setValue(parseIntOrDefault(Backsnap.MINIMUMSNAPSHOTS.getParameter(), 249));
    }
    /**
     * @param snapConfigs
@@ -184,14 +190,14 @@ public class BacksnapGui implements MouseListener {
       ConcurrentSkipListMap<String, SnapshotLabel>  backupLabels_Uuid   =getPanelBackup().labelTree_UUID;
       ConcurrentSkipListMap<String, SnapshotLabel>  backupLabels_KeyO   =getPanelBackup().labelTree_KeyO;
       ConcurrentSkipListMap<String, SnapshotLabel>  backupLabels_DirName=getPanelBackup().labelTree_DirName;
-//      ConcurrentSkipListMap<String, SnapshotLabel>  deleteLabels        =new ConcurrentSkipListMap<>();
+      // ConcurrentSkipListMap<String, SnapshotLabel> deleteLabels =new ConcurrentSkipListMap<>();
       // SINGLESNAPSHOT make or delete only one(1) snapshot per call
       // for DELETEOLD get all old snapshots that are "o=999" older than the newest one
       ConcurrentNavigableMap<String, SnapshotLabel> toDeleteOld         =new ConcurrentSkipListMap<>();
       if (Backsnap.DELETEOLD.get()) {
          if (getPanelSrc().labelTree_DirName.lastEntry() instanceof Entry<String, SnapshotLabel> lastEntry) {
-            int           deleteOld=parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), 2999);
-//            System.out.println("delOld: "+deleteOld);
+            int           deleteOld=parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), 999);
+            // System.out.println("delOld: "+deleteOld);
             SnapshotLabel last     =lastEntry.getValue();
             int           firstNr  =parseIntOrDefault(last.snapshot.dirName(), deleteOld) - deleteOld;
             if (firstNr > 0) {
@@ -517,9 +523,9 @@ public class BacksnapGui implements MouseListener {
          sliderMeta.setMaximum(500);
          sliderMeta.setMajorTickSpacing(100);
          sliderMeta.setMinorTickSpacing(20);
-         sliderMeta.setValue(249);
          sliderMeta.setPaintLabels(true);
          sliderMeta.setPaintTicks(true);
+         sliderMeta.setValue(249);
          sliderMeta.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(final ChangeEvent e) {
@@ -597,9 +603,16 @@ public class BacksnapGui implements MouseListener {
       }
       return progressBar;
    }
-   public JLabel getLblPv() {
+   public void getLblPvSetText(String s1) {
+      String s2=s1.replace(IGEL1, IGEL2);
+      if (s2.contentEquals(getLblPv().getText()))
+         return;
+      getLblPv().setText(s2);
+      getLblPv().repaint(50);
+   }
+   private JLabel getLblPv() {
       if (lblPv == null) {
-         lblPv=new JLabel("- Infozeile -");
+         lblPv=new JLabel("- Infozeile <=>");
          lblPv.setBorder(new EmptyBorder(0, 10, 0, 0));
       }
       return lblPv;
@@ -640,15 +653,15 @@ public class BacksnapGui implements MouseListener {
    }
    private JLabel getLblSpace() {
       if (lblSpace == null) {
-      	lblSpace = new JLabel("?");
-      	lblSpace.setHorizontalAlignment(SwingConstants.CENTER);
+         lblSpace=new JLabel("?");
+         lblSpace.setHorizontalAlignment(SwingConstants.CENTER);
       }
       return lblSpace;
    }
    private JLabel getLblMeta() {
       if (lblMeta == null) {
-      	lblMeta = new JLabel("?");
-      	lblMeta.setHorizontalAlignment(SwingConstants.CENTER);
+         lblMeta=new JLabel("?");
+         lblMeta.setHorizontalAlignment(SwingConstants.CENTER);
       }
       return lblMeta;
    }
