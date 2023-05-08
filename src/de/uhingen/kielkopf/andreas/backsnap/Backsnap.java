@@ -54,7 +54,7 @@ public class Backsnap {
                                                                                                          // s
    public final static Flag   MINIMUMSNAPSHOTS   =new Flag('m', "keepminimum");                          // keep at
                                                                                                          // least
-   public static final String BACK_SNAP_VERSION  ="<html> BackSnap <br> Version 0.5.3 <br> (2023/04/27)";
+   public static final String BACK_SNAP_VERSION  ="<html> BackSnap <br> Version 0.5.4 <br> (2023/04/27)";
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
       StringBuilder argLine=new StringBuilder("args > ");
@@ -197,7 +197,11 @@ public class Backsnap {
             String srcSsh, String backupSsh, List<SnapConfig> snapConfigs) throws IOException {
       if (bsGui != null) {
          JLabel sl=bsGui.getSnapshotName();
-         sl.setText(srcSnapshot.btrfsPath().toString());
+         String dirname=srcSnapshot.dirName();
+         String blueDirname=BacksnapGui.BLUE+dirname+BacksnapGui.NORMAL;
+         String text="<html>"+srcSnapshot.btrfsPath().toString().replace(dirname, blueDirname);
+         System.out.println(text);
+         sl.setText(text);
          sl.repaint(100);
       }
       if (srcSnapshot.isBackup()) {
@@ -325,8 +329,8 @@ public class Backsnap {
          return;
       if (line.equals("\n") || line.equals("\r"))
          return;
-      bsGui.getLblPv().setText(line);
-      bsGui.getLblPv().repaint(50);
+      bsGui.getLblPvSetText(line);
+//      bsGui.getLblPv().repaint(50);
    }
    private static void rsyncFiles(String srcSsh, String backupSsh, Path sDir, Path bDir) throws IOException {
       StringBuilder copyCmd=new StringBuilder("/bin/rsync -vcptgo --exclude \"" + SNAPSHOT + "\" ");
