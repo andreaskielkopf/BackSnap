@@ -143,8 +143,8 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    static private Mount getMount(Mount mount0, Path btrfsPath1) {
       if (btrfsPath1 == null)
          return null;
-//      if (btrfsPath1.toString().contains("20318"))
-//         System.out.println(btrfsPath1);
+      // if (btrfsPath1.toString().contains("20318"))
+      // System.out.println(btrfsPath1);
       Path  b2 =btrfsPath1;
       Mount erg=null;
       for (Mount mount1:mount0.mountList().mountTree().values())
@@ -152,8 +152,8 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
             if (b2.startsWith(mount1.btrfsPath())) // only if same path or starts with the same path
                if ((erg == null) || (erg.btrfsPath().getNameCount() < mount1.btrfsPath().getNameCount()))
                   erg=mount1;
-//      if ((erg == null) && (btrfsPath1.toString().contains("20318")))
-//         return null;
+      // if ((erg == null) && (btrfsPath1.toString().contains("20318")))
+      // return null;
       return erg;
    }
    public Path getPathOn(Path root, List<SnapConfig> snapConfigs) {
@@ -163,19 +163,19 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    }
    public Stream<Entry<String, String>> getInfo() {
       Map<String, String> infoMap=new TreeMap<>();
-      infoMap.put("0 mount", mount.mountPath().toString());
+      // infoMap.put("0 mount", mount.mountPath().toString());
       infoMap.put("1 dirName()", dirName());
-      infoMap.put("2 btrfsPath", btrfsPath.toString());
-      infoMap.put("3 mountPath", getMountPath().toString());
       infoMap.put("b otime", otime);
       infoMap.put("c uuid", uuid);
+      infoMap.put("2 btrfsPath", btrfsPath.toString());
+      // infoMap.put("3 mountPath", getMountPath().toString());
       infoMap.put("d parent_uuid", parent_uuid);
       infoMap.put("e received_uuid", received_uuid);
-      infoMap.put("g gen", gen.toString());
-      infoMap.put("h cgen", cgen.toString());
-      infoMap.put("i id", id.toString());
-      infoMap.put("j top_level", top_level.toString());
-      infoMap.put("k parent", parent.toString());
+//      infoMap.put("g gen", gen.toString());
+//      infoMap.put("h cgen", cgen.toString());
+//      infoMap.put("i id", id.toString());
+//      infoMap.put("j top_level", top_level.toString());
+//      infoMap.put("k parent", parent.toString());
       infoMap.put("m key", key());
       return infoMap.entrySet().parallelStream();
    }
