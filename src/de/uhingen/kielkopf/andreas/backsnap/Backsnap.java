@@ -54,7 +54,7 @@ public class Backsnap {
                                                                                                          // s
    public final static Flag   MINIMUMSNAPSHOTS   =new Flag('m', "keepminimum");                          // keep at
                                                                                                          // least
-   public static final String BACK_SNAP_VERSION  ="<html> BackSnap <br> Version 0.5.4 <br> (2023/04/27)";
+   public static final String BACK_SNAP_VERSION  ="<html> BackSnap <br> Version 0.5.5 <br> (2023/05/08)";
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
       StringBuilder argLine=new StringBuilder("args > ");
