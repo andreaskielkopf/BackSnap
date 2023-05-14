@@ -16,22 +16,20 @@ Sonntag, 14. Mai 2023 03:07
 ## pictures
 <img src="gui_startup.png" width=50% height=50%>
 
-![startup](gui_startup.png  "gui startup"){width=50% height=50%}
 #### version
-![version](gui_startup_Version.png  "backsnap version"){width=50% height=50%}
+<img src="gui_startup_Version.png" width=30% height=30%>
 
 #### snapshots
-![source](gui_startup_Src.png  "source"){width=50% height=50%} ![snapshots](gui_startup_SrcSnapshots.png  "snapshots"){width=50% height=50%}
+<img src="gui_startup_Src.png" width=30% height=30%> <img src="gui_startup_SrcSnapshots.png" width=30% height=30%>
 
 #### Info (mouse over)
-![Info](gui_startup_InfoSnapshots.png  "Info"){width=50% height=50%}
+<img src="gui_startup_InfoSnapshots.png" width=30% height=30%>
 
 #### progress
-![progress](gui_startup_InfoProgress.png  "follow the progress"){width=50% height=50%}
+<img src="gui_startup_InfoProgress.png" width=30% height=30%>
 
 #### backup
 -
 
 #### maintenance
-![space](gui_startup_FreeSomeSpace.png  "free some space"){width=50% height=50%}
-![meta](gui_startup_FreeSomeMetadata.png  "free some metadata"){width=50% height=50%}
+<img src="gui_startup_FreeSomeSpace.png" width=30% height=30%> <img src="gui_startup_FreeSomeMetadata.png" width=30% height=30%>
