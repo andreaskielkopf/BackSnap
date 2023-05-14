@@ -14,6 +14,8 @@ Sonntag, 14. Mai 2023 03:07
 ## en
 
 ## pictures
+<img src="gui_startup.png" width=50% height=50%>
+
 ![startup](gui_startup.png  "gui startup"){width=50% height=50%}
 #### version
 ![version](gui_startup_Version.png  "backsnap version"){width=50% height=50%}
