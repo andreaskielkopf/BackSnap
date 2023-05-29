@@ -1,5 +1,5 @@
 # BackSnap CLI ausprobieren
-Das folgende setzt vorraus dass das Backupmedium und der erforderliche Mountpunkt vorbereitet wurden.
+Das folgende setzt vorraus dass alles [installiert](install_de.md) und das Backupmedium und der erforderliche Mountpunkt [vorbereitet](device_de.md) wurden.
 ### Backupmedium mounten
 Das Subvolume @BackSnap des Backup-device mit der besagten UUID wird nach /mnt/BackSnap gemountet. Dabei wird die Kompression zstd mit Level 9 eingestellt. Das verwenden der UUID verhindert zuverlässig, dass etwas falsches gemountet wird.
 

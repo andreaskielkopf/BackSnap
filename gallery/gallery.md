@@ -10,6 +10,7 @@ Sonntag, 14. Mai 2023 15:07
 #### ~~GUI per script~~
 ####  ~~[ssh einsetzen](ssh_de.md)~~
 #### [Restore vom Backup](restore_de.md)
+P.S. Sie finden mich im [manjaro-forum](https://forum.manjaro.org/t/howto-hilfsprogramm-fur-backup-btrfs-snapshots-mit-send-recieve/130154) als "andreas85"
 
 ## en
 
