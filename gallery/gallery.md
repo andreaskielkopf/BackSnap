@@ -4,7 +4,7 @@ Sonntag, 14. Mai 2023 15:07
 ## de
 #### [Installation](install_de.md) 
 #### [Backupmedium vorbereiten](device_de.md)
-#### ~~[CLI ausprobieren](clitest_de.md)~~
+#### [CLI ausprobieren](clitest_de.md)
 #### ~~CLI automatisieren~~
 #### ~~[GUI testen](guitest_de.md)~~
 #### ~~GUI per script~~

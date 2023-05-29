@@ -1,13 +1,15 @@
 # Installation
 Es ist bewusst einfach gehalten BackSnap zu installieren.
-## 1. `Java 17` installieren
-Je nach verwendeter Distribution ist das ganz unterschiedlich. Bitte schau in der **Anleitung zu deiner Distribution** nach wie das geht, damit du das von Anfang an richtig machst. Ich empfehle `java Openjdk 17 oder 19` zu verwenden, aber alle Versionen ab 17 sollten gut funktionieren.
-#### für ARCH oder manjaro:
-`pamac install jdk17-openjdk`
+## 1. `JAVA` installieren
+Je nach verwendeter Distribution ist das ganz unterschiedlich. Bitte schau in der **Anleitung zu deiner Distribution** nach wie du java installieren kannst, damit du das von Anfang an richtig machst. Ich empfehle `java Openjdk 17 oder 20` zu verwenden, aber alle Versionen ab 17 sollten gut funktionieren.
+#### Für manjaro oder arch:
+`pamac install jdk-openjdk`
+
 oder 
-`pacman -S jdk17-openjdk`
+`pacman -S jdk-openjdk`
+
 oder 
-`trizen -S jdk17-openjdk`
+`trizen -S jdk-openjdk`
 ### Test als `user` und als `root`:
 `java -version`
 ```
@@ -21,8 +23,10 @@ Siehe auch: [archlinux wiki java](https://wiki.archlinux.org/title/java) , [manj
 `pv` zeigt während der Übertragung des Snapshots den Fortschritt und die Geschwindigkeit an. Es ist nicht erforderlich, aber empfohlen.
 #### für ARCH oder manjaro:
 `pamac install pv`
+
 oder 
 `pacman -S pv`
+
 oder 
 `trizen -S pv`
 
@@ -32,11 +36,13 @@ Die Installation muß als root erfolgen (oder mit sudo). Sie sollte so erfolgen,
 #### in /usr/local/bin
 Wenn `/usr/local/bin` in deinem Pfad enthalten ist, ist es das einfachste BackSnap dort zu installieren.
 `wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap.jar -O /usr/local/bin/backsnap.jar`
+
 BackSnap ausführbar machen
 `chmod a+x /usr/local/bin/backsnap.jar`
 #### oder in /usr/bin
 Wenn `/usr/local/bin` nicht in deinem Pfad enthalten ist, ist es das einfachste BackSnap in `/usr/bin` zu installieren.
 `wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap.jar -O /usr/bin/backsnap.jar`
+
 BackSnap ausführbar machen
 `chmod a+x /usr/bin/backsnap.jar`
 ### Test als `user` und als `root`:
