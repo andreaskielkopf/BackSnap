@@ -1,6 +1,3 @@
-/**
- * 
- */
 package de.uhingen.kielkopf.andreas.backsnap;
 
 import java.io.*;

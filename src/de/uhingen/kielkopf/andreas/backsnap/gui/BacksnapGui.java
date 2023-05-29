@@ -64,7 +64,7 @@ public class BacksnapGui implements MouseListener {
    public final static String                          BLUE        ="<font size=+1 color=\"3333ff\">";
    public final static String                          NORMAL      ="</font>";
    public final static String                          IGEL1       ="<=>";
-   public final static String                          IGEL2       =BLUE + IGEL1 + NORMAL;
+   public final static String                          IGEL2       =BLUE + "=O=" + NORMAL;
    private JLabel                                      lblSpace;
    private JLabel                                      lblMeta;
    /**
@@ -604,11 +604,12 @@ public class BacksnapGui implements MouseListener {
       return progressBar;
    }
    public void getLblPvSetText(String s1) {
-      String s2=s1.replace(IGEL1, IGEL2);
+      String s2="<html>" + s1.replace(' ','.').replace(IGEL1, IGEL2);
       if (s2.contentEquals(getLblPv().getText()))
          return;
       getLblPv().setText(s2);
-      getLblPv().repaint(50);
+//      System.out.println(s2);
+      getLblPv().repaint(100);
    }
    private JLabel getLblPv() {
       if (lblPv == null) {
