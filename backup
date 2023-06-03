@@ -1,25 +1,35 @@
 #!/bin/zsh
 # Sichern aller aufgelisteten Rechner auf ein angestecktes Laufwerk
-# BS_UUID=03417033-3745-4ae7-9451-efafcbb9124e
-BS_MOUNT=/mnt/BackSnap 
-# BS_MOUNT=/mnt/@BackSnap
-BS_JAR=/usr/local/bin/backsnap.jar
-BS_HOST=manjaro18
-# mount aus fstab ;-)
-# [ -d $BS_MOUNT/@snapshots ] || mount $BS_MOUNT
-# sudo mount -o noatime,subvol=/,compress=zstd:9 UUID=$BS_UUID $BS_MOUNT
-# wenn das mounten nicht geklappt hat, ABBRECHEN 
-# [ -d $BS_MOUNT/@snapshots ] || { echo "Das mounten war nicht erfolgreich"; exit; }
-[ -d $BS_MOUNT/$BS_HOST ] || { echo "Für $BS_HOST gibt es keinen mountpoint"; exit; }
+
+# your mountpoint for backsnap
+BS_MOUNT=/mnt/BackSnap
+# start of the uuid of your backup partition
+BS_ID=03417033
+
+# search for the backup device:
+BS_UUID=$(lsblk -o uuid | grep -E $BS_ID)
+#BS_UUID=03417033-3745-4ae7-9451-efafcbb912..
+# echo "UUID=$BS_UUID LEN=${#BS_UUID}"
+[ ${#BS_UUID} -le 35 ] && 
+    echo "error: backup disk with UUID $BS_ID... is not connected" && exit
+
+# mount backup device:
+WAS_MOUNTED=$(mount | grep -E " $BS_MOUNT ")
+# echo "was mounted=$WAS_MOUNTED"
+[ ${#WAS_MOUNTED} -le 10 ] && 
+    echo "i need to mount $BS_UUID to $BS_MOUNT" && 
+    mount -t btrfs -o subvol=@BackSnap,compress=zstd:9 /dev/disk/by-uuid/$BS_UUID $BS_MOUNT
+mount | grep -E " $BS_MOUNT " ||
+    { echo "error: could not mount $BS_UUID to $BS_MOUNT" && exit }
+
+# activate ssh-askpass for gui usage
+export SSH_ASKPASS_REQUIRE="prefer"
 
 function backup {
-    BS_SOURCE="$1"
-    BS_DEST="$BS_MOUNT/$2"
-#    echo "java -jar $BS_JAR $BS_SOURCE $BS_DEST"
 # This script has to be run in a terminal with sudo to get the grapical version !
-    java -jar $BS_JAR -g -a -o -m $BS_SOURCE $BS_DEST || exit
+    backsnap -g -v=1 -a=15 $1 $BS_MOUNT/$2 || exit
 # alternative cli-version is called:    
-#   java -jar $BS_JAR $BS_SOURCE $BS_DEST || exit    
+#   backsnap -v3 $1 $BS_MOUNT/$2 || exit    
     echo  "OK"
 }
 
@@ -43,9 +53,14 @@ backup root@notebook: notebook
 backup root@notebook:/home notebook.home
 
 # gast sichern
-# backup root@gast:/ gast
-# backup root@gast:/home gast.home
+backup root@gast:/ gast
+backup root@gast:/home gast.home
 
+# Laufwerk unmounten:
 sync
-# umount $BS_MOUNT
-echo "fertig"
+[ ${#WAS_MOUNTED} -le 10 ] && 
+    echo "i need to umount $BS_MOUNT" && 
+    umount $BS_MOUNT &&
+    sync
+mount | grep -E " $BS_MOUNT "
+echo "fertig mit den Backups"

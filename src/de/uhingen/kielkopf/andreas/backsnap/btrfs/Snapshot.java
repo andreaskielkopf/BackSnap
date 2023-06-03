@@ -16,6 +16,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 import de.uhingen.kielkopf.andreas.beans.cli.Flag;
@@ -143,8 +144,8 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    static private Mount getMount(Mount mount0, Path btrfsPath1) {
       if (btrfsPath1 == null)
          return null;
-//      if (btrfsPath1.toString().contains("20318"))
-//         System.out.println(btrfsPath1);
+      // if (btrfsPath1.toString().contains("20318"))
+      // System.out.println(btrfsPath1);
       Path  b2 =btrfsPath1;
       Mount erg=null;
       for (Mount mount1:mount0.mountList().mountTree().values())
@@ -152,8 +153,8 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
             if (b2.startsWith(mount1.btrfsPath())) // only if same path or starts with the same path
                if ((erg == null) || (erg.btrfsPath().getNameCount() < mount1.btrfsPath().getNameCount()))
                   erg=mount1;
-//      if ((erg == null) && (btrfsPath1.toString().contains("20318")))
-//         return null;
+      // if ((erg == null) && (btrfsPath1.toString().contains("20318")))
+      // return null;
       return erg;
    }
    public Path getPathOn(Path root, List<SnapConfig> snapConfigs) {
@@ -163,19 +164,19 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    }
    public Stream<Entry<String, String>> getInfo() {
       Map<String, String> infoMap=new TreeMap<>();
-      infoMap.put("0 mount", mount.mountPath().toString());
+      // infoMap.put("0 mount", mount.mountPath().toString());
       infoMap.put("1 dirName()", dirName());
-      infoMap.put("2 btrfsPath", btrfsPath.toString());
-      infoMap.put("3 mountPath", getMountPath().toString());
       infoMap.put("b otime", otime);
       infoMap.put("c uuid", uuid);
+      infoMap.put("2 btrfsPath", btrfsPath.toString());
+      // infoMap.put("3 mountPath", getMountPath().toString());
       infoMap.put("d parent_uuid", parent_uuid);
       infoMap.put("e received_uuid", received_uuid);
-      infoMap.put("g gen", gen.toString());
-      infoMap.put("h cgen", cgen.toString());
-      infoMap.put("i id", id.toString());
-      infoMap.put("j top_level", top_level.toString());
-      infoMap.put("k parent", parent.toString());
+//      infoMap.put("g gen", gen.toString());
+//      infoMap.put("h cgen", cgen.toString());
+//      infoMap.put("i id", id.toString());
+//      infoMap.put("j top_level", top_level.toString());
+//      infoMap.put("k parent", parent.toString());
       infoMap.put("m key", key());
       return infoMap.entrySet().parallelStream();
    }
@@ -202,12 +203,12 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
             throw new RuntimeException("Could not find srcDir: " + sourceDir);
          if (srcVolume.btrfsMap().isEmpty())
             throw new RuntimeException("Ingnoring, because there are no snapshots in: " + sourceDir);
-         System.out.println("backup snapshots from: " + srcVolume.keyM());
+         Backsnap.logln( 1,"backup snapshots from: " + srcVolume.keyM());
          // BackupVolume ermitteln
          Mount backupVolume=subVolumes.getBackupVolume(backupDir);
          if (backupVolume == null)
             throw new RuntimeException("Could not find backupDir: " + backupDir);
-         System.out.println("Will try to use backupDir: " + backupVolume.keyM());
+         Backsnap.logln( 1,"Will try to use backupDir: " + backupVolume.keyM());
          // Subdir ermitteln
          Path pathBackupDir=backupVolume.mountPath().relativize(Path.of(backupDir));
          System.out.println(pathBackupDir);
