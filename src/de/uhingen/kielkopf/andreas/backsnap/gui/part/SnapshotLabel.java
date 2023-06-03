@@ -73,11 +73,10 @@ public class SnapshotLabel extends JLabel {
    }
    @Override
    public synchronized void addMouseListener(MouseListener l) {
-      MouseListener[] wl=getListeners(MouseListener.class);      
+      MouseListener[] wl=getListeners(MouseListener.class);
       for (MouseListener mouseListener:wl)
          if (mouseListener == l)
             return;
-//      System.out.print(" "+this);
       super.addMouseListener(l);
    }
 }

@@ -13,6 +13,7 @@ import java.awt.Color;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
+import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.Mount;
@@ -136,7 +137,7 @@ public class Computer extends JPanel {
    protected void updateSubvolumeInfo(ListSelectionEvent ev) {
       if (ev.getSource() instanceof JList<?> l)
          if (l.getSelectedValue() instanceof Mount mount) {
-            System.out.println(mount);
+            Backsnap.logln(6, mount.toString());
             getSubvol().setMount(mount);
          }
    }
@@ -216,7 +217,7 @@ public class Computer extends JPanel {
    protected void test() {
       calculateExtern();
       boolean ok=false;
-      System.out.println("test " + extern);
+      Backsnap.logln(7, "test " + extern);
       if (extern.equals("sudo")) { // nur sudo lokal
          try (CmdStream sudoTest=Commandline.executeCached("id", null)) {
             sudoTest.backgroundErr();
@@ -233,11 +234,11 @@ public class Computer extends JPanel {
          sb.insert(0, "ssh " + extern + " '").append("'");
          try (CmdStream sudoTest=Commandline.executeCached(sb, null)) {
             sudoTest.backgroundErr();
-            sudoTest.erg().forEach(System.out::println);
+            sudoTest.erg().forEach(t -> Backsnap.logln(7, t));
             // sudoTest.close(); // schließt den stream und ermöglicht zugriff auf die Konserver
             ok=sudoTest.errList().isEmpty();
             if (!ok)
-               sudoTest.errList().forEach(System.err::println);
+               sudoTest.errList().forEach(t -> Backsnap.logln(7, t));
          } catch (IOException e) {
             ok=false;
             e.printStackTrace();

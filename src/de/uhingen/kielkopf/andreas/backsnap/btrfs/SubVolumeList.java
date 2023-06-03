@@ -3,8 +3,6 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 
-import static java.lang.System.out;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -13,6 +11,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentSkipListMap;
 
+import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 
@@ -47,7 +46,7 @@ public record SubVolumeList(String extern, ConcurrentSkipListMap<String, Mount> 
             mountCmd.insert(0, extern);
          else
             mountCmd.insert(0, "ssh " + extern + " '").append("'");
-      System.out.println(mountCmd);
+      Backsnap.logln(3, mountCmd.toString());
       try (CmdStream mountList=Commandline.executeCached(mountCmd)) {
          mountList.backgroundErr();
          for (String line:mountList.erg().toList())
@@ -59,7 +58,7 @@ public record SubVolumeList(String extern, ConcurrentSkipListMap<String, Mount> 
             if (line.contains("No route to host") || line.contains("Connection closed")
                      || line.contains("connection unexpectedly closed"))
                throw new IOException(line);
-         out.println();
+         Backsnap.logln(3, "");
       }
    }
    /**

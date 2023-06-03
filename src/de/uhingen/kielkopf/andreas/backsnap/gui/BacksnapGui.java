@@ -171,7 +171,7 @@ public class BacksnapGui implements MouseListener {
             linefeeds++;
          }
       }
-      System.out.println(sb.toString());
+      Backsnap.logln(2, sb.toString());
       abgleich();
       sb.setLength(0);
       sb.append("<html>Snapshots of ").append(BLUE).append(srcConfig.original().mountList().extern()).append(NORMAL);
@@ -196,10 +196,10 @@ public class BacksnapGui implements MouseListener {
       ConcurrentNavigableMap<String, SnapshotLabel> toDeleteOld         =new ConcurrentSkipListMap<>();
       if (Backsnap.DELETEOLD.get()) {
          if (getPanelSrc().labelTree_DirName.lastEntry() instanceof Entry<String, SnapshotLabel> lastEntry) {
-            int           deleteOld=parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), 999);
-            // System.out.println("delOld: "+deleteOld);
-            SnapshotLabel last     =lastEntry.getValue();
-            int           firstNr  =parseIntOrDefault(last.snapshot.dirName(), deleteOld) - deleteOld;
+            int deleteOld=parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), 999);
+            Backsnap.logln(8, "delOld: " + deleteOld);
+            SnapshotLabel last   =lastEntry.getValue();
+            int           firstNr=parseIntOrDefault(last.snapshot.dirName(), deleteOld) - deleteOld;
             if (firstNr > 0) {
                toDeleteOld=backupLabels_DirName.headMap(Integer.toString(firstNr));
             }
@@ -293,7 +293,7 @@ public class BacksnapGui implements MouseListener {
       for (Entry<String, SnapshotLabel> entry:alle.entrySet())
          if (entry.getValue() instanceof SnapshotLabel label)
             if (label.getBackground() == deleteColor) {
-               System.out.println("to remove " + label.getText());
+               Backsnap.logln(6, "to remove " + label.getText());
                toRemove.add(label.snapshot);
             }
       Commandline.background.submit(new Runnable() {
@@ -326,14 +326,14 @@ public class BacksnapGui implements MouseListener {
          }
       });
    }
-   final static public int parseIntOrDefault(String s, int or) {
+   final static public int parseIntOrDefault(String s, int def) {
       if (s != null)
          try {
             return Integer.parseInt(s);
          } catch (NumberFormatException ignore) {
             System.err.println(ignore.getMessage() + ":" + s);
          }
-      return or;
+      return def;
    }
    private SnapshotPanel getPanelBackup() {
       if (panelBackup == null) {
@@ -371,7 +371,7 @@ public class BacksnapGui implements MouseListener {
             linefeeds++;
          }
       }
-      System.out.println(sb.toString());
+      Backsnap.logln(2, sb.toString());
       abgleich();
       sb.setLength(0);
       sb.append("<html>Backup to ").append(BLUE).append(rest.getFileName()).append(NORMAL);
@@ -393,12 +393,7 @@ public class BacksnapGui implements MouseListener {
    private JButton getBtnMeta() {
       if (btnMeta == null) {
          btnMeta=new JButton("Delete some unneeded snapshots");
-         btnMeta.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(final ActionEvent e) {
-               delete(getBtnMeta(), SnapshotLabel.delete2Color);
-            }
-         });
+         btnMeta.addActionListener(e -> delete(getBtnMeta(), SnapshotLabel.delete2Color));
          btnMeta.setEnabled(false);
          btnMeta.setBackground(SnapshotLabel.delete2Color);
       }
@@ -407,12 +402,7 @@ public class BacksnapGui implements MouseListener {
    private JButton getBtnSpace() {
       if (btnSpace == null) {
          btnSpace=new JButton("Delete some old snapshots");
-         btnSpace.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(final ActionEvent e) {
-               delete(getBtnSpace(), SnapshotLabel.deleteColor);
-            }
-         });
+         btnSpace.addActionListener(e -> delete(getBtnSpace(), SnapshotLabel.deleteColor));
          btnSpace.setEnabled(false);
          btnSpace.setBackground(SnapshotLabel.deleteColor);
       }
@@ -446,45 +436,39 @@ public class BacksnapGui implements MouseListener {
    }
    private void flagSpace() {
       boolean s=getChckSpace().isSelected();
-      System.out.println("--------------- getChckSpace() actionPerformed");
+      Backsnap.logln(3, "--------------- getChckSpace() actionPerformed");
       Backsnap.DELETEOLD.set(s);
       getSliderSpace().setEnabled(s);
       getBtnSpace().setEnabled(s);
+      if (s)
+         getTglPause().setSelected(s);
    }
    private JCheckBox getChckSpace() {
       if (chckSpace == null) {
          chckSpace=new JCheckBox("-o, --deleteold");
          chckSpace.setHorizontalTextPosition(SwingConstants.LEADING);
+         chckSpace.addActionListener(e -> flagSpace());
          chckSpace.setSelected(Backsnap.DELETEOLD.get());
-         chckSpace.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(final ActionEvent e) {
-               flagSpace();
-            }
-         });
-         flagSpace();
+         // flagSpace();
       }
       return chckSpace;
    }
    private void flagMeta() {
       boolean s=getChckSpace().isSelected();
-      System.out.println("-------------- getChckMeta() actionPerformed");
+      Backsnap.log(3, "-------------- getChckMeta() actionPerformed");
       Backsnap.MINIMUMSNAPSHOTS.set(s);
       getSliderMeta().setEnabled(s);
       getBtnMeta().setEnabled(s);
+      if (s)
+         getTglPause().setSelected(s);
    }
    private JCheckBox getChckMeta() {
       if (chckMeta == null) {
          chckMeta=new JCheckBox("-m, --keepminimum");
          chckMeta.setHorizontalTextPosition(SwingConstants.LEADING);
+         chckMeta.addActionListener(e -> flagMeta());
          chckMeta.setSelected(Backsnap.MINIMUMSNAPSHOTS.get());
-         chckMeta.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(final ActionEvent e) {
-               flagMeta();
-            }
-         });
-         flagMeta();
+         // flagMeta();
       }
       return chckMeta;
    }
@@ -543,12 +527,12 @@ public class BacksnapGui implements MouseListener {
    @Override
    public void mouseClicked(MouseEvent e) {
       if (e.getSource() instanceof SnapshotLabel sl) {
-         System.out.print("click-" + sl);
+         Backsnap.log(8, "click-" + sl);
          if (!manualDelete.containsValue(sl))
             manualDelete.put(sl.getText(), sl);
          else
             manualDelete.remove(sl.getText());
-         System.out.print(manualDelete.containsValue(sl) ? "del" : "keep");
+         Backsnap.log(8, manualDelete.containsValue(sl) ? "del" : "keep");
          abgleich();
          sl.repaint(100);
       }
@@ -604,11 +588,10 @@ public class BacksnapGui implements MouseListener {
       return progressBar;
    }
    public void getLblPvSetText(String s1) {
-      String s2="<html>" + s1.replace(' ','.').replace(IGEL1, IGEL2);
+      String s2="<html>" + s1.replace(' ', '.').replace(IGEL1, IGEL2);
       if (s2.contentEquals(getLblPv().getText()))
          return;
-      getLblPv().setText(s2);
-//      System.out.println(s2);
+      getLblPv().setText(s2); // System.out.println(s2);
       getLblPv().repaint(100);
    }
    private JLabel getLblPv() {

@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
+import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 
@@ -40,7 +41,7 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
             btrfsCmd.insert(0, x);
          else
             btrfsCmd.insert(0, "ssh " + x + " '").append("'");
-      System.out.println(btrfsCmd);
+      Backsnap.logln( 3,btrfsCmd.toString());
       try (CmdStream snapshotList=Commandline.executeCached(btrfsCmd, mount.keyD())) {
          snapshotList.backgroundErr();
          snapshotList.erg().forEachOrdered(line -> {
@@ -76,9 +77,9 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
       String deviceKey=mount2.keyD();
       if (!snapTreeCache.containsKey(deviceKey)) {
          snapTreeCache.put(deviceKey, new SnapTree(mount2));
-         System.out.println("set " + deviceKey + " into treeCache");
+         Backsnap.logln(8,"set " + deviceKey + " into treeCache");
       } else
-         System.err.println("take " + deviceKey + " from treeCache");
+         Backsnap.logln(8,"take " + deviceKey + " from treeCache");
       return snapTreeCache.get(deviceKey);
    }
    @Override

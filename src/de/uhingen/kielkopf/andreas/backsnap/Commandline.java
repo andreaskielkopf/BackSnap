@@ -79,7 +79,7 @@ public class Commandline {
             public void run() {
                try { // System.out.print("1");
                   try (BufferedReader q=brErr()) {
-                     errList.addAll(q.lines().peek(System.err::println).toList());
+                     errList.addAll(q.lines()/* .peek(System.err::println) */.toList());
                   } // System.out.print("2"); // System.out.println("3");
                } catch (IOException e) {
                   e.printStackTrace();

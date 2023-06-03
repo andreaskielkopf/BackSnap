@@ -16,6 +16,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 import de.uhingen.kielkopf.andreas.beans.cli.Flag;
@@ -202,12 +203,12 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
             throw new RuntimeException("Could not find srcDir: " + sourceDir);
          if (srcVolume.btrfsMap().isEmpty())
             throw new RuntimeException("Ingnoring, because there are no snapshots in: " + sourceDir);
-         System.out.println("backup snapshots from: " + srcVolume.keyM());
+         Backsnap.logln( 1,"backup snapshots from: " + srcVolume.keyM());
          // BackupVolume ermitteln
          Mount backupVolume=subVolumes.getBackupVolume(backupDir);
          if (backupVolume == null)
             throw new RuntimeException("Could not find backupDir: " + backupDir);
-         System.out.println("Will try to use backupDir: " + backupVolume.keyM());
+         Backsnap.logln( 1,"Will try to use backupDir: " + backupVolume.keyM());
          // Subdir ermitteln
          Path pathBackupDir=backupVolume.mountPath().relativize(Path.of(backupDir));
          System.out.println(pathBackupDir);

@@ -1,7 +1,6 @@
 package de.uhingen.kielkopf.andreas.backsnap;
 
 import static java.lang.System.err;
-import static java.lang.System.out;
 
 import java.awt.Frame;
 import java.io.FileNotFoundException;
@@ -48,7 +47,7 @@ public class Backsnap {
    final static Flag          DRYRUN             =new Flag('d', "dryrun");         // do not do anythimg ;-)
    final static Flag          GUI                =new Flag('g', "gui");            // enable gui (works only with sudo)
    final static Flag          AUTO               =new Flag('a', "auto");           // auto-close gui when ready
-   final static Flag          VERBOSE            =new Flag('v', "verbose");
+   final public static Flag   VERBOSE            =new Flag('v', "verbose");
    final public static String SNAPSHOT           ="snapshot";
    final public static String DOT_SNAPSHOTS      =".snapshots";
    final public static String AT_SNAPSHOTS       ="@snapshots";
@@ -56,19 +55,19 @@ public class Backsnap {
    public final static Flag   DELETEOLD          =new Flag('o', "deleteold");      // mark old snapshots for deletion
    public final static Flag   MINIMUMSNAPSHOTS   =new Flag('m', "keepminimum");    // mark all but minimum snapshots
    public static final String BACK_SNAP_VERSION  ="<html>"                         // version
-            + " BackSnap <br>" + " Version 0.5.5 <br>" + " (2023/06/01)";
+            + " BackSnap <br>" + " Version 0.5.6 <br>" + " (2023/06/03)";
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
       StringBuilder argLine=new StringBuilder("args > ");
       for (String s:args)
          argLine.append(" ").append(s);
-      System.out.println(argLine);
+      logln(1, argLine.toString());
       if (VERSION.get()) {
-         System.out.println(BACK_SNAP_VERSION);
+         logln(0, BACK_SNAP_VERSION);
          System.exit(0);
       }
       if (DRYRUN.get())
-         System.out.println("Doing a dry run ! ");
+         logln(0, "Doing a dry run ! ");
       // Parameter sammeln für SOURCE
       String source=Flag.getParameterOrDefault(0, "sudo:/" + DOT_SNAPSHOTS);
       String srcSsh=source.contains(":") ? source.substring(0, source.indexOf(":")) : "";
@@ -85,7 +84,7 @@ public class Backsnap {
             throw new RuntimeException("Could not find srcDir: " + srcDir);
          if (srcConfig.original().btrfsMap().isEmpty())
             throw new RuntimeException("Ingnoring, because there are no snapshots in: " + srcDir);
-         System.out.println("Backup snapshots from: " + srcConfig.original().keyM());
+         logln(1, "Backup snapshots from " + srcConfig.original().keyM());
          // BackupVolume ermitteln
          String backup   =Flag.getParameterOrDefault(1, "@BackSnap");
          String backupSsh=backup.contains(":") ? backup.substring(0, backup.indexOf(":")) : "";
@@ -100,7 +99,7 @@ public class Backsnap {
             throw new RuntimeException("Could not find backupDir: " + backupDir);
          if (backupVolume.devicePath().equals(srcConfig.original().devicePath()) && samePC)
             throw new RuntimeException("Backup not possible onto same device: " + backupDir + " <= " + srcDir);
-         System.out.println("Try to use backupDir : " + backupVolume.keyM());
+         logln(2, "Try to use backupDir  " + backupVolume.keyM());
          SnapTree backupTree=SnapTree.getSnapTree(backupVolume/* , backupVolume.mountPoint(), backupSsh */);
          if (GUI.get()) {
             bsGui=new BacksnapGui();
@@ -198,12 +197,12 @@ public class Backsnap {
    private static boolean backup(Snapshot srcSnapshot, Mount srcVolume, SnapTree backupMap, String backupDir,
             String srcSsh, String backupSsh, List<SnapConfig> snapConfigs) throws IOException {
       if (bsGui != null) {
+         String text="<html>" + srcSnapshot.btrfsPath().toString();
+         logln(7, text);
          JLabel sl         =bsGui.getSnapshotName();
          String dirname    =srcSnapshot.dirName();
          String blueDirname=BacksnapGui.BLUE + dirname + BacksnapGui.NORMAL;
-         String text       ="<html>" + srcSnapshot.btrfsPath().toString().replace(dirname, blueDirname);
-         System.out.println(text);
-         sl.setText(text);
+         sl.setText(text.replace(dirname, blueDirname));
          sl.repaint(100);
       }
       if (srcSnapshot.isBackup()) {
@@ -212,15 +211,15 @@ public class Backsnap {
       }
       if (backupMap.rUuidMap().containsKey(srcSnapshot.uuid())) {
          if (textVorhanden == 0) {
-            out.println();
-            out.print("Überspringe bereits vorhandene Snapshots:");
+            logln(5, "");
+            log(5, "Überspringe bereits vorhandene Snapshots:");
             textVorhanden=42;
          } else
             if (textVorhanden >= 120) {
-               out.println();
+               logln(5, "");
                textVorhanden=0;
             }
-         out.print(" " + srcSnapshot.dirName());
+         log(5, " " + srcSnapshot.dirName());
          textVorhanden+=srcSnapshot.dirName().length() + 1;
          parentSnapshot=srcSnapshot;
          return false;
@@ -233,15 +232,15 @@ public class Backsnap {
       Path relMdir =backupMap.mount().mountPath().relativize(bDir);
       Path bpq     =backupMap.mount().btrfsPath().resolve(relMdir);
       Path bSnapDir=bpq.resolve(SNAPSHOT);
-      out.println();
-      System.out.println(bSnapDir);
+      logln(3, "");
+      log(3, bSnapDir.toString());
       if (backupMap.btrfsPathMap().containsKey(bSnapDir)) {
-         System.out.println("Der Snapshot scheint schon da zu sein ????");
+         logln(5, "Der Snapshot scheint schon da zu sein ????");
          return true;
       }
-      out.print("Backup of " + srcSnapshot.dirName());
+      log(3, "Backup of " + srcSnapshot.dirName());
       if (parentSnapshot != null) // @todo genauer prüfen
-         out.println(" based on " + parentSnapshot.dirName());
+         logln(3, " based on " + parentSnapshot.dirName());
       mkDirs(bDir, backupSsh);
       rsyncFiles(srcSsh, backupSsh, sDir, bDir);
       if (sendBtrfs(srcVolume, srcSsh, backupSsh, sDir, bDir, snapConfigs))
@@ -256,7 +255,7 @@ public class Backsnap {
       StringBuilder send_cmd=new StringBuilder("/bin/btrfs send ");
       if (parentSnapshot != null) // @todo genauer prüfen
          send_cmd.append("-p ").append(parentSnapshot.getPathOn(srcVolume.mountPath(), snapConfigs)).append(" ");
-      out.println();
+      logln(1, "");
       send_cmd.append(sDir);
       if (!sameSsh)
          if (srcSsh.contains("@"))
@@ -279,7 +278,7 @@ public class Backsnap {
       // send_cmd.insert(0, srcSsh); // @todo für einzelnes sudo anpassen ?
       if (backupSsh.contains("@"))
          send_cmd.append("'");
-      out.println(send_cmd);
+      logln(1, send_cmd.toString());
       if (!DRYRUN.get())
          try (CmdStream btrfs_send=Commandline.executeCached(send_cmd, null)) {
             task=Commandline.background.submit(() -> btrfs_send.err().forEach(line -> {
@@ -315,9 +314,9 @@ public class Backsnap {
             btrfs_send.erg().forEach(line -> {
                if (lastLine != 0) {
                   lastLine=0;
-                  out.println();
+                  logln(3, "");
                }
-               out.println();
+               logln(3, "");
             });
          } // ende("S");// B
       return true;
@@ -347,10 +346,10 @@ public class Backsnap {
             copyCmd.insert(0, "ssh " + srcSsh + " '").append("'"); // gesamten Befehl senden ;-)
          else
             copyCmd.insert(0, srcSsh); // nur sudo, kein quoting !
-      out.println(copyCmd.toString());// if (!DRYRUN.get())
+      logln(4, copyCmd.toString());// if (!DRYRUN.get())
       try (CmdStream rsync=Commandline.executeCached(copyCmd.toString(), null)) { // not cached
          rsync.backgroundErr();
-         rsync.erg().forEach(out::println);
+         rsync.erg().forEach(t -> logln(4, t));
          for (String line:rsync.errList())
             if (line.contains("No route to host") || line.contains("Connection closed")
                      || line.contains("connection unexpectedly closed")) {
@@ -367,20 +366,20 @@ public class Backsnap {
             remove_cmd.insert(0, x);
          else
             remove_cmd.insert(0, "ssh " + x + " '").append("'");
-      out.println();
-      out.print(remove_cmd);
+      logln(4, "");
+      log(4, remove_cmd.toString());
       // if (!DRYRUN.get())
       try (CmdStream remove_snap=Commandline.executeCached(remove_cmd, null)) {
          remove_snap.backgroundErr();
          remove_snap.erg().forEach(line -> {
             if (lastLine != 0) {
                lastLine=0;
-               out.println();
+               logln(4, "");
             }
-            out.println();
+            logln(4, "");
          });
          remove_snap.waitFor();
-         out.println(" # ");
+         logln(4, " # ");
       }
    }
    /**
@@ -391,7 +390,7 @@ public class Backsnap {
     */
    private static void mkDirs(Path d, String backupSsh) throws IOException {
       if (d.isAbsolute()) {
-         System.out.print(" mkdir:" + d);
+         log(6, " mkdir:" + d);
          if (DRYRUN.get())
             return;
          if (backupSsh.isBlank())
@@ -404,7 +403,7 @@ public class Backsnap {
             mkdirCmd.insert(0, backupSsh);
          try (CmdStream mkdir=Commandline.executeCached(mkdirCmd, null)) {
             mkdir.backgroundErr();
-            if (mkdir.erg().peek(System.out::println).anyMatch(Pattern.compile("mkdir").asPredicate()))
+            if (mkdir.erg().peek(t -> logln(6, t)).anyMatch(Pattern.compile("mkdir").asPredicate()))
                return;
             if (mkdir.errList().isEmpty())
                return;
@@ -418,16 +417,16 @@ public class Backsnap {
     * @param t
     */
    private final static void ende(String t) {
-      out.print("ende:");
+      log(4, "ende:");
       if (task != null)
          try {
             task.get(10, TimeUnit.SECONDS);
          } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
          }
-      out.print(t);
+      log(4, t);
       if (t.startsWith("X")) {
-         out.print(" ready");
+         log(4, " ready");
          if (GUI.get()) {
             if (bsGui != null) {
                JLabel sl=bsGui.getSnapshotName();
@@ -439,7 +438,7 @@ public class Backsnap {
                   JProgressBar  exitBar    =bsGui.getSpeedBar();
                   JToggleButton pauseButton=bsGui.getTglPause();
                   int           countdown  =10;
-                  if (AUTO.getParameterOrDefault("10") instanceof Integer n)
+                  if (AUTO.getParameterOrDefault(10) instanceof Integer n)
                      countdown=n;
                   exitBar.setMaximum(countdown);
                   while (countdown-- > 0) {
@@ -462,15 +461,25 @@ public class Backsnap {
                      Thread.sleep(1000);
                   } catch (InterruptedException ignore) {}
          }
-         out.print(" to");
+         log(4, " to");
          Commandline.background.shutdown();
-         out.print(" exit");
+         log(4, " exit");
          Commandline.cleanup();
-         out.print(" java");
+         log(4, " java");
          if (AUTO.get()) {
             System.exit(0);
          }
       }
-      out.println();
+      logln(4, "");
+   }
+   public static void log(int level, String text) {
+      if (Backsnap.VERBOSE.getParameterOrDefault(1) instanceof Integer v)
+         if (v >= level)
+            System.out.print(text);
+   }
+   public static void logln(int level, String text) {
+      if (Backsnap.VERBOSE.getParameterOrDefault(1) instanceof Integer v)
+         if (v >= level)
+            System.out.println(text);
    }
 }

@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.regex.Pattern;
 
+import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 
@@ -61,7 +62,7 @@ public record Volume(String extern, Path device, String label, String uuid) {
       StringBuilder                         filesystemShowCmd=new StringBuilder("btrfs filesystem show -")
                .append(onlyMounted ? "m" : "d");
       injectSsh(filesystemShowCmd, extern);
-      System.out.println(filesystemShowCmd);
+      Backsnap.logln(7, filesystemShowCmd.toString());
       String cacheKey=filesystemShowCmd.toString();
       try (CmdStream volumeList=Commandline.executeCached(filesystemShowCmd, cacheKey)) {
          volumeList.backgroundErr();

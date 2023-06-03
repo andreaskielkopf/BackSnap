@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 
@@ -83,7 +84,7 @@ public record Mount(SubVolumeList mountList, Path devicePath, Path mountPath, Pa
             btrfsCmd.insert(0, x);
          else
             btrfsCmd.insert(0, "ssh " + x + " '").append("'");
-      System.out.println(btrfsCmd);
+     Backsnap.logln(3,btrfsCmd.toString());
       try (CmdStream snapshotList=Commandline.executeCached(btrfsCmd, keyM())) {
          snapshotList.backgroundErr();
          snapshotList.erg().forEach(line -> {
