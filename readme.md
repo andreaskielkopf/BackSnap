@@ -1,6 +1,7 @@
 # [HowTo] Backup btrfs snapshots with send/receive
 [How it works](./HowItWorks.md),  [deutsch](./backsnap.md) 
- [most recent info :](.gallery/gallery.md) 
+## How to use backsnap
+You find most recent info in [./gallery/gallery.md](.gallery/gallery.md) 
 ## Prologue
 ###### A snapshot is not a backup!
 
@@ -111,7 +112,7 @@ Since `backsnap` must also be started locally as `root`, the ssh connection must
 
 ###### Warnings:
 SSH doesn't work miracles. That can (despite compression and differential backup) only be as fast as
-your network. (1GB/s / 100MB/s / WLAN ??? )
+your network. (10Gbit/s, 1GB/s, 100MB/s, / WLAN ??? )
 
 I will not be able to give any help with SSH problems!
 As long as the program works locally but not over SSH, SSH doesn't seem to be fully set up.
@@ -136,19 +137,19 @@ You can get the uuid with e.g. `lsblk -o name,uuid`
 It is recommended to check the Java version:
 `java -version`
 
-The backsnap.jar file must be stored "somewhere". (Recommended: /usr/local/bin/backsnap.jar).
+The backsnap file must be stored "somewhere". (Recommended: /usr/local/bin/backsnap).
 The call is then made as root.
 
-`java -jar /usr/local/bin/backsnap.jar / /mnt/BackSnap/manjaro21`
+`backsnap / /mnt/BackSnap/manjaro21`
 or
 
-`sudo java -jar /usr/local/bin/backsnap.jar / /mnt/BackSnap/manjaro21`
+`sudo backsnap / /mnt/BackSnap/manjaro21`
 (recomended) or
 
-`ssh root@localhost java -jar /usr/local/bin/backsnap.jar / /mnt/BackSnap/manjaro21`
+`ssh root@localhost backsnap.jar / /mnt/BackSnap/manjaro21`
 or
 
-`java -jar /usr/local/bin/backsnap.jar root@localhost:/ root@localhost:/mnt/BackSnap/manjaro21`
+`backsnap root@localhost:/ root@localhost:/mnt/BackSnap/manjaro21`
 
 ##### Prepare (one time)
   * become root `sudo su -`
@@ -159,18 +160,18 @@ or
  
 ##### Prepare (per PC/Subvolume)
   * become root `sudo su -`
-  * Mount backup medium btrfs subvolume **/BackSnap** (!) to /mnt/BackSnap
+  * Mount backup medium btrfs subvolume **/@BackSnap** (!) to /mnt/BackSnap
   * Create target path for **manjaro21** `mkdir /mnt/BackSnap/manjaro21`
   * Create target path for **home** `mkdir /mnt/BackSnap/manjaro21.home`
   * Create additional target paths for computers/subvolumes as required
-  * Create first backup `java -jar /usr/local/bin/backsnap.jar /home /mnt/BackSnap/manjaro21.home`
+  * Create first backup `backsnap -s /home /mnt/BackSnap/manjaro21.home`
  
 > ATTENTION: this can take quite a long time, so try the smallest subvolume first ;-)
 
   * try again after an hour!
 
 ##### backup script
-After the first manual experiments, a backup script should be created (e.g. in `/usr/local/bin/backsnap.sh` ).
+After the first manual experiments, a backup script should be created (e.g. in `/usr/local/bin/backup.sh` ).
 The desired subvolumes / computers are then mentioned there.
 Btrfs needs root access. So the script must be **executable** and started with **sudo**!
 
@@ -178,43 +179,70 @@ Btrfs needs root access. So the script must be **executable** and started with *
 ###### Example:
 
 ```
-   #!/bin/zsh
-   # Sichern aller aufgelisteten Rechner auf ein angestecktes Laufwerk
-   # BS_UUID=03417033-3745-4ae7-9451-efafcbb9124e
-   BS_MOUNT=/mnt/BackSnap
-   BS_JAR=/usr/local/bin/backsnap.jar
-   
-   # mount aus fstab ;-)
-   
-   # [ -d $BS_MOUNT ] || mount $BS_MOUNT
-   # sudo mount -o noatime,subvol=/,compress=zstd:9 UUID=$BS_UUID $BS_MOUNT
-   # wenn das mounten nicht geklappt hat, ABBRECHEN 
-   # [ -d $BS_MOUNT/@snapshots ] || { echo "Das mounten war nicht erfolgreich"; exit; }
-   [ -d $BS_MOUNT/$BS_HOST ] || { echo "Für $BS_HOST gibt es kein Verzeichnis"; exit; }
-   
-   function backup {
-       BS_SOURCE="$1"
-       BS_DEST="$BS_MOUNT/$2"
-   #    echo "java -jar $BS_JAR $BS_SOURCE $BS_DEST"
-       java -jar $BS_JAR $BS_SOURCE $BS_DEST
-       echo -n " Y" 
-   }
-   
-   # lokal sichern
-   backup "/" "manjaro18"
-   backup "/home" "manjaro18.home"
-   
-   # server sichern
-   backup "root@server:/" "server"
-   backup "root@server:/home" "server.home"
-   
-   # laptop sichern 
-   backup "root@notebook:/" "notebook"
-   backup "root@notebook:/home" "notebook.home"
-   
-   # gast sichern
-   backup "root@gast:/" "gast"
-   backup "root@gast:/home" "gast.home"
-   umount $BS_MOUNT
-   echo "fertig"
+#!/bin/zsh
+# Sichern aller aufgelisteten Rechner auf ein angestecktes Laufwerk
+
+# your mountpoint for backsnap
+BS_MOUNT=/mnt/BackSnap
+# start of the uuid of your backup partition
+BS_ID=03417033
+
+# search for the backup device:
+BS_UUID=$(lsblk -o uuid | grep -E $BS_ID)
+#BS_UUID=03417033-3745-4ae7-9451-efafcbb912..
+# echo "UUID=$BS_UUID LEN=${#BS_UUID}"
+[ ${#BS_UUID} -le 35 ] && 
+    echo "error: backup disk with UUID $BS_ID... is not connected" && exit
+
+# mount backup device:
+WAS_MOUNTED=$(mount | grep -E " $BS_MOUNT ")
+# echo "was mounted=$WAS_MOUNTED"
+[ ${#WAS_MOUNTED} -le 10 ] && 
+    echo "i need to mount $BS_UUID to $BS_MOUNT" && 
+    mount -t btrfs -o subvol=@BackSnap,compress=zstd:9 /dev/disk/by-uuid/$BS_UUID $BS_MOUNT
+mount | grep -E " $BS_MOUNT " ||
+    { echo "error: could not mount $BS_UUID to $BS_MOUNT" && exit }
+
+# activate ssh-askpass for gui usage
+export SSH_ASKPASS_REQUIRE="prefer"
+
+function backup {
+# This script has to be run in a terminal with sudo to get the grapical version !
+    backsnap -g -v=1 -a=15 $1 $BS_MOUNT/$2 || exit
+# alternative cli-version is called:    
+#   backsnap -v3 $1 $BS_MOUNT/$2 || exit    
+    echo  "OK"
+}
+
+# lokal sichern
+backup /     manjaro18
+backup /home manjaro18.home
+
+# server sichern
+backup root@server:/ server
+backup root@server:/home server.home
+backup root@server:/srv server.srv
+
+# jitsi sichern
+backup root@jitsim1:/ jitsim1
+backup root@jitsim1:/home jitsim1.home
+backup root@jitsim1:/opt/hst jitsim1.hst
+backup root@jitsim1:/opt/hugo jitsim1.hugo
+
+# laptop sichern 
+backup root@notebook: notebook
+backup root@notebook:/home notebook.home
+
+# gast sichern
+backup root@gast:/ gast
+backup root@gast:/home gast.home
+
+# Laufwerk unmounten:
+sync
+[ ${#WAS_MOUNTED} -le 10 ] && 
+    echo "i need to umount $BS_MOUNT" && 
+    umount $BS_MOUNT &&
+    sync
+mount | grep -E " $BS_MOUNT "
+echo "fertig mit den Backups"
 ```

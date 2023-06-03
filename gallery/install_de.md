@@ -10,7 +10,7 @@ oder
 
 oder 
 `trizen -S jdk-openjdk`
-### Test als `user` und als `root`:
+#### Test als `user` und als `root`:
 `java -version`
 ```
 openjdk version "19.0.2" 2023-01-17
@@ -35,21 +35,22 @@ Die Installation muß als root erfolgen (oder mit sudo). Sie sollte so erfolgen,
 `echo $PATH`
 #### in /usr/local/bin
 Wenn `/usr/local/bin` in deinem Pfad enthalten ist, ist es das einfachste BackSnap dort zu installieren.
-`wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap.jar -O /usr/local/bin/backsnap.jar`
+`wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/local/bin/backsnap`
 
 BackSnap ausführbar machen
-`chmod a+x /usr/local/bin/backsnap.jar`
+`chmod a+x /usr/local/bin/backsnap`
 #### oder in /usr/bin
 Wenn `/usr/local/bin` nicht in deinem Pfad enthalten ist, ist es das einfachste BackSnap in `/usr/bin` zu installieren.
-`wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap.jar -O /usr/bin/backsnap.jar`
+`wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/bin/backsnap`
 
 BackSnap ausführbar machen
-`chmod a+x /usr/bin/backsnap.jar`
+`chmod a+x /usr/bin/backsnap`
 ### Test als `user` und als `root`:
-`java -jar /usr/local/bin/backsnap.jar -x`
+backsnap -x`
 ```
 args >  -x
 <html> BackSnap <br> Version 0.5.1 <br> (2023/04/22)
 ```
 ----
-Samstag, 29. April 2023 08:47 
+Samstag, 03. Juni 2023 06:22 
+
