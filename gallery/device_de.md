@@ -16,6 +16,7 @@ Es ist Empfehlenswert ein Device zu verwenden, das **deutlich** mehr Speicherpla
 Es ist empfehlenswert das Device mit einer `GPT`-Partitionstabelle zu versehen. Die Partition die zum Backup verwendet werden soll, muß mit `btrfs` formatiert werden. Ich habe mit `gparted` gute Erfahrungen gemacht. Das Label der btrfs-Partition darf beliebig lauten. In meinem Beispiel ist es `Backup`
 
 ### 3. Subvolume @BackSnap anlegen
+Bitte achte genau darauf wo **`BackSnap`** verwendet wird, und wo **`@Backsnap`** verwendet werden muß. Das sind keine Tippfehler.
 #### UUID ermitteln
 ```
 sudo btrfs filesystem show -d`
@@ -82,7 +83,7 @@ sudo mkdir -v /mnt/Backsnap
 ```
 Eine Zeile in die /etc/fstab einfügen die einen mout erleichtert. Die fstab kann z.B. mit `nano` oder `mc` editiert werden. 
 
-Die Zeile könnte wie folgt aussehen. wobei du natürlich die UUID deiner eigenen Partition verwenden mußt. ;-) (siehe oben). Bitte achte genau darauf wo **`BackSnap`** verwendet wird, und wo **`@Backsnap`** verwendet werden muß. Das sind keine Tippfehler.
+Die Zeile könnte wie folgt aussehen. wobei du natürlich die UUID deiner eigenen Partition verwenden mußt. ;-) (siehe oben). 
 ```
 UUID=03417033-4ae7-9451-3745-efafcbb9124e /mnt/BackSnap	btrfs	noauto,rw,noatime,compress=zstd:9,subvol=/@BackSnap	0 0
 ```
