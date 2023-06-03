@@ -32,21 +32,26 @@ oder
 
 ## 3. `BackSnap` installieren
 Die Installation muß als root erfolgen (oder mit sudo). Sie sollte so erfolgen, dass BackSnap sowohl im `$PATH` von **root** als auch im `$PATH` des **users** erreichbar ist.
+
 `echo $PATH`
 #### in /usr/local/bin
 Wenn `/usr/local/bin` in deinem Pfad enthalten ist, ist es das einfachste BackSnap dort zu installieren.
+
 `wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/local/bin/backsnap`
 
 BackSnap ausführbar machen
+
 `chmod a+x /usr/local/bin/backsnap`
 #### oder in /usr/bin
 Wenn `/usr/local/bin` nicht in deinem Pfad enthalten ist, ist es das einfachste BackSnap in `/usr/bin` zu installieren.
+
 `wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/bin/backsnap`
 
 BackSnap ausführbar machen
+
 `chmod a+x /usr/bin/backsnap`
 ### Test als `user` und als `root`:
-backsnap -x`
+`backsnap -x`
 ```
 args >  -x
 <html> BackSnap <br> Version 0.5.1 <br> (2023/04/22)
