@@ -21,6 +21,15 @@ import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
 
 import de.uhingen.kielkopf.andreas.beans.cli.Flag;
 
+/**
+ * License: 'GNU General Public License v3.0'
+ * 
+ * © 2023
+ * 
+ * @author Andreas Kielkopf
+ * @see https://github.com/andreaskielkopf/BackSnap
+ * @see https://forum.manjaro.org/t/howto-hilfsprogramm-fur-backup-btrfs-snapshots-mit-send-recieve
+ */
 public class Backsnap {
    static String              parentKey          =null;
    private static Snapshot    parentSnapshot     =null;
@@ -34,27 +43,20 @@ public class Backsnap {
    private static Mount       refreshBackupVolume=null;
    private static String      refreshBackupDir   =null;
    private static int         textVorhanden      =0;
-   final static Flag          GUI                =new Flag('g', "gui");                                  // show and
-                                                                                                         // wait for
-                                                                                                         // gui
-   final static Flag          AUTO               =new Flag('a', "auto");                                 // automatic
-                                                                                                         // close
-                                                                                                         // on end
-   final static Flag          DRYRUN             =new Flag('d', "dryrun");                               // do not do
-                                                                                                         // anythimg
+   final static Flag          HELP               =new Flag('h', "help");           // show usage
+   final static Flag          VERSION            =new Flag('x', "version");        // show date and version
+   final static Flag          DRYRUN             =new Flag('d', "dryrun");         // do not do anythimg ;-)
+   final static Flag          GUI                =new Flag('g', "gui");            // enable gui (works only with sudo)
+   final static Flag          AUTO               =new Flag('a', "auto");           // auto-close gui when ready
    final static Flag          VERBOSE            =new Flag('v', "verbose");
-   final static Flag          HELP               =new Flag('h', "help");                                 // show usage
-   final static Flag          VERSION            =new Flag('x', "version");                              // show version
-                                                                                                         // info
    final public static String SNAPSHOT           ="snapshot";
    final public static String DOT_SNAPSHOTS      =".snapshots";
    final public static String AT_SNAPSHOTS       ="@snapshots";
-   public final static Flag   SINGLESNAPSHOT     =new Flag('s', "singlesnapshot");                       // make one s
-   public final static Flag   DELETEOLD          =new Flag('o', "deleteold");                            // delete older
-                                                                                                         // s
-   public final static Flag   MINIMUMSNAPSHOTS   =new Flag('m', "keepminimum");                          // keep at
-                                                                                                         // least
-   public static final String BACK_SNAP_VERSION  ="<html> BackSnap <br> Version 0.5.5 <br> (2023/05/08)";
+   public final static Flag   SINGLESNAPSHOT     =new Flag('s', "singlesnapshot"); // backup exactly one snapshot
+   public final static Flag   DELETEOLD          =new Flag('o', "deleteold");      // mark old snapshots for deletion
+   public final static Flag   MINIMUMSNAPSHOTS   =new Flag('m', "keepminimum");    // mark all but minimum snapshots
+   public static final String BACK_SNAP_VERSION  ="<html>"                         // version
+            + " BackSnap <br>" + " Version 0.5.5 <br>" + " (2023/06/01)";
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
       StringBuilder argLine=new StringBuilder("args > ");
@@ -196,10 +198,10 @@ public class Backsnap {
    private static boolean backup(Snapshot srcSnapshot, Mount srcVolume, SnapTree backupMap, String backupDir,
             String srcSsh, String backupSsh, List<SnapConfig> snapConfigs) throws IOException {
       if (bsGui != null) {
-         JLabel sl=bsGui.getSnapshotName();
-         String dirname=srcSnapshot.dirName();
-         String blueDirname=BacksnapGui.BLUE+dirname+BacksnapGui.NORMAL;
-         String text="<html>"+srcSnapshot.btrfsPath().toString().replace(dirname, blueDirname);
+         JLabel sl         =bsGui.getSnapshotName();
+         String dirname    =srcSnapshot.dirName();
+         String blueDirname=BacksnapGui.BLUE + dirname + BacksnapGui.NORMAL;
+         String text       ="<html>" + srcSnapshot.btrfsPath().toString().replace(dirname, blueDirname);
          System.out.println(text);
          sl.setText(text);
          sl.repaint(100);
@@ -330,7 +332,7 @@ public class Backsnap {
       if (line.equals("\n") || line.equals("\r"))
          return;
       bsGui.getLblPvSetText(line);
-//      bsGui.getLblPv().repaint(50);
+      // bsGui.getLblPv().repaint(50);
    }
    private static void rsyncFiles(String srcSsh, String backupSsh, Path sDir, Path bDir) throws IOException {
       StringBuilder copyCmd=new StringBuilder("/bin/rsync -vcptgo --exclude \"" + SNAPSHOT + "\" ");
