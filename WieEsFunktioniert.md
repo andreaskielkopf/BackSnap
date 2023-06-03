@@ -1,11 +1,9 @@
 # Wie es funktioniert:
 [ReadMe](./backsnap.md),  [english](./HowItWorks.md) 
 
-`java -jar /usr/local/bin/backsnap.jar /.snapshots /mnt/BackSnap/manjaro21`
+`backsnap / /mnt/BackSnap/manjaro21`
 
-1. startet java
-2. Verwende eine JAR-Datei
-3. Pfad zu backsnap.jar
+1. starte BackSnap (aus /usr/local/bin)
 4. Pfad zu Quell-Snapshots (sourcedir)
 5. Pfad zum Speichern von Backups der Snapshots (destdir)
 
@@ -29,3 +27,5 @@
 
 #### Führe dabei eine Fehlerprüfung durch
 * Unterbrechen, wenn ein Fehler auftritt
+
+Genaueres zur Installation [hier](gallery/gallery.md)
