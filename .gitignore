@@ -8,3 +8,5 @@
 /build.sh
 /sign.sh
 /backsnap.sh
+/prepare.jar
+/prepare.jardesc
