@@ -58,7 +58,7 @@ Um auf unserem Backup eine gewisse Ordnung einzuhalten, ist es dringend angerate
 
 Ich verwendet für jeden Rechner einen Namen, und für jedes Subvolume den Namen des Mountpoints, und verbinde die zwei durch einen Punkt. Das kann jeder so machen wie er will. Aber später müssen diese Pfade beim Aufruf von `BackSnap` angegeben werden. Es lohnt sich also hier eine gewisse Ordnung zu halten.
 
-Mit den folgenden Befehlen werden die Verzeichnisse angelegt. (Man kann das aber auch mit `mc` tun)
+Mit den folgenden Befehlen werden die Verzeichnisse für die verschiedenen PCs angelegt. (Man kann das aber auch mit `mc` tun). Meine Pcs sind *manjaro23, server, jitsim1, notebook, laptop* und *gast*
 ```
 sudo su -
 cd /mnt/@BackSnap
@@ -81,16 +81,16 @@ sudo umount /mnt
 ```
 sudo mkdir -v /mnt/Backsnap
 ```
-Eine Zeile in die /etc/fstab einfügen die einen mout erleichtert. Die fstab kann z.B. mit `nano` oder `mc` editiert werden. 
-
-Die Zeile könnte wie folgt aussehen. wobei du natürlich die UUID deiner eigenen Partition verwenden mußt. ;-) (siehe oben). 
+###### optional Eintrag in der fstab
+Eine Zeile in die /etc/fstab einfügen die einen mout erleichtert. Die fstab kann z.B. mit `nano` oder `mc` editiert werden.
+Die Zeile könnte wie folgt aussehen. (wobei du natürlich die UUID deiner eigenen Partition verwenden mußt. ;-) (siehe oben). 
 ```
 UUID=03417033-4ae7-9451-3745-efafcbb9124e /mnt/BackSnap	btrfs	noauto,rw,noatime,compress=zstd:9,subvol=/@BackSnap	0 0
 ```
 * Jetzt mußt du dich auch für einen Kompressionslevel entscheiden. Alles zwischen 3 und 13 ist OK. **Ich habe mit `9` gute Erfahrungen gemacht.**.
 * `noauto` verhindert dass die Platte beim Booten automatisch gemountet wird.
 
-### 5. Abschließen und Kontrolle
+### 6. Abschließen und Kontrolle
 ##### Muß leer sein:
 ```
 sudo ls -lA /mnt/BackSnap

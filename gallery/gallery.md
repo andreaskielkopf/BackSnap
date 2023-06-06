@@ -13,7 +13,14 @@ Sonntag, 14. Mai 2023 15:07
 P.S. Sie finden mich im [manjaro-forum](https://forum.manjaro.org/t/howto-hilfsprogramm-fur-backup-btrfs-snapshots-mit-send-recieve/130154) als "andreas85"
 
 ## en
-
+#### [Install](install_en.md)
+#### [Prepare backup medium](device_en.md)
+#### [Try the CLI](clitest_en.md)
+#### ~~Automate CLI~~
+#### ~~[Test GUI](guitest_en.md)~~
+#### ~~GUI by script~~
+#### ~~[use it with ssh](ssh_en.md)~~
+#### [Restore from backup](restore_en.md)
 ## pictures
 <img src="gui_startup.png" width=50% height=50%>
 
