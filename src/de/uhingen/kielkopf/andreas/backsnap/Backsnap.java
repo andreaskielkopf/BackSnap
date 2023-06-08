@@ -107,6 +107,7 @@ public class Backsnap {
             BacksnapGui.main2(args);
             bsGui.setSrc(srcConfig);
             bsGui.setBackup(backupTree, backupDir);
+            bsGui. getSplitPane().setDividerLocation(.35d);
          }
          try {
             usePv=Paths.get("/bin/pv").toFile().canExecute();

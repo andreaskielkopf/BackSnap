@@ -8,7 +8,6 @@ BS_ID=03417033
 
 # search for the backup device:
 BS_UUID=$(lsblk -o uuid | grep -E $BS_ID)
-#BS_UUID=03417033-3745-4ae7-9451-efafcbb912..
 # echo "UUID=$BS_UUID LEN=${#BS_UUID}"
 [ ${#BS_UUID} -le 35 ] && 
     echo "error: backup disk with UUID $BS_ID... is not connected" && exit

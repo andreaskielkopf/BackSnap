@@ -51,7 +51,7 @@ public class BacksnapGui implements MouseListener {
    private JSlider                                     sliderSpace;
    private JCheckBox                                   chckMeta;
    private JSlider                                     sliderMeta;
-   public ConcurrentSkipListMap<String, SnapshotLabel> manualDelete=new ConcurrentSkipListMap<>();
+   public ConcurrentSkipListMap<String, SnapshotLabel> manualDelete =new ConcurrentSkipListMap<>();
    private JPanel                                      panelInfo;
    private JPanel                                      panelProgress;
    private JPanel                                      panelPv;
@@ -61,12 +61,14 @@ public class BacksnapGui implements MouseListener {
    private JProgressBar                                speedBar;
    private JLabel                                      SnapshotName;
    private JToggleButton                               tglPause;
-   public final static String                          BLUE        ="<font size=+1 color=\"3333ff\">";
-   public final static String                          NORMAL      ="</font>";
-   public final static String                          IGEL1       ="<=>";
-   public final static String                          IGEL2       =BLUE + "=O=" + NORMAL;
+   public final static String                          BLUE         ="<font size=+1 color=\"3333ff\">";
+   public final static String                          NORMAL       ="</font>";
+   public final static String                          IGEL1        ="<=>";
+   public final static String                          IGEL2        =BLUE + "=O=" + NORMAL;
    private JLabel                                      lblSpace;
    private JLabel                                      lblMeta;
+   private int                                         DEFAULT_META =249;
+   private int                                         DEFAULT_SPACE=999;
    /**
     * @param args
     */
@@ -91,10 +93,12 @@ public class BacksnapGui implements MouseListener {
       UIManager.put("ProgressBar.selectionForeground", Color.black);
       UIManager.put("ProgressBar.selectionBackground", Color.black);
       initialize();
-      if (Backsnap.DELETEOLD.get())
-         getSliderSpace().setValue(parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), 999));
+      getSliderMeta().setValue(parseIntOrDefault(Backsnap.MINIMUMSNAPSHOTS.getParameter(), DEFAULT_META));
       if (Backsnap.MINIMUMSNAPSHOTS.get())
-         getSliderMeta().setValue(parseIntOrDefault(Backsnap.MINIMUMSNAPSHOTS.getParameter(), 249));
+         flagMeta();
+      getSliderSpace().setValue(parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), DEFAULT_SPACE));
+      if (Backsnap.DELETEOLD.get())
+         flagSpace();
    }
    /**
     * @param snapConfigs
@@ -112,7 +116,13 @@ public class BacksnapGui implements MouseListener {
     */
    private void initialize() {
       frame=new JFrame();
-      frame.setBounds(100, 100, 1280, 960);
+      Dimension screenSize=Toolkit.getDefaultToolkit().getScreenSize();
+      int       width     =Math.min(screenSize.width, 3840 / 2);
+      int       height    =Math.min(screenSize.height, 2160 / 2);
+      int       x         =(screenSize.width <= (3840 / 2)) ? 0 : screenSize.width - (3840 / 2);
+      frame.setBounds(x, 0, width, height);
+      // frame.setResizable(true);
+      // frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
       frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
       frame.getContentPane().add(getPanel(), BorderLayout.NORTH);
       frame.getContentPane().add(getPanelMain(), BorderLayout.CENTER);
@@ -196,7 +206,7 @@ public class BacksnapGui implements MouseListener {
       ConcurrentNavigableMap<String, SnapshotLabel> toDeleteOld         =new ConcurrentSkipListMap<>();
       if (Backsnap.DELETEOLD.get()) {
          if (getPanelSrc().labelTree_DirName.lastEntry() instanceof Entry<String, SnapshotLabel> lastEntry) {
-            int deleteOld=parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), 999);
+            int deleteOld=parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), DEFAULT_SPACE);
             Backsnap.logln(8, "delOld: " + deleteOld);
             SnapshotLabel last   =lastEntry.getValue();
             int           firstNr=parseIntOrDefault(last.snapshot.dirName(), deleteOld) - deleteOld;
@@ -220,9 +230,9 @@ public class BacksnapGui implements MouseListener {
          }
       }
       // MINIMUMSNAPSHOTS
-      int minimum=0;
+      int minimum=DEFAULT_META;
       if (Backsnap.MINIMUMSNAPSHOTS.get())
-         minimum=parseIntOrDefault(Backsnap.MINIMUMSNAPSHOTS.getParameter(), 499);
+         minimum=parseIntOrDefault(Backsnap.MINIMUMSNAPSHOTS.getParameter(), DEFAULT_META);
       ArrayList<SnapshotLabel> mixedList2;
       synchronized (getPanelBackup().mixedList) {
          mixedList2=new ArrayList<>(getPanelBackup().mixedList);
@@ -383,7 +393,7 @@ public class BacksnapGui implements MouseListener {
       getPanelBackup().repaint();
       // System.out.println(sb.toString());
    }
-   private JSplitPane getSplitPane() {
+   public JSplitPane getSplitPane() {
       if (splitPane == null) {
          splitPane=new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, getPanelSrc(), getPanelBackup());
          splitPane.setDividerLocation(.3d);
@@ -449,12 +459,11 @@ public class BacksnapGui implements MouseListener {
          chckSpace.setHorizontalTextPosition(SwingConstants.LEADING);
          chckSpace.addActionListener(e -> flagSpace());
          chckSpace.setSelected(Backsnap.DELETEOLD.get());
-         // flagSpace();
       }
       return chckSpace;
    }
    private void flagMeta() {
-      boolean s=getChckSpace().isSelected();
+      boolean s=getChckMeta().isSelected();
       Backsnap.log(3, "-------------- getChckMeta() actionPerformed");
       Backsnap.MINIMUMSNAPSHOTS.set(s);
       getSliderMeta().setEnabled(s);
@@ -468,7 +477,6 @@ public class BacksnapGui implements MouseListener {
          chckMeta.setHorizontalTextPosition(SwingConstants.LEADING);
          chckMeta.addActionListener(e -> flagMeta());
          chckMeta.setSelected(Backsnap.MINIMUMSNAPSHOTS.get());
-         // flagMeta();
       }
       return chckMeta;
    }
@@ -481,7 +489,7 @@ public class BacksnapGui implements MouseListener {
          sliderSpace.setMinorTickSpacing(200);
          sliderSpace.setPaintTicks(true);
          sliderSpace.setPaintLabels(true);
-         sliderSpace.setValue(999);
+         sliderSpace.setValue(DEFAULT_SPACE - 1);
          Dictionary<Integer, JLabel> labelTable=new Hashtable<>();
          for (int i=0; i <= 5; i++)
             labelTable.put(Integer.valueOf(i * 1000), new JLabel((i == 0) ? "0" : Integer.toString(i) + "T"));
@@ -489,10 +497,10 @@ public class BacksnapGui implements MouseListener {
          sliderSpace.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(final ChangeEvent e) {
+               String text=Integer.toString(getSliderSpace().getValue());
+               getLblSpace().setText(text);
                if (!getSliderSpace().getValueIsAdjusting()) {
-                  int v=getSliderSpace().getValue();
-                  Backsnap.DELETEOLD.setParameter(Integer.toString(v));
-                  getLblSpace().setText(Integer.toString(v));
+                  Backsnap.DELETEOLD.setParameter(text);
                   abgleich();
                }
             }
@@ -509,14 +517,14 @@ public class BacksnapGui implements MouseListener {
          sliderMeta.setMinorTickSpacing(20);
          sliderMeta.setPaintLabels(true);
          sliderMeta.setPaintTicks(true);
-         sliderMeta.setValue(249);
+         sliderMeta.setValue(DEFAULT_META - 1);
          sliderMeta.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(final ChangeEvent e) {
+               String text=Integer.toString(getSliderMeta().getValue());
+               getLblMeta().setText(text);
                if (!getSliderMeta().getValueIsAdjusting()) {
-                  int v=getSliderMeta().getValue();
-                  Backsnap.MINIMUMSNAPSHOTS.setParameter(Integer.toString(v));
-                  getLblMeta().setText(Integer.toString(v));
+                  Backsnap.MINIMUMSNAPSHOTS.setParameter(text);
                   abgleich();
                }
             }
