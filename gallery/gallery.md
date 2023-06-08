@@ -16,10 +16,10 @@ P.S. Sie finden mich im [manjaro-forum](https://forum.manjaro.org/t/howto-hilfsp
 #### [Install](install_en.md)
 #### [Prepare backup medium](device_en.md)
 #### [Try the CLI](clitest_en.md)
-#### ~~Automate CLI~~
+#### [CLI by script](backup_en.de)
 #### ~~[Test GUI](guitest_en.md)~~
-#### ~~GUI by script~~
-#### ~~[use it with ssh](ssh_en.md)~~
+#### [GUI by script](backup_en.md)
+#### [use it with ssh](backup_en.md)
 #### [Restore from backup](restore_en.md)
 ## pictures
 <img src="gui_startup.png" width=50% height=50%>
