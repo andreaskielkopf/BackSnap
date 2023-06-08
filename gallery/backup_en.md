@@ -1,33 +1,33 @@
-# Beispielscripte zum Backup mit backsnap
-Ein Beispielscript für den lokalen Rechner
-Das Script muss in einem **grafischen Terminal** mit **sudo** gestartet werden !
-#### Anpassen nicht vergessen!
-Die Scripte müssen an die lokalen Gegebenheiten angepasst werden. Insbesondere folgende Punkte:
+# Example scripts for backup with backsnap
+An example script for the local computer
+The script must be started in a **graphical terminal** with **sudo** !
+#### Don't forget to adapt!
+The scripts must be adapted to the local conditions. In particular the following points:
 `BS_ID=03417033`
- Das muß ein erkennbarer Teil der UUID der Backup-Partition sein
-`backup /     manjaro18`
- Der erste Parameter zeigt auf den mountpoint des Subvolumes dessen Snapshots gesichert werden sollen
- Der zweite Parameter benennt den Namen der Sicherung
-### lokal
+  This must be a recognizable part of the UUID of the backup partition
+`backup / manjaro18`
+  The first parameter points to the mountpoint of the subvolume whose snapshots are to be backed up
+  The second parameter names the name of the backup
+### local
 
 ```
 #!/bin/sh
-# Alle Snapshots des lokalen Rechners auf ein angestecktes Laufwerk sichern
+# Back up all snapshots of the local machine to an attached drive
 
-# Vorgaben für backsnap
+# Defaults for backsnap
 BS_MOUNT=/mnt/BackSnap
-# Teil der UUID der  backup partition
+# Part of the UUID of the backup partition
 BS_ID=03417033
 # activate ssh-askpass for gui usage
 # export SSH_ASKPASS_REQUIRE="prefer"
 
-# Partition suchen
+# Find partition
 BS_UUID=$(lsblk -o uuid | grep -E $BS_ID)
 #BS_UUID=03417033-3745-4ae7-9451-efafcbb912..
 [ ${#BS_UUID} -le 35 ] && 
     echo "error: backup disk with UUID $BS_ID... is not connected" && exit
 
-# Partition mounten
+# Mount partition
 WAS_MOUNTED=$(mount | grep -E " $BS_MOUNT ")
 [ ${#WAS_MOUNTED} -le 10 ] && 
     echo "i need to mount $BS_UUID to $BS_MOUNT" && 
@@ -42,12 +42,12 @@ function backup {
     echo  "OK"
 }
 
-# lokale Snapshots sichern
+# back up local snapshots
 backup /     manjaro18
 backup /home manjaro18.home
 # ... hier erweitern
 
-# Laufwerk unmounten:
+# Unmount drive:
 sync
 [ ${#WAS_MOUNTED} -le 10 ] && 
     echo "i need to umount $BS_MOUNT" && 
@@ -56,29 +56,29 @@ sync
 mount | grep -E " $BS_MOUNT "
 echo "All backups done"
 ```
-### per ssh
-Ein Beispielscript zum Backup mehrerer Rechner über ssh
-Das Script muss in einem **grafischen Terminal** mit **sudo** gestartet werden !
-ssh muß vorher passend eingerichtet worden sein !
-durch SSH_ASKPASS_REQUIRE wird ein Dialog angezeigt der die Passphrase für den eingesetzten Schlüssel abfragt sobald dieser gebraucht wird.
+### via ssh
+An example script for backing up multiple machines via ssh
+The script must be started in a **graphical terminal** with **sudo** !
+ssh must have been set up appropriately beforehand!
+SSH_ASKPASS_REQUIRE displays a dialog that requests the passphrase for the key used as soon as it is needed.
 ```
 #!/bin/sh
-# Alle Snapshots des lokalen Rechners auf ein angestecktes Laufwerk sichern
+# Back up all snapshots to an attached drive
 
-# Vorgaben für backsnap
+# Defaults for backsnap
 BS_MOUNT=/mnt/BackSnap
-# Teil der UUID der  backup partition
+# Part of the UUID of the backup partition
 BS_ID=03417033
 # activate ssh-askpass for gui usage
 export SSH_ASKPASS_REQUIRE="prefer"
 
-# Partition suchen
+# Find partition
 BS_UUID=$(lsblk -o uuid | grep -E $BS_ID)
 #BS_UUID=03417033-3745-4ae7-9451-efafcbb912..
 [ ${#BS_UUID} -le 35 ] && 
     echo "error: backup disk with UUID $BS_ID... is not connected" && exit
 
-# Partition mounten
+# Mount partition
 WAS_MOUNTED=$(mount | grep -E " $BS_MOUNT ")
 [ ${#WAS_MOUNTED} -le 10 ] && 
     echo "i need to mount $BS_UUID to $BS_MOUNT" && 
@@ -93,30 +93,30 @@ function backup {
     echo  "OK"
 }
 
-# lokale Snapshots sichern
+# back up local snapshots
 backup /     manjaro18
 backup /home manjaro18.home
 
-# server sichern
+# backup server 
 backup root@server:/ server
 backup root@server:/home server.home
 backup root@server:/srv server.srv
 
-# jitsi sichern
+# backup jitsi 
 backup root@jitsim1:/ jitsim1
 backup root@jitsim1:/home jitsim1.home
 backup root@jitsim1:/opt/hst jitsim1.hst
 backup root@jitsim1:/opt/hugo jitsim1.hugo
 
-# laptop sichern 
+# backuplaptop 
 backup root@notebook: notebook
 backup root@notebook:/home notebook.home
 
-# gast sichern
+# backup gast
 backup root@gast:/ gast
 backup root@gast:/home gast.home
 
-# Laufwerk unmounten:
+# Unmount drive:
 sync
 [ ${#WAS_MOUNTED} -le 10 ] && 
     echo "i need to umount $BS_MOUNT" && 
