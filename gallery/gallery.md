@@ -16,7 +16,7 @@ P.S. Sie finden mich im [manjaro-forum](https://forum.manjaro.org/t/howto-hilfsp
 #### [Install](install_en.md)
 #### [Prepare backup medium](device_en.md)
 #### [Try the CLI](clitest_en.md)
-#### [CLI by script](backup_en.de)
+#### [CLI by script](backup_en.md)
 #### ~~[Test GUI](guitest_en.md)~~
 #### [GUI by script](backup_en.md)
 #### [use it with ssh](backup_en.md)

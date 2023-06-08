@@ -56,9 +56,9 @@ sudo btrfs subvolume create /mnt/@BackSnap
 ### 4. Create directories for backing up the volumes
 In order to maintain a certain order on our backup, it is strongly recommended to create a separate area for each PC and each subvolume that is backed up.
 
-I use a name for each host and a mount point name for each subvolume, and connect the two with a period. Everyone can do that as they want. But later these paths must be specified when calling `BackSnap`. It is therefore worthwhile to keep a certain order here.
+I use a name for each host and a mount point name for each subvolume, and connect them with a period. You can do this as you want. But later these paths must be specified when calling `BackSnap`. It is therefore worthwhile to keep a certain order here.
 
-The directories for the various PCs are created with the following commands. (You can also do this with `mc`). My PCs are *manjaro23, server, jitsim1, notebook, laptop* and *guest*
+The directories for the various PCs are created with the following commands. (You can also do this with `mc`). My PCs are *manjaro23, server, jitsim1, notebook, laptop* and *gast*
 ```
 sudo su -
 cd /mnt/@BackSnap
@@ -67,7 +67,7 @@ mkdir -v server server.home server.srv
 mkdir -v jitsim1 jitsim1.home jitsim1.hugo jitsim1.hst
 mkdir -v notebook notebook.home
 mkdir -v laptop laptop.home
-mkdir -v guest guest.home
+mkdir -v gast gast.home
 ```
 Further directories can be added later at any time.
 
