@@ -18,7 +18,7 @@ siehe auch:
 * [Dateien retten aus btrfs (auch wenn das Backup fehlt)](https://forum.manjaro.org/t/how-to-daten-von-einem-beschadigten-btrfs-volume-retten/79400) 
 * [manjaro - wiki zu btrfs](https://wiki.manjaro.org/index.php/Btrfs) 
 * [arch-wiki zu btrfs](https://wiki.archlinux.org/title/Btrfs) 
-* [Btrfs Dokumentation(Read the docs)](https://btrfs.readthedocs.io/en/latest/index.html btrfs.readthedocs.io)
+* [Btrfs Dokumentation(Read the docs)](https://btrfs.readthedocs.io/en/latest/index.html)
 
 ## Hilfsmittel für Lösungen:
 
