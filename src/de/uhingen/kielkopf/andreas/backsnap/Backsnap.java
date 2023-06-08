@@ -55,7 +55,7 @@ public class Backsnap {
    public final static Flag   DELETEOLD          =new Flag('o', "deleteold");      // mark old snapshots for deletion
    public final static Flag   MINIMUMSNAPSHOTS   =new Flag('m', "keepminimum");    // mark all but minimum snapshots
    public static final String BACK_SNAP_VERSION  ="<html>"                         // version
-            + " BackSnap <br>" + " Version 0.5.6 <br>" + " (2023/06/03)";
+            + " BackSnap <br>" + " Version 0.5.7 <br>" + " (2023/06/08)";
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
       StringBuilder argLine=new StringBuilder("args > ");
@@ -107,7 +107,7 @@ public class Backsnap {
             BacksnapGui.main2(args);
             bsGui.setSrc(srcConfig);
             bsGui.setBackup(backupTree, backupDir);
-            bsGui. getSplitPane().setDividerLocation(.35d);
+            bsGui.getSplitPane().setDividerLocation(.35d);
          }
          try {
             usePv=Paths.get("/bin/pv").toFile().canExecute();
@@ -372,15 +372,11 @@ public class Backsnap {
       // if (!DRYRUN.get())
       try (CmdStream remove_snap=Commandline.executeCached(remove_cmd, null)) {
          remove_snap.backgroundErr();
+         logln(1, "");
          remove_snap.erg().forEach(line -> {
-            if (lastLine != 0) {
-               lastLine=0;
-               logln(4, "");
-            }
-            logln(4, "");
+            log(1, line);
          });
          remove_snap.waitFor();
-         logln(4, " # ");
       }
    }
    /**

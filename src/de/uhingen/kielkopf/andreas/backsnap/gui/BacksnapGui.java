@@ -311,6 +311,12 @@ public class BacksnapGui implements MouseListener {
          public void run() {
             jButton.setEnabled(false);
             for (Snapshot snapshot:toRemove) {
+               if (jButton == getBtnMeta())
+                  if (!getChckMeta().isSelected())
+                     continue;
+               if (jButton == getBtnSpace())
+                  if (!getChckSpace().isSelected())
+                     continue;
                try {
                   Backsnap.removeSnapshot(snapshot);
                } catch (IOException e1) { /* */ }
@@ -332,6 +338,7 @@ public class BacksnapGui implements MouseListener {
                if (Backsnap.SINGLESNAPSHOT.get())
                   break;
             }
+            Backsnap.logln(1, "");
             jButton.setEnabled(true);
          }
       });
