@@ -63,8 +63,9 @@ echo "All backups done"
 ### ssh
 #### An example script for backing up multiple machines
 The script must be started in a **graphical terminal** with **sudo** !
-ssh must have been set up appropriately beforehand!
-SSH_ASKPASS_REQUIRE displays a dialog that requests the passphrase for the key used as soon as it is needed.
+
+* ssh must have been set up appropriately beforehand!
+* SSH_ASKPASS_REQUIRE displays a dialog that requests the passphrase for the key as soon as it is needed.
 ```
 #!/bin/sh
 # Back up all snapshots to an attached drive
