@@ -10,8 +10,8 @@ The scripts must be adapted to the local conditions. In particular the following
   
 `backup / manjaro18`
 
-  The first parameter points to the mountpoint of the subvolume whose snapshots are to be backed up
-  The second parameter names the name of the backup
+* The first parameter points to the mountpoint of the subvolume whose snapshots are to be backed up
+* The second parameter names the name of the backup
 ### local
 
 ```
