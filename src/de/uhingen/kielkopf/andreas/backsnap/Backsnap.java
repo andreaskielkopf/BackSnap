@@ -56,6 +56,7 @@ public class Backsnap {
    public final static Flag   MINIMUMSNAPSHOTS   =new Flag('m', "keepminimum");    // mark all but minimum snapshots
    public static final String BACK_SNAP_VERSION  ="<html>"                         // version
             + " BackSnap <br>" + " Version 0.5.7 <br>" + " (2023/06/08)";
+   public static final Object BTRFS_LOCK         =new Object();
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
       StringBuilder argLine=new StringBuilder("args > ");
@@ -244,6 +245,8 @@ public class Backsnap {
          logln(3, " based on " + parentSnapshot.dirName());
       mkDirs(bDir, backupSsh);
       rsyncFiles(srcSsh, backupSsh, sDir, bDir);
+      if (GUI.get())
+         bsGui.mark(srcSnapshot);
       if (sendBtrfs(srcVolume, srcSsh, backupSsh, sDir, bDir, snapConfigs))
          parentSnapshot=srcSnapshot;
       // ende("Xstop");
@@ -281,45 +284,47 @@ public class Backsnap {
          send_cmd.append("'");
       logln(1, send_cmd.toString());
       if (!DRYRUN.get())
-         try (CmdStream btrfs_send=Commandline.executeCached(send_cmd, null)) {
-            task=Commandline.background.submit(() -> btrfs_send.err().forEach(line -> {
-               if (line.contains("ERROR: cannot find parent subvolume"))
-                  Backsnap.canNotFindParent=Backsnap.parentKey;
-               if (line.contains("No route to host") || line.contains("Connection closed")
-                        || line.contains("connection unexpectedly closed"))
-                  Backsnap.connectionLost=10;
-               if (line.contains("<=>")) { // from pv
-                  err.print(line);
-                  show(line);
-                  String lf=(Backsnap.lastLine == 0) ? "\n" : "\r";
-                  err.print(lf);
-                  Backsnap.lastLine=line.length();
-                  if (line.contains(":00 ")) {
-                     err.print("\n");
-                     Backsnap.connectionLost=0;
+         synchronized (BTRFS_LOCK) {
+            try (CmdStream btrfs_send=Commandline.executeCached(send_cmd, null)) {
+               task=Commandline.background.submit(() -> btrfs_send.err().forEach(line -> {
+                  if (line.contains("ERROR: cannot find parent subvolume"))
+                     Backsnap.canNotFindParent=Backsnap.parentKey;
+                  if (line.contains("No route to host") || line.contains("Connection closed")
+                           || line.contains("connection unexpectedly closed"))
+                     Backsnap.connectionLost=10;
+                  if (line.contains("<=>")) { // from pv
+                     err.print(line);
+                     show(line);
+                     String lf=(Backsnap.lastLine == 0) ? "\n" : "\r";
+                     err.print(lf);
+                     Backsnap.lastLine=line.length();
+                     if (line.contains(":00 ")) {
+                        err.print("\n");
+                        Backsnap.connectionLost=0;
+                     }
+                     if (line.contains("0,00 B/s")) {
+                        err.println();
+                        err.println("HipCup");
+                        Backsnap.connectionLost++;
+                     }
+                  } else {
+                     if (Backsnap.lastLine != 0) {
+                        Backsnap.lastLine=0;
+                        err.println();
+                     }
+                     err.println(line);
+                     show(line);
                   }
-                  if (line.contains("0,00 B/s")) {
-                     err.println();
-                     err.println("HipCup");
-                     Backsnap.connectionLost++;
+               }));
+               btrfs_send.erg().forEach(line -> {
+                  if (lastLine != 0) {
+                     lastLine=0;
+                     logln(3, "");
                   }
-               } else {
-                  if (Backsnap.lastLine != 0) {
-                     Backsnap.lastLine=0;
-                     err.println();
-                  }
-                  err.println(line);
-                  show(line);
-               }
-            }));
-            btrfs_send.erg().forEach(line -> {
-               if (lastLine != 0) {
-                  lastLine=0;
                   logln(3, "");
-               }
-               logln(3, "");
-            });
-         } // ende("S");// B
+               });
+            } // ende("S");// B
+         }
       return true;
    }
    static StringBuilder pv=new StringBuilder("- Info -");
@@ -331,7 +336,7 @@ public class Backsnap {
          return;
       if (line.equals("\n") || line.equals("\r"))
          return;
-      bsGui.getLblPvSetText(line);
+      bsGui.lblPvSetText(line);
       // bsGui.getLblPv().repaint(50);
    }
    private static void rsyncFiles(String srcSsh, String backupSsh, Path sDir, Path bDir) throws IOException {
@@ -370,13 +375,29 @@ public class Backsnap {
       logln(4, "");
       log(4, remove_cmd.toString());
       // if (!DRYRUN.get())
-      try (CmdStream remove_snap=Commandline.executeCached(remove_cmd, null)) {
-         remove_snap.backgroundErr();
-         logln(1, "");
-         remove_snap.erg().forEach(line -> {
-            log(1, line);
-         });
-         remove_snap.waitFor();
+      synchronized (BTRFS_LOCK) {
+         if (GUI.get()) {
+            JLabel sl  =bsGui.getSnapshotName();
+            String text="<html>" + s.btrfsPath().toString();
+            logln(7, text);
+            String dirname    =s.dirName();
+            String blueDirname=BacksnapGui.BLUE + dirname + BacksnapGui.NORMAL;
+            sl.setText(text.replace(dirname, blueDirname));
+//            bsGui.lblPvSetText("delete # "+s.dirName());
+            sl.repaint(100);
+            bsGui.mark(s);
+         }
+         try (CmdStream remove_snap=Commandline.executeCached(remove_cmd, null)) {
+            remove_snap.backgroundErr();
+            logln(1, "");
+            remove_snap.erg().forEach(line -> {
+               log(1, line);
+               if (GUI.get()) 
+                  bsGui.lblPvSetText(line);
+               
+            });
+            remove_snap.waitFor();
+         }
       }
    }
    /**

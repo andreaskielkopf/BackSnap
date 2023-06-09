@@ -602,12 +602,12 @@ public class BacksnapGui implements MouseListener {
       }
       return progressBar;
    }
-   public void getLblPvSetText(String s1) {
+   public void lblPvSetText(String s1) {
       String s2="<html>" + s1.replace(' ', '.').replace(IGEL1, IGEL2);
       if (s2.contentEquals(getLblPv().getText()))
          return;
       getLblPv().setText(s2); // System.out.println(s2);
-      getLblPv().repaint(100);
+      getPanelPv().repaint(100);
    }
    private JLabel getLblPv() {
       if (lblPv == null) {
@@ -663,5 +663,20 @@ public class BacksnapGui implements MouseListener {
          lblMeta.setHorizontalAlignment(SwingConstants.CENTER);
       }
       return lblMeta;
+   }
+   /**
+    * @param s
+    */
+   public void mark(Snapshot s) {
+      for (SnapshotLabel sl1:getPanelBackup().labelTree_UUID.values())
+         if (sl1.snapshot == s) {
+            sl1.setBackground(SnapshotLabel.markColor);
+            getPanelBackup().repaint(100);
+         }
+      for (SnapshotLabel sl2:getPanelSrc().labelTree_UUID.values())
+         if (sl2.snapshot == s) {
+            sl2.setBackground(SnapshotLabel.markColor);
+            getPanelSrc().repaint(100);
+         }
    }
 }

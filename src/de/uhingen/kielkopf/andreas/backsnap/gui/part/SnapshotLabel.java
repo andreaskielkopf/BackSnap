@@ -44,6 +44,7 @@ public class SnapshotLabel extends JLabel {
    public final static Color keepColor    =Color.CYAN.brighter();
    public final static Color deleteColor  =Color.RED.brighter();   // darf weg
    public final static Color naheColor    =Color.ORANGE.brighter();
+   public final static Color markColor    =Color.CYAN;
    private void initialize() {
       setBorder(new CompoundBorder(new LineBorder(new Color(0, 0, 0), 2, true), new EmptyBorder(5, 5, 5, 5)));
       setOpaque(true);
