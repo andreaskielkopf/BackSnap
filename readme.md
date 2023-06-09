@@ -1,5 +1,4 @@
 # [HowTo] Backup btrfs snapshots with send/receive
-[How it works](./HowItWorks.md),  [deutsch](./backsnap.md) 
 ## How to use backsnap
 You find most recent info in [gallery/gallery.md](gallery/gallery.md) 
 ## Prologue
