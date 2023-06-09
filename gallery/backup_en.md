@@ -1,11 +1,15 @@
 # Example scripts for backup with backsnap
-An example script for the local computer
+#### An example script for the local computer
 The script must be started in a **graphical terminal** with **sudo** !
 #### Don't forget to adapt!
 The scripts must be adapted to the local conditions. In particular the following points:
+
 `BS_ID=03417033`
+
   This must be a recognizable part of the UUID of the backup partition
+  
 `backup / manjaro18`
+
   The first parameter points to the mountpoint of the subvolume whose snapshots are to be backed up
   The second parameter names the name of the backup
 ### local
@@ -56,8 +60,8 @@ sync
 mount | grep -E " $BS_MOUNT "
 echo "All backups done"
 ```
-### via ssh
-An example script for backing up multiple machines via ssh
+### ssh
+#### An example script for backing up multiple machines
 The script must be started in a **graphical terminal** with **sudo** !
 ssh must have been set up appropriately beforehand!
 SSH_ASKPASS_REQUIRE displays a dialog that requests the passphrase for the key used as soon as it is needed.
