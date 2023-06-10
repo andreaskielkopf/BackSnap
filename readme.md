@@ -1,5 +1,5 @@
 # [HowTo] Backup btrfs snapshots with send/receive
-## How to use backsnap
+## How to use BackSnap
 You find most recent info in [gallery/gallery.md](gallery/gallery.md) 
 ## Prologue
 ###### A snapshot is not a backup!
@@ -35,7 +35,7 @@ At best, the external disk should only be connected to the computer for a short 
 
 Btrfs then corresponds to 3-2-1 Backup (Near CDP)
 
-## Goals of backsnap:
+## Goals of BackSnap:
 **Simple external backup** of a complete (btrfs) subvolume
 
 * Back up **all** snapshots
@@ -66,8 +66,8 @@ Btrfs then corresponds to 3-2-1 Backup (Near CDP)
 * Recommended: external backup medium e.g. USB3 hard drive
 * Recommended: your own bash script to start the backup easily
 
-# Backsnap:
-The Java program Backsnap backs up ALL snapshots from a specified directory to another directory on a
+# BackSnap:
+The Java program BackSnap backs up ALL snapshots from a specified directory to another directory on a
 backup medium. To do this, it uses **btrfs send** and **btrfs receive**.
 
 ##### Source (snapshots)
