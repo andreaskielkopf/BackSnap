@@ -84,10 +84,11 @@ public record Mount(SubVolumeList mountList, Path devicePath, Path mountPath, Pa
             btrfsCmd.insert(0, x);
          else
             btrfsCmd.insert(0, "ssh " + x + " '").append("'");
-     Backsnap.logln(3,btrfsCmd.toString());
+      Backsnap.logln(3, btrfsCmd.toString());
       try (CmdStream snapshotList=Commandline.executeCached(btrfsCmd, keyM())) {
          snapshotList.backgroundErr();
          snapshotList.erg().forEach(line -> {
+            Backsnap.logln(9, line);
             Matcher mn=NAME.matcher(line);
             if (mn.find())
                name.add("/" + mn.group(1));// store Name: ...
@@ -97,7 +98,7 @@ public record Mount(SubVolumeList mountList, Path devicePath, Path mountPath, Pa
                   if (ms.find()) {
                      Path     btrfsPath1=Path.of("/", ms.group(1));
                      Snapshot snapshot  =snapTree.btrfsPathMap().get(btrfsPath1);
-                     if (snapshot != null) {
+                     if ((snapshot != null) && (snapshot.mount() != null)) {
                         if (!snapshot.mount().mountPath.startsWith(this.mountPath))
                            System.err.println("Mount passt nicht für: " + this + " -> " + snapshot);
                         btrfsMap.put(btrfsPath1, snapshot);
