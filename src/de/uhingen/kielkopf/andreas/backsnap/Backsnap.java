@@ -55,7 +55,7 @@ public class Backsnap {
    public final static Flag   DELETEOLD          =new Flag('o', "deleteold");      // mark old snapshots for deletion
    public final static Flag   MINIMUMSNAPSHOTS   =new Flag('m', "keepminimum");    // mark all but minimum snapshots
    public static final String BACK_SNAP_VERSION  ="<html>"                         // version
-            + " BackSnap <br>" + " Version 0.5.7.1 <br>" + " (2023/06/12)";
+            + " BackSnap <br>" + " Version 0.5.7.2 <br>" + " (2023/06/12)";
    public static final Object BTRFS_LOCK         =new Object();
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
