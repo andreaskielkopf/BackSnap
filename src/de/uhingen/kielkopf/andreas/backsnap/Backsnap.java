@@ -55,7 +55,7 @@ public class Backsnap {
    public final static Flag   DELETEOLD          =new Flag('o', "deleteold");      // mark old snapshots for deletion
    public final static Flag   MINIMUMSNAPSHOTS   =new Flag('m', "keepminimum");    // mark all but minimum snapshots
    public static final String BACK_SNAP_VERSION  ="<html>"                         // version
-            + " BackSnap <br>" + " Version 0.5.7.2 <br>" + " (2023/06/12)";
+            + " BackSnap <br>" + " Version 0.5.7.3 <br>" + " (2023/06/12)";
    public static final Object BTRFS_LOCK         =new Object();
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
@@ -230,6 +230,7 @@ public class Backsnap {
       Path sDir=srcSnapshot.getPathOn(srcVolume.mountPath(), snapConfigs);
       if (sDir == null)
          throw new FileNotFoundException("Could not find dir: " + srcVolume);
+      logln(9, "Paths.get(backupDir=" + backupDir + " dirName=" + srcSnapshot.dirName() + ")");
       Path bDir    =Paths.get(backupDir, srcSnapshot.dirName());
       Path relMdir =backupMap.mount().mountPath().relativize(bDir);
       Path bpq     =backupMap.mount().btrfsPath().resolve(relMdir);
@@ -383,7 +384,7 @@ public class Backsnap {
             String dirname    =s.dirName();
             String blueDirname=BacksnapGui.BLUE + dirname + BacksnapGui.NORMAL;
             sl.setText(text.replace(dirname, blueDirname));
-//            bsGui.lblPvSetText("delete # "+s.dirName());
+            // bsGui.lblPvSetText("delete # "+s.dirName());
             sl.repaint(100);
             bsGui.mark(s);
          }
@@ -392,9 +393,8 @@ public class Backsnap {
             logln(1, "");
             remove_snap.erg().forEach(line -> {
                log(1, line);
-               if (GUI.get()) 
+               if (GUI.get())
                   bsGui.lblPvSetText(line);
-               
             });
             remove_snap.waitFor();
          }
