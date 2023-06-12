@@ -6,6 +6,8 @@ package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 import java.nio.file.Path;
 import java.util.*;
 
+import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
+
 /**
  * @author Andreas Kielkopf
  *
@@ -25,8 +27,7 @@ public record SnapConfig(Mount original, Mount kopie) {
          o: for (Snapshot o:original.btrfsMap().values()) {
             Path btrfsPath=o.btrfsPath();
             for (Mount kopie:srcSubVolumes.mountTree().values()) { // über alle subvolumes laufen
-               if (!original.devicePath().equals(kopie.devicePath())) // nur auf dem selben device kann es snapshots
-                                                                      // geben
+               if (!original.devicePath().equals(kopie.devicePath())) // nur auf diesem device kann es snapshots geben
                   continue;
                Path sdir=kopie.btrfsPath();
                int  le2 =kopie.btrfsMap().size();
@@ -52,10 +53,22 @@ public record SnapConfig(Mount original, Mount kopie) {
    }
    public static SnapConfig getConfig(List<SnapConfig> list, Path srcDir) {
       for (SnapConfig snapConfig:list) {
+         Backsnap.logln(9, snapConfig.toString());
          if (snapConfig.original.mountPath().equals(srcDir))
             return snapConfig;
          if (snapConfig.kopie.mountPath().equals(srcDir))
             return snapConfig;
-      }return null;
+      }
+      return null;
+   }
+   @Override
+   public String toString() {
+      StringBuilder builder=new StringBuilder();
+      builder.append("SnapConfig [original=");
+      builder.append(original.mountPath());
+      builder.append(", kopie=");
+      builder.append(kopie.mountPath());
+      builder.append("]");
+      return builder.toString();
    }
 }

@@ -82,7 +82,7 @@ public class Backsnap {
          List<SnapConfig> snapConfigs  =SnapConfig.getList(srcSubVolumes);
          SnapConfig       srcConfig    =SnapConfig.getConfig(snapConfigs, srcDir);
          if (srcConfig == null)
-            throw new RuntimeException("Could not find srcDir: " + srcDir);
+            throw new RuntimeException("Could not find snapshots for srcDir: " + srcDir);
          if (srcConfig.original().btrfsMap().isEmpty())
             throw new RuntimeException("Ingnoring, because there are no snapshots in: " + srcDir);
          logln(1, "Backup snapshots from " + srcConfig.original().keyM());
