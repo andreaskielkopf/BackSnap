@@ -93,8 +93,8 @@ public class BacksnapGui implements MouseListener {
       UIManager.put("ProgressBar.selectionForeground", Color.black);
       UIManager.put("ProgressBar.selectionBackground", Color.black);
       initialize();
-      getSliderMeta().setValue(parseIntOrDefault(Backsnap.MINIMUMSNAPSHOTS.getParameter(), DEFAULT_META));
-      if (Backsnap.MINIMUMSNAPSHOTS.get())
+      getSliderMeta().setValue(parseIntOrDefault(Backsnap.KEEP_MINIMUM.getParameter(), DEFAULT_META));
+      if (Backsnap.KEEP_MINIMUM.get())
          flagMeta();
       getSliderSpace().setValue(parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), DEFAULT_SPACE));
       if (Backsnap.DELETEOLD.get())
@@ -229,10 +229,10 @@ public class BacksnapGui implements MouseListener {
             child=parent;
          }
       }
-      // MINIMUMSNAPSHOTS
+      // KEEP_MINIMUM
       int minimum=DEFAULT_META;
-      if (Backsnap.MINIMUMSNAPSHOTS.get())
-         minimum=parseIntOrDefault(Backsnap.MINIMUMSNAPSHOTS.getParameter(), DEFAULT_META);
+      if (Backsnap.KEEP_MINIMUM.get())
+         minimum=parseIntOrDefault(Backsnap.KEEP_MINIMUM.getParameter(), DEFAULT_META);
       ArrayList<SnapshotLabel> mixedList2;
       synchronized (getPanelBackup().mixedList) {
          mixedList2=new ArrayList<>(getPanelBackup().mixedList);
@@ -472,7 +472,7 @@ public class BacksnapGui implements MouseListener {
    private void flagMeta() {
       boolean s=getChckMeta().isSelected();
       Backsnap.log(3, "-------------- getChckMeta() actionPerformed");
-      Backsnap.MINIMUMSNAPSHOTS.set(s);
+      Backsnap.KEEP_MINIMUM.set(s);
       getSliderMeta().setEnabled(s);
       getBtnMeta().setEnabled(s);
       if (s)
@@ -483,7 +483,7 @@ public class BacksnapGui implements MouseListener {
          chckMeta=new JCheckBox("-m, --keepminimum");
          chckMeta.setHorizontalTextPosition(SwingConstants.LEADING);
          chckMeta.addActionListener(e -> flagMeta());
-         chckMeta.setSelected(Backsnap.MINIMUMSNAPSHOTS.get());
+         chckMeta.setSelected(Backsnap.KEEP_MINIMUM.get());
       }
       return chckMeta;
    }
@@ -531,7 +531,7 @@ public class BacksnapGui implements MouseListener {
                String text=Integer.toString(getSliderMeta().getValue());
                getLblMeta().setText(text);
                if (!getSliderMeta().getValueIsAdjusting()) {
-                  Backsnap.MINIMUMSNAPSHOTS.setParameter(text);
+                  Backsnap.KEEP_MINIMUM.setParameter(text);
                   abgleich();
                }
             }
