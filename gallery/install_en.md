@@ -37,19 +37,19 @@ The installation must be done as root (or with sudo). It should be done in such 
 #### in /usr/local/bin
 If `/usr/local/bin` is in your path, it's easiest to install BackSnap there.
 
-`wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/local/bin/backsnap`
+`sudo wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/local/bin/backsnap`
 
 Make BackSnap executable
 
-`chmod a+x /usr/local/bin/backsnap`
+`sudo chmod a+x /usr/local/bin/backsnap`
 #### or in /usr/bin
 If `/usr/local/bin` is not in your path, the easiest way is to install BackSnap in `/usr/bin`.
 
-`wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/bin/backsnap`
+`sudo wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/bin/backsnap`
 
 Make BackSnap executable
 
-`chmod a+x /usr/bin/backsnap`
+`sudo chmod a+x /usr/bin/backsnap`
 ### Test as `user` and as `root`:
 `backsnap -x`
 ```
