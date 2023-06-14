@@ -15,17 +15,19 @@ Die Scripte müssen an die lokalen Gegebenheiten angepasst werden. Insbesondere 
 # Alle Snapshots des lokalen Rechners auf ein angestecktes Laufwerk sichern
 
 # Vorgaben für backsnap
-BS_MOUNT=/mnt/BackSnap
+BS_MOUNT='/mnt/BackSnap'
 # Teil der UUID der  backup partition
-BS_ID=03417033
-# activate ssh-askpass for gui usage
+BS_ID='0341703'
+# activate ssh-askpass for gui usage with ssh
 # export SSH_ASKPASS_REQUIRE="prefer"
 
 # Partition suchen
-BS_UUID=$(lsblk -o uuid | grep -E $BS_ID)
-#BS_UUID=03417033-3745-4ae7-9451-efafcbb912..
-[ ${#BS_UUID} -le 35 ] && 
-    echo "error: backup disk with UUID $BS_ID... is not connected" && exit
+BS_UUID=$( lsblk -no FSTYPE,UUID | grep "$BS_ID" | grep -Po '(?<=btrfs  ).{36}$' ) 
+# BS_UUID="03417033-3745-4ae7-9451-efafcbb9124...."
+if [ ${#BS_UUID} -ne 36 ]; then 
+    echo "error: backup disk with UUID $BS_ID... is not connected" 
+    exit
+fi
 
 # Partition mounten
 WAS_MOUNTED=$(mount | grep -E " $BS_MOUNT ")

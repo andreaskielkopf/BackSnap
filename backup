@@ -5,6 +5,8 @@
 BS_MOUNT=/mnt/BackSnap
 # start of the uuid of your backup partition
 BS_ID=03417033
+# activate ssh-askpass for gui usage
+export SSH_ASKPASS_REQUIRE="prefer"
 
 # search for the backup device:
 BS_UUID=$(lsblk -o uuid | grep -E $BS_ID)
@@ -20,9 +22,6 @@ WAS_MOUNTED=$(mount | grep -E " $BS_MOUNT ")
     mount -t btrfs -o subvol=@BackSnap,compress=zstd:9 /dev/disk/by-uuid/$BS_UUID $BS_MOUNT
 mount | grep -E " $BS_MOUNT " ||
     { echo "error: could not mount $BS_UUID to $BS_MOUNT" && exit }
-
-# activate ssh-askpass for gui usage
-export SSH_ASKPASS_REQUIRE="prefer"
 
 function backup {
 # This script has to be run in a terminal with sudo to get the grapical version !
