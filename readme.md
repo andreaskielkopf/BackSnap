@@ -54,7 +54,7 @@ Btrfs then corresponds to 3-2-1 Backup (Near CDP)
 * Backup of the current state of a subvolume
 
 ##### Desirable side effects
-* The **backup strategy** is already defined in snapper/Timeshift, and is involved here
+* The **backup strategy** is already defined in snapper~~/Timeshift~~, and is involved here
 * The backup is compressed, but at the same time all snapshots in the backup are **always fully read-only accessible**
 
 ## Requirements:
