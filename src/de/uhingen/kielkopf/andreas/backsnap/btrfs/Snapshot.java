@@ -94,21 +94,20 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       return btrfsPath.toString();
    }
    public String keyO() {
-      StringBuilder sb=new StringBuilder();
-      if (mount == null)
-         sb.append("null:");
-      else
-         sb.append(mount().keyM());
-      sb.append(otime());
-      sb.append(id());
-      return sb.toString();
+      return new StringBuilder((mount == null) ? "null:" : mount().keyM()).append(otime()).append(id())
+               .append(btrfsPath().getFileName()).toString();
    }
    final public static String dir2key(String dir) { // ??? numerisch sortieren ;-)
       return (dir.length() >= SORT_LEN) ? dir : ".".repeat(SORT_LEN - dir.length()).concat(dir);
    }
    public String dirName() {
       Matcher m=DIRNAME.matcher(btrfsPath.toString());
-      return (m.find()) ? m.group(1) : null;
+      if (m.find())
+         return m.group(1);
+      String dn=btrfsPath.getParent().getFileName().toString();
+      // if (Backsnap.TIMESHIFT.get())
+      // dn+="/" + btrfsPath.getFileName().toString();
+      return dn;
    }
    /**
     * @return Mount dieses Snapshots sofern im Pfad enthalten
@@ -125,9 +124,25 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
     * 
     * @return mountpoint oder null
     */
-   public Path getMountPath() {
+   public Path getBackupMountPath() {
       if (mount == null)
          return null;
+      Path rel=mount.btrfsPath().relativize(btrfsPath);
+      Path abs=mount.mountPath().resolve(rel);
+      return abs;
+   }
+   public Path getSnapshotMountPath() {
+      if (mount == null)
+         return null;
+      if (Backsnap.TIMESHIFT.get()) {
+         Optional<Mount> om=mount.pc().getTimeshiftBase();
+         if (om.isPresent())
+            if (om.get().devicePath().equals(mount.devicePath())) {
+               Path rel=Path.of("/").relativize(btrfsPath);
+               Path abs=om.get().mountPath().resolve(rel);
+               return abs;
+            }
+      }
       Path rel=mount.btrfsPath().relativize(btrfsPath);
       Path abs=mount.mountPath().resolve(rel);
       return abs;
@@ -147,21 +162,30 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       // if (btrfsPath1.toString().contains("20318"))
       // System.out.println(btrfsPath1);
       Path  b2 =btrfsPath1;
-      Mount erg=null;
-      for (Mount mount1:mount0.mountList().mountTree().values())
-         if (mount0.devicePath().equals(mount1.devicePath())) // only from same device
-            if (b2.startsWith(mount1.btrfsPath())) // only if same path or starts with the same path
-               if ((erg == null) || (erg.btrfsPath().getNameCount() < mount1.btrfsPath().getNameCount()))
-                  erg=mount1;
-      // if ((erg == null) && (btrfsPath1.toString().contains("20318")))
-      // return null;
+      Mount erg=null;    // default ?
+      if (!b2.toString().contains("timeshift-btrfs")) {
+         for (Mount mount1:mount0.pc().mounts().values())
+            if (mount0.devicePath().equals(mount1.devicePath())) // only from same device
+               if (b2.startsWith(mount1.btrfsPath())) // only if same path or starts with the same path
+                  if ((erg == null) || (erg.btrfsPath().getNameCount() < mount1.btrfsPath().getNameCount()))
+                     erg=mount1;
+      } else {
+         for (Mount mount1:mount0.pc().mounts().values())
+            if (mount0.devicePath().equals(mount1.devicePath())) // only from same device
+               if (b2.getFileName().equals(mount1.btrfsPath().getFileName())) // only if ends with the same path
+                  if ((erg == null) || (erg.btrfsPath().getNameCount() < mount1.btrfsPath().getNameCount()))
+                     erg=mount1;
+      }
+      if (erg == null)
+         if (b2.toString().contains("ack"))
+            return null;
       return erg;
    }
-   public Path getPathOn(Path root, List<SnapConfig> snapConfigs) {
-      Path rp=mount.btrfsPath().relativize(btrfsPath());
-      Path ap=mount.mountPath().resolve(rp);
-      return ap;
-   }
+   // public Path getPathOn(Path root, List<SnapConfig> snapConfigs) {
+   // Path rp=mount.btrfsPath().relativize(btrfsPath());
+   // Path ap=mount.mountPath().resolve(rp);
+   // return ap;
+   // }
    public Stream<Entry<String, String>> getInfo() {
       Map<String, String> infoMap=new TreeMap<>();
       // infoMap.put("0 mount", mount.mountPath().toString());
@@ -172,11 +196,11 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       // infoMap.put("3 mountPath", getMountPath().toString());
       infoMap.put("d parent_uuid", parent_uuid);
       infoMap.put("e received_uuid", received_uuid);
-//      infoMap.put("g gen", gen.toString());
-//      infoMap.put("h cgen", cgen.toString());
-//      infoMap.put("i id", id.toString());
-//      infoMap.put("j top_level", top_level.toString());
-//      infoMap.put("k parent", parent.toString());
+      // infoMap.put("g gen", gen.toString());
+      // infoMap.put("h cgen", cgen.toString());
+      // infoMap.put("i id", id.toString());
+      // infoMap.put("j top_level", top_level.toString());
+      // infoMap.put("k parent", parent.toString());
       infoMap.put("m key", key());
       return infoMap.entrySet().parallelStream();
    }
@@ -197,18 +221,18 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          if (sourceDir.endsWith("//"))
             sourceDir=sourceDir.substring(0, sourceDir.length() - 2);
          // SrcVolume ermitteln
-         SubVolumeList subVolumes=new SubVolumeList(externSsh);
+         SubVolumeList subVolumes=new SubVolumeList(new Pc(externSsh));
          Mount         srcVolume =subVolumes.mountTree().get(sourceDir);
          if (srcVolume == null)
             throw new RuntimeException("Could not find srcDir: " + sourceDir);
          if (srcVolume.btrfsMap().isEmpty())
             throw new RuntimeException("Ingnoring, because there are no snapshots in: " + sourceDir);
-         Backsnap.logln( 1,"backup snapshots from: " + srcVolume.keyM());
+         Backsnap.logln(1, "backup snapshots from: " + srcVolume.keyM());
          // BackupVolume ermitteln
          Mount backupVolume=subVolumes.getBackupVolume(backupDir);
          if (backupVolume == null)
             throw new RuntimeException("Could not find backupDir: " + backupDir);
-         Backsnap.logln( 1,"Will try to use backupDir: " + backupVolume.keyM());
+         Backsnap.logln(1, "Will try to use backupDir: " + backupVolume.keyM());
          // Subdir ermitteln
          Path pathBackupDir=backupVolume.mountPath().relativize(Path.of(backupDir));
          System.out.println(pathBackupDir);
@@ -228,15 +252,15 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          Mount backupVolumeMount=subVolumes.getBackupVolume(null);
          System.out.println(backupVolumeMount);
          System.exit(-9);
-         List<Snapshot> snapshots=new ArrayList<>();
-         StringBuilder  cmd      =new StringBuilder("btrfs subvolume list -aspuqR ").append(backupDir);
+         List<Snapshot> snapshots       =new ArrayList<>();
+         StringBuilder  subvolumeListCmd=new StringBuilder("btrfs subvolume list -aspuqR ").append(backupDir);
          if ((externSsh instanceof String x) && (!x.isBlank()))
             if (x.startsWith("sudo "))
-               cmd.insert(0, x);
+               subvolumeListCmd.insert(0, x);
             else
-               cmd.insert(0, "ssh " + x + " '").append("'");
-         System.out.println(cmd);
-         try (CmdStream std=Commandline.executeCached(cmd, null)) {
+               subvolumeListCmd.insert(0, "ssh " + x + " '").append("'");
+         System.out.println(subvolumeListCmd);
+         try (CmdStream std=Commandline.executeCached(subvolumeListCmd, null)) {
             std.backgroundErr();
             std.erg().forEach(line -> {
                try {

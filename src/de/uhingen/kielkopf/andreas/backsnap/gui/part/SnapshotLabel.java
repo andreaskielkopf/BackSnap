@@ -69,8 +69,7 @@ public class SnapshotLabel extends JLabel {
    }
    @Override
    public String toString() {
-      StringBuilder sb=new StringBuilder(snapshot.dirName());
-      return sb.toString();
+      return new StringBuilder(snapshot.dirName()).toString();
    }
    @Override
    public synchronized void addMouseListener(MouseListener l) {

@@ -172,8 +172,8 @@ public class BacksnapGui implements MouseListener {
    public void setSrc(SnapConfig srcConfig) {
       int                                     linefeeds=0;
       StringBuilder                           sb       =new StringBuilder("Src:");
-      ConcurrentSkipListMap<String, Snapshot> neuList  =getPanelSrc().setVolume(srcConfig.original(),
-               srcConfig.original().otimeKeyMap().values());
+      ConcurrentSkipListMap<String, Snapshot> neuList  =getPanelSrc().setVolume(srcConfig.volumeMount(),
+               srcConfig.volumeMount().otimeKeyMap().values());
       for (Snapshot snap:neuList.values()) {
          sb.append(" ").append(snap.dirName());
          if ((sb.length() / 120) > linefeeds) {
@@ -184,10 +184,10 @@ public class BacksnapGui implements MouseListener {
       Backsnap.logln(2, sb.toString());
       abgleich();
       sb.setLength(0);
-      sb.append("<html>Snapshots of ").append(BLUE).append(srcConfig.original().mountList().extern()).append(NORMAL);
-      sb.append(": ").append(srcConfig.original().devicePath());
-      sb.append(" subvolume->").append(srcConfig.original().btrfsPath());
-      sb.append(" (mounted as ").append(BLUE).append(srcConfig.original().mountPath()).append(NORMAL).append(")");
+      sb.append("<html>Snapshots of ").append(BLUE).append(srcConfig.volumeMount().pc().extern()).append(NORMAL);
+      sb.append(": ").append(srcConfig.volumeMount().devicePath());
+      sb.append(" subvolume->").append(srcConfig.volumeMount().btrfsPath());
+      sb.append(" (mounted as ").append(BLUE).append(srcConfig.volumeMount().mountPath()).append(NORMAL).append(")");
       getPanelSrc().setTitle(sb.toString());
       getPanelSrc().repaint();
       // System.out.println(sb.toString());
@@ -369,7 +369,7 @@ public class BacksnapGui implements MouseListener {
       ConcurrentSkipListMap<String, Snapshot> passendBackups=new ConcurrentSkipListMap<>();
       Path                                    rest          =Path.of("/", backupDir);
       for (Snapshot snapshot:backupTree.dateMap().values()) { // sortiert nach otime
-         Path pfad=snapshot.getMountPath();
+         Path pfad=snapshot.getBackupMountPath();
          if (pfad == null)
             continue;
          if (pfad.startsWith(rest))
@@ -392,7 +392,7 @@ public class BacksnapGui implements MouseListener {
       abgleich();
       sb.setLength(0);
       sb.append("<html>Backup to ").append(BLUE).append(rest.getFileName()).append(NORMAL);
-      sb.append(" on ").append(backupTree.mount().mountList().extern());
+      sb.append(" on ").append(backupTree.mount().pc().extern());
       sb.append(": ").append(backupTree.mount().devicePath());
       sb.append(" subvolume->").append(backupTree.mount().btrfsPath());
       sb.append(" (mounted as ").append(BLUE).append(backupTree.mount().mountPath()).append(NORMAL).append(")");

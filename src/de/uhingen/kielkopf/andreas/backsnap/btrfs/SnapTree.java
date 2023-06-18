@@ -35,17 +35,21 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
    }
    private void populate() throws IOException {// otime kommt nur bei snapshots
       // mit -a bekommt man alle Snapshots für dieses Device
-      StringBuilder btrfsCmd=new StringBuilder("btrfs subvolume list -aspcguqR ").append(mount.mountPath());
-      if ((mount.mountList().extern() instanceof String x) && (!x.isBlank()))
-         if (x.startsWith("sudo "))
-            btrfsCmd.insert(0, x);
-         else
-            btrfsCmd.insert(0, "ssh " + x + " '").append("'");
-      Backsnap.logln( 3,btrfsCmd.toString());
-      try (CmdStream snapshotList=Commandline.executeCached(btrfsCmd, mount.keyD())) {
-         snapshotList.backgroundErr();
-         snapshotList.erg().forEachOrdered(line -> {
+      StringBuilder subvolumeListCmd=new StringBuilder("btrfs subvolume list -apcguqR ").append(mount.mountPath());
+      String        cmd             =mount.pc().getCmd(subvolumeListCmd);
+      // if ((mount.extern() instanceof String x) && (!x.isBlank()))
+      // if (x.startsWith("sudo "))
+      // subvolumeListCmd.insert(0, x);
+      // else
+      // subvolumeListCmd.insert(0, "ssh " + x + " '").append("'");
+      Backsnap.logln(3, cmd);
+      try (CmdStream snapshotStream=Commandline.executeCached(cmd, mount.keyD())) {
+         snapshotStream.backgroundErr();
+         snapshotStream.erg().forEachOrdered(line -> {
             try {
+               if (line.contains("timeshift"))
+                  Backsnap.logln(8, line);
+               
                Snapshot snapshot=new Snapshot(mount, line);
                btrfsPathMap.put(snapshot.btrfsPath(), snapshot);// nach pfad sortiert
                uuidMap.put(snapshot.uuid(), snapshot);
@@ -57,7 +61,7 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
                e.printStackTrace();
             }
          });
-         for (String line:snapshotList.errList())
+         for (String line:snapshotStream.errList())
             if (line.contains("No route to host") || line.contains("Connection closed")
                      || line.contains("connection unexpectedly closed"))
                throw new IOException(line);
@@ -77,16 +81,16 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
       String deviceKey=mount2.keyD();
       if (!snapTreeCache.containsKey(deviceKey)) {
          snapTreeCache.put(deviceKey, new SnapTree(mount2));
-         Backsnap.logln(8,"set " + deviceKey + " into treeCache");
+         Backsnap.logln(8, "set " + deviceKey + " into treeCache");
       } else
-         Backsnap.logln(8,"take " + deviceKey + " from treeCache");
+         Backsnap.logln(8, "take " + deviceKey + " from treeCache");
       return snapTreeCache.get(deviceKey);
    }
    @Override
    public String toString() {
-      StringBuilder sb=new StringBuilder("SnapTree [").append(mount.mountList().extern()).append(":")
-               .append(mount.devicePath()).append(" -> ").append(mount.mountPath()).append("[");
-      sb.append(uuidMap.size()).append(":");
+      StringBuilder sb=new StringBuilder("SnapTree [").append(mount.pc().extern()).append(":")
+               .append(mount.devicePath()).append(" -> ").append(mount.mountPath()).append("[")//
+               .append(uuidMap.size()).append(":");
       for (Snapshot s:dateMap.values())
          sb.append(s.dirName()).append(",");
       sb.setLength(sb.length() - 1);
