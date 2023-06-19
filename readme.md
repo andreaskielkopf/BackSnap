@@ -94,4 +94,5 @@ If possible, a previous snapshot is used as **"parent"**.
 Each time the program is called, all snapshots of ONE subvolume can be backed up, which corresponds to ONE configuration of Snapper.
 
 ## Furter reading:
-[gallery/gallery.md](gallery/gallery.md) 
+* In the **[master](../master/gallery/gallery.md)** branch is a version for use with "snapper"
+* In the **[timeshift](../timeshift/gallery/gallery.md)** branch is a beta version for use with "timeshift"
