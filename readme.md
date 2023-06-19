@@ -1,6 +1,5 @@
 # [HowTo] Backup btrfs snapshots with send/receive
 ## How to use BackSnap
-You find most recent info in [gallery/gallery.md](gallery/gallery.md) 
 
 * In the **[master](../master/gallery/gallery.md)** branch is a version for use with "snapper"
 * In the **[timeshift](../timeshift/gallery/gallery.md)** branch is a beta version for use with "timeshift"
