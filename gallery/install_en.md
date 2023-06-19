@@ -30,14 +30,14 @@ or
 or
 `tricen -S pv`
 
-## 3. Install `BackSnap`
+## 3. Install `BackSnap` for timeshift
 The installation must be done as root (or with sudo). It should be done in such a way that BackSnap is accessible in both **root**'s `$PATH` and **user**'s `$PATH`.
 
 `echo $PATH`
 #### in /usr/local/bin
 If `/usr/local/bin` is in your path, it's easiest to install BackSnap there.
 
-`sudo wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/local/bin/backsnap`
+`sudo wget https://github.com/andreaskielkopf/BackSnap/raw/timeshift/backsnap -O /usr/local/bin/backsnap`
 
 Make BackSnap executable
 
@@ -45,7 +45,7 @@ Make BackSnap executable
 #### or in /usr/bin
 If `/usr/local/bin` is not in your path, the easiest way is to install BackSnap in `/usr/bin`.
 
-`sudo wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/bin/backsnap`
+`sudo wget https://github.com/andreaskielkopf/BackSnap/raw/timeshift/backsnap -O /usr/bin/backsnap`
 
 Make BackSnap executable
 
@@ -54,7 +54,7 @@ Make BackSnap executable
 `backsnap -x`
 ```
 args > -x
-<html>BackSnap <br> Version 0.5.1 <br> (2023/04/22)
+<html>BackSnap <br> Version 0.6 <br> (2023/06/00)
 ```
 ----
-Saturday, June 03, 2023 06:22
+Monday, June 19, 2023 06:19

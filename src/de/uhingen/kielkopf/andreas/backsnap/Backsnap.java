@@ -59,7 +59,7 @@ public class Backsnap {
    public final static Flag   DELETEOLD          =new Flag('o', "deleteold");      // mark old snapshots for deletion
    public final static Flag   KEEP_MINIMUM       =new Flag('m', "keepminimum");    // mark all but minimum snapshots
    public static final String BACK_SNAP_VERSION  ="<html>"                         // version
-            + " BackSnap <br>" + " Version 0.6.0.0 <br>" + " (2023/06/18)";
+            + " BackSnap <br>" + " Version 0.6.0.1 <br>" + " (2023/06/19)";
    public static final Object BTRFS_LOCK         =new Object();
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
@@ -73,6 +73,7 @@ public class Backsnap {
       }
       if (DRYRUN.get())
          logln(0, "Doing a dry run ! ");
+      TIMESHIFT.set(true);
       // Parameter sammeln für SOURCE
       String source=Flag.getParameterOrDefault(0, "sudo:/");
       srcSsh=source.contains(":") ? source.substring(0, source.indexOf(":")) : "";

@@ -10,7 +10,7 @@ Sonntag, 14. Mai 2023 15:07
 #### [GUI per script](backup_de.md)
 ####  [ssh einsetzen](backup_de.md)
 #### [Restore vom Backup](restore_de.md)
-P.S. Sie finden mich im [manjaro-forum](https://forum.manjaro.org/t/howto-hilfsprogramm-fur-backup-btrfs-snapshots-mit-send-recieve/130154) als "andreas85"
+Sie finden mich im [manjaro-forum](https://forum.manjaro.org/t/howto-hilfsprogramm-fur-backup-btrfs-snapshots-mit-send-recieve/130154) als "andreas85"
 
 ## en
 #### [Install](install_en.md)
@@ -21,6 +21,7 @@ P.S. Sie finden mich im [manjaro-forum](https://forum.manjaro.org/t/howto-hilfsp
 #### [GUI by script](backup_en.md)
 #### [use it with ssh](backup_en.md)
 #### [Restore from backup](restore_en.md)
+You can find me in the [manjaro-forum](https://forum.manjaro.org/t/howto-hilfsprogramm-fur-backup-btrfs-snapshots-mit-send-recieve/130154) as "andreas85"
 ## pictures
 <img src="gui_startup.png" width=50% height=50%>
 

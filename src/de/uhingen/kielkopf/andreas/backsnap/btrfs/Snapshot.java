@@ -105,8 +105,6 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       if (m.find())
          return m.group(1);
       String dn=btrfsPath.getParent().getFileName().toString();
-      // if (Backsnap.TIMESHIFT.get())
-      // dn+="/" + btrfsPath.getFileName().toString();
       return dn;
    }
    /**
