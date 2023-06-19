@@ -30,7 +30,7 @@ or
 or
 `tricen -S pv`
 
-## 3. Install `BackSnap`
+## 3. Install `BackSnap` for snapper
 The installation must be done as root (or with sudo). It should be done in such a way that BackSnap is accessible in both **root**'s `$PATH` and **user**'s `$PATH`.
 
 `echo $PATH`

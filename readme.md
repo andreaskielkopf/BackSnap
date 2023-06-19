@@ -1,6 +1,9 @@
 # [HowTo] Backup btrfs snapshots with send/receive
 ## How to use BackSnap
-You find most recent info in [gallery/gallery.md](gallery/gallery.md) 
+
+* In the **[master](../master/gallery/gallery.md)** branch is a version for use with "snapper"
+* In the **[timeshift](../timeshift/gallery/gallery.md)** branch is a beta version for use with "timeshift"
+
 ## Prologue
 ###### A snapshot is not a backup!
 
@@ -54,14 +57,14 @@ Btrfs then corresponds to 3-2-1 Backup (Near CDP)
 * Backup of the current state of a subvolume
 
 ##### Desirable side effects
-* The **backup strategy** is already defined in snapper~~/Timeshift~~, and is involved here
+* The **backup strategy** is already defined in snapper, and is involved here
 * The backup is compressed, but at the same time all snapshots in the backup are **always fully read-only accessible**
 
 ## Requirements:
 * **Java 17** or newer on the computer
 * Recommended: **pv** installed
 * BTRFS both on the computer (recommended as **RAID 1** with 2 devices) and on the backup medium (single)
-* **snapper** layout of the snapshots (the program may also work with other layouts)
+* **snapper** layout of the snapshots 
 * The snapshots must be **readonly** otherwise btrfs cannot transfer them.
 * Recommended: external backup medium e.g. USB3 hard drive
 * Recommended: your own bash script to start the backup easily
