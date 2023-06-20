@@ -174,7 +174,7 @@ public record Mount(SubVolumeList mountList, Pc pc, Path devicePath, Path mountP
     * @throws IOException
     */
    public static ConcurrentSkipListMap<Path, Mount> getMountList(Pc pc, SubVolumeList svl) throws IOException {
-      StringBuilder mountCmd=new StringBuilder("mount|grep btrfs");
+      StringBuilder mountCmd=new StringBuilder("mount -t btrfs");
       // if (!extern.isBlank())
       // if (extern.startsWith("sudo"))
       // mountCmd.insert(0, extern);

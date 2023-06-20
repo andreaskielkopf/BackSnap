@@ -22,7 +22,7 @@ This can be achieved by using ssh-keys and by restricting their usage to some of
 #### You need permission to
  * id
  * mount
- * mount|grep btrfs
+ * mount -t btrfs
  * btrfs send
  * /bin/btrfs send
  * btrfs subvolume show

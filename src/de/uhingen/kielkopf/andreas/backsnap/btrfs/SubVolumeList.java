@@ -40,7 +40,7 @@ public record SubVolumeList(Pc pc, ConcurrentSkipListMap<String, Mount> mountTre
          mountTree.put(mount.keyM(), mount);
          mount.populate();
       }
-      // StringBuilder mountCmd=new StringBuilder("mount|grep btrfs");
+      // StringBuilder mountCmd=new StringBuilder("mount -t btrfs");
       // if (!extern.isBlank())
       // if (extern.startsWith("sudo"))
       // mountCmd.insert(0, extern);
