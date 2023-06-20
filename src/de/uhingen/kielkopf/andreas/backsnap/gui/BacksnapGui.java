@@ -377,7 +377,7 @@ public class BacksnapGui implements MouseListener {
       }
       Backsnap.logln(2, sb.toString());
       abgleich();
-      getPanelBackup().setTitle("<html>Backup to " + rest.getFileName());
+      getPanelBackup().setTitle("Backup to Label " + rest.getFileName());
       getPanelBackup().setInfo(backupTree.mount());
    }
    public JSplitPane getSplitPane() {
