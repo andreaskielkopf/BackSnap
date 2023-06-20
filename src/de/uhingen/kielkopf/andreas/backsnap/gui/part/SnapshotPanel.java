@@ -19,6 +19,7 @@ import javax.swing.border.TitledBorder;
  */
 public class SnapshotPanel extends JPanel implements ComponentListener, MouseListener {
    private static final long                           serialVersionUID    =-3405881652038164771L;
+   private static final Font                           FONT_INFO           =new Font("Noto Sans", Font.PLAIN, 16);
    private JPanel                                      panelView;
    private SnapshotDetail                              panelDetail;
    private JPanel                                      panel;
@@ -30,6 +31,15 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    public ArrayList<SnapshotLabel>                     mixedList           =new ArrayList<>();
    private TitledBorder                                tBorder             =new TitledBorder(null, "Snapshots of ...",
             TitledBorder.LEADING, TitledBorder.TOP, null, null);
+   private JPanel                                      panelInfo;
+   private JLabel                                      lblPc;
+   private JLabel                                      lblVolume;
+   private JLabel                                      lblSubvolume;
+   private JLabel                                      lblMountPoint;
+   private JLabel                                      infoPc;
+   private JLabel                                      infoVolume;
+   private JLabel                                      infoSubvolume;
+   private JLabel                                      infoMountPoint;
    public SnapshotPanel() {
       setBorder(tBorder);
       initialize();
@@ -40,6 +50,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
       // add(getPanelVolumeName(), BorderLayout.NORTH);
       getPanelView().add(new SnapshotLabel(null));
       add(getPanel(), BorderLayout.CENTER);
+      add(getPanelInfo(), BorderLayout.NORTH);
    }
    public JPanel getPanelView() {
       if (panelView == null) {
@@ -113,7 +124,6 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
     * @return
     */
    public ConcurrentSkipListMap<String, Snapshot> setVolume(Mount subVolume, Collection<Snapshot> list) {
-    
       ConcurrentSkipListMap<String, Snapshot> neuList=new ConcurrentSkipListMap<>();
       for (Snapshot snap:list)
          if (!labelTree_UUID.containsKey(snap.uuid()))
@@ -213,4 +223,86 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    public void setTitle(String string) {
       tBorder.setTitle(string);
    }
+   private JPanel getPanelInfo() {
+      if (panelInfo == null) {
+         panelInfo=new JPanel();
+         panelInfo.setLayout(new GridLayout(2, 0, 0, 0));
+         panelInfo.add(getLblPc());
+         panelInfo.add(getLblVolume());
+         panelInfo.add(getLblSubvolume());
+         panelInfo.add(getLblMountPoint());
+         panelInfo.add(getInfoPc());
+         panelInfo.add(getInfoVolume());
+         panelInfo.add(getInfoSubvolume());
+         panelInfo.add(getInfoMountPoint());
+      }
+      return panelInfo;
+   }
+   private JLabel getLblPc() {
+      if (lblPc == null) {
+         lblPc=new JLabel("Pc:");
+      }
+      return lblPc;
+   }
+   private JLabel getLblVolume() {
+      if (lblVolume == null) {
+         lblVolume=new JLabel("Volume:");
+      }
+      return lblVolume;
+   }
+   private JLabel getLblSubvolume() {
+      if (lblSubvolume == null) {
+         lblSubvolume=new JLabel("Subvolume:");
+      }
+      return lblSubvolume;
+   }
+   private JLabel getLblMountPoint() {
+      if (lblMountPoint == null) {
+         lblMountPoint=new JLabel("mounted as: ");
+      }
+      return lblMountPoint;
+   }
+   public JLabel getInfoPc() {
+      if (infoPc == null) {
+         infoPc=new JLabel("local");
+         infoPc.setFont(FONT_INFO);
+         infoPc.setHorizontalAlignment(SwingConstants.CENTER);
+      }
+      return infoPc;
+   }
+   public JLabel getInfoVolume() {
+      if (infoVolume == null) {
+         infoVolume=new JLabel("/dev/sdz");
+         infoVolume.setFont(FONT_INFO);
+         infoVolume.setHorizontalAlignment(SwingConstants.CENTER);
+      }
+      return infoVolume;
+   }
+   public JLabel getInfoSubvolume() {
+      if (infoSubvolume == null) {
+         infoSubvolume=new JLabel("/@");
+         infoSubvolume.setFont(FONT_INFO);
+         infoSubvolume.setHorizontalAlignment(SwingConstants.CENTER);
+      }
+      return infoSubvolume;
+   }
+   public JLabel getInfoMountPoint() {
+      if (infoMountPoint == null) {
+         infoMountPoint=new JLabel("/");
+         infoMountPoint.setFont(FONT_INFO);
+         infoMountPoint.setHorizontalAlignment(SwingConstants.CENTER);
+      }
+      return infoMountPoint;
+   }
+   /**
+    * @param srcConfig
+    */
+   public void setInfo(Mount mount) {
+      getInfoPc().setText(mount.pc().extern());
+      getInfoVolume().setText(mount.devicePath().toString());
+      getInfoSubvolume().setText(mount.btrfsPath().toString());
+      getInfoMountPoint().setText(mount.mountPath().toString());
+      repaint(100);
+   }
+  
 }

@@ -160,7 +160,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       // if (btrfsPath1.toString().contains("20318"))
       // System.out.println(btrfsPath1);
       Path  b2 =btrfsPath1;
-      Mount erg=null;    // default ?
+      Mount erg=null;      // default ?
       if (!b2.toString().contains("timeshift-btrfs")) {
          for (Mount mount1:mount0.pc().mounts().values())
             if (mount0.devicePath().equals(mount1.devicePath())) // only from same device
@@ -188,18 +188,18 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       Map<String, String> infoMap=new TreeMap<>();
       // infoMap.put("0 mount", mount.mountPath().toString());
       infoMap.put("1 dirName()", dirName());
-      infoMap.put("b otime", otime);
-      infoMap.put("c uuid", uuid);
       infoMap.put("2 btrfsPath", btrfsPath.toString());
+      infoMap.put("3 otime", otime);
+      infoMap.put("4 uuid", uuid);      
       // infoMap.put("3 mountPath", getMountPath().toString());
-      infoMap.put("d parent_uuid", parent_uuid);
-      infoMap.put("e received_uuid", received_uuid);
+      infoMap.put("5 parent_uuid", parent_uuid);
+      infoMap.put("6 received_uuid", received_uuid);
       // infoMap.put("g gen", gen.toString());
       // infoMap.put("h cgen", cgen.toString());
       // infoMap.put("i id", id.toString());
       // infoMap.put("j top_level", top_level.toString());
       // infoMap.put("k parent", parent.toString());
-      infoMap.put("m key", key());
+      // infoMap.put("m key", key());
       return infoMap.entrySet().parallelStream();
    }
    public static void mkain(String[] args) {

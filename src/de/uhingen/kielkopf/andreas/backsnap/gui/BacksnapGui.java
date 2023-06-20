@@ -183,13 +183,14 @@ public class BacksnapGui implements MouseListener {
       }
       Backsnap.logln(2, sb.toString());
       abgleich();
-      sb.setLength(0);
-      sb.append("<html>Snapshots of ").append(BLUE).append(srcConfig.volumeMount().pc().extern()).append(NORMAL);
-      sb.append(": ").append(srcConfig.volumeMount().devicePath());
-      sb.append(" subvolume->").append(srcConfig.volumeMount().btrfsPath());
-      sb.append(" (mounted as ").append(BLUE).append(srcConfig.volumeMount().mountPath()).append(NORMAL).append(")");
-      getPanelSrc().setTitle(sb.toString());
-      getPanelSrc().repaint();
+      // sb.setLength(0);
+      // sb.append("<html>Snapshots of ").append(BLUE).append(srcConfig.volumeMount().pc().extern()).append(NORMAL);
+      // sb.append(": ").append(srcConfig.volumeMount().devicePath());
+      // sb.append(" subvolume->").append(srcConfig.volumeMount().btrfsPath());
+      // sb.append(" (mounted as ").append(BLUE).append(srcConfig.volumeMount().mountPath()).append(NORMAL).append(")");
+      // getPanelSrc().setTitle(sb.toString());
+      // getPanelSrc().repaint();
+      getPanelSrc().setInfo(srcConfig.volumeMount());
       // System.out.println(sb.toString());
    }
    /**
@@ -390,14 +391,15 @@ public class BacksnapGui implements MouseListener {
       }
       Backsnap.logln(2, sb.toString());
       abgleich();
-      sb.setLength(0);
-      sb.append("<html>Backup to ").append(BLUE).append(rest.getFileName()).append(NORMAL);
-      sb.append(" on ").append(backupTree.mount().pc().extern());
-      sb.append(": ").append(backupTree.mount().devicePath());
-      sb.append(" subvolume->").append(backupTree.mount().btrfsPath());
-      sb.append(" (mounted as ").append(BLUE).append(backupTree.mount().mountPath()).append(NORMAL).append(")");
-      getPanelBackup().setTitle(sb.toString());
-      getPanelBackup().repaint();
+      // sb.setLength(0);
+      // sb.append("<html>Backup to ").append(BLUE).append(rest.getFileName()).append(NORMAL);
+      // sb.append(" on ").append(backupTree.mount().pc().extern());
+      // sb.append(": ").append(backupTree.mount().devicePath());
+      // sb.append(" subvolume->").append(backupTree.mount().btrfsPath());
+      // sb.append(" (mounted as ").append(BLUE).append(backupTree.mount().mountPath()).append(NORMAL).append(")");
+      getPanelBackup().setTitle("<html>Backup to " + rest.getFileName() );
+      // getPanelBackup().repaint();
+      getPanelBackup().setInfo(backupTree.mount());
       // System.out.println(sb.toString());
    }
    public JSplitPane getSplitPane() {
