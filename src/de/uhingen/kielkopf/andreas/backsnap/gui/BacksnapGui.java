@@ -37,8 +37,7 @@ import javax.swing.border.EmptyBorder;
 public class BacksnapGui implements MouseListener {
    private static BacksnapGui                          backSnapGui;
    public JFrame                                       frame;
-   private JPanel                                      panel;
-   private JLabel                                      lblNewLabel;
+   private JPanel                                      panelWartung;
    private JPanel                                      panelMain;
    private SnapshotPanel                               panelSrc;
    private SnapshotPanel                               panelBackup;
@@ -52,7 +51,7 @@ public class BacksnapGui implements MouseListener {
    private JCheckBox                                   chckMeta;
    private JSlider                                     sliderMeta;
    public ConcurrentSkipListMap<String, SnapshotLabel> manualDelete =new ConcurrentSkipListMap<>();
-   private JPanel                                      panelInfo;
+   private JPanel                                      panelRun;
    private JPanel                                      panelProgress;
    private JPanel                                      panelPv;
    private JProgressBar                                progressBar;
@@ -69,6 +68,7 @@ public class BacksnapGui implements MouseListener {
    private JLabel                                      lblMeta;
    private int                                         DEFAULT_META =249;
    private int                                         DEFAULT_SPACE=999;
+   private JPanel                                      panel_1;
    /**
     * @param args
     */
@@ -97,6 +97,7 @@ public class BacksnapGui implements MouseListener {
       if (Backsnap.KEEP_MINIMUM.get())
          flagMeta();
       getSliderSpace().setValue(parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), DEFAULT_SPACE));
+      frame.getContentPane().add(getPanel_1(), BorderLayout.SOUTH);
       if (Backsnap.DELETEOLD.get())
          flagSpace();
    }
@@ -115,7 +116,7 @@ public class BacksnapGui implements MouseListener {
     * 
     */
    private void initialize() {
-      frame=new JFrame();
+      frame=new JFrame(Backsnap.BACK_SNAP_VERSION);
       Dimension screenSize=Toolkit.getDefaultToolkit().getScreenSize();
       int       width     =Math.min(screenSize.width, 3840 / 2);
       int       height    =Math.min(screenSize.height, 2160 / 2);
@@ -124,27 +125,18 @@ public class BacksnapGui implements MouseListener {
       // frame.setResizable(true);
       // frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
       frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-      frame.getContentPane().add(getPanel(), BorderLayout.NORTH);
+      // frame.getContentPane().add(getPanelWartung(), BorderLayout.NORTH);
       frame.getContentPane().add(getPanelMain(), BorderLayout.CENTER);
-      frame.getContentPane().add(getPanelInfo(), BorderLayout.SOUTH);
+      // frame.getContentPane().add(getPanelRun(), BorderLayout.SOUTH);
    }
-   private JPanel getPanel() {
-      if (panel == null) {
-         panel=new JPanel();
-         panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-         panel.add(getLblNewLabel());
-         panel.add(getPanelSpace());
-         panel.add(getPanelMeta());
+   private JPanel getPanelWartung() {
+      if (panelWartung == null) {
+         panelWartung=new JPanel();
+         panelWartung.setLayout(new BoxLayout(panelWartung, BoxLayout.X_AXIS));
+         panelWartung.add(getPanelSpace());
+         panelWartung.add(getPanelMeta());
       }
-      return panel;
-   }
-   private JLabel getLblNewLabel() {
-      if (lblNewLabel == null) {
-         lblNewLabel=new JLabel(Backsnap.BACK_SNAP_VERSION);
-         lblNewLabel.setFont(new Font("Noto Sans", Font.PLAIN, 14));
-         lblNewLabel.setHorizontalAlignment(SwingConstants.CENTER);
-      }
-      return lblNewLabel;
+      return panelWartung;
    }
    /**
     * @param bsGui
@@ -155,8 +147,10 @@ public class BacksnapGui implements MouseListener {
    private JPanel getPanelMain() {
       if (panelMain == null) {
          panelMain=new JPanel();
+         panelMain.setBorder(new TitledBorder(null, "Backup", TitledBorder.LEADING, TitledBorder.CENTER, null, null));
          panelMain.setLayout(new BorderLayout(0, 0));
          panelMain.add(getSplitPane(), BorderLayout.CENTER);
+         panelMain.add(getPanelRun(), BorderLayout.SOUTH);
       }
       return panelMain;
    }
@@ -183,15 +177,7 @@ public class BacksnapGui implements MouseListener {
       }
       Backsnap.logln(2, sb.toString());
       abgleich();
-      // sb.setLength(0);
-      // sb.append("<html>Snapshots of ").append(BLUE).append(srcConfig.volumeMount().pc().extern()).append(NORMAL);
-      // sb.append(": ").append(srcConfig.volumeMount().devicePath());
-      // sb.append(" subvolume->").append(srcConfig.volumeMount().btrfsPath());
-      // sb.append(" (mounted as ").append(BLUE).append(srcConfig.volumeMount().mountPath()).append(NORMAL).append(")");
-      // getPanelSrc().setTitle(sb.toString());
-      // getPanelSrc().repaint();
       getPanelSrc().setInfo(srcConfig.volumeMount());
-      // System.out.println(sb.toString());
    }
    /**
     * Bereite das einfärben vor
@@ -241,8 +227,8 @@ public class BacksnapGui implements MouseListener {
       int deletable=mixedList2.size() - minimum;
       for (SnapshotLabel sl:backupLabels_DirName.values()) { // GrundFarbe setzen
          if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid())) {
-            sl.setBackground(SnapshotLabel.backupColor);// Das ist ein aktuelles Backup ! (unlöschbar)
-            snapshotLabels_Uuid.get(sl.snapshot.received_uuid()).setBackground(SnapshotLabel.backupColor);
+            sl.setBackground(SnapshotLabel.allesOkColor);// Das ist ein aktuelles Backup ! (unlöschbar)
+            snapshotLabels_Uuid.get(sl.snapshot.received_uuid()).setBackground(SnapshotLabel.allesOkColor);
          } else
             sl.setBackground(SnapshotLabel.naheColor);
          panelBackup.repaint(100);
@@ -253,7 +239,7 @@ public class BacksnapGui implements MouseListener {
          if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid()))
             continue;// aktuell, unlöschbar
          deleteList.add(sl);
-         sl.setBackground(SnapshotLabel.deleteColor);// rot
+         sl.setBackground(SnapshotLabel.deleteOldColor);// rot
          deletable--;
          panelBackup.repaint(100);
       }
@@ -391,16 +377,8 @@ public class BacksnapGui implements MouseListener {
       }
       Backsnap.logln(2, sb.toString());
       abgleich();
-      // sb.setLength(0);
-      // sb.append("<html>Backup to ").append(BLUE).append(rest.getFileName()).append(NORMAL);
-      // sb.append(" on ").append(backupTree.mount().pc().extern());
-      // sb.append(": ").append(backupTree.mount().devicePath());
-      // sb.append(" subvolume->").append(backupTree.mount().btrfsPath());
-      // sb.append(" (mounted as ").append(BLUE).append(backupTree.mount().mountPath()).append(NORMAL).append(")");
-      getPanelBackup().setTitle("<html>Backup to " + rest.getFileName() );
-      // getPanelBackup().repaint();
+      getPanelBackup().setTitle("<html>Backup to " + rest.getFileName());
       getPanelBackup().setInfo(backupTree.mount());
-      // System.out.println(sb.toString());
    }
    public JSplitPane getSplitPane() {
       if (splitPane == null) {
@@ -421,9 +399,9 @@ public class BacksnapGui implements MouseListener {
    private JButton getBtnSpace() {
       if (btnSpace == null) {
          btnSpace=new JButton("Delete some old snapshots");
-         btnSpace.addActionListener(e -> delete(getBtnSpace(), SnapshotLabel.deleteColor));
+         btnSpace.addActionListener(e -> delete(getBtnSpace(), SnapshotLabel.deleteOldColor));
          btnSpace.setEnabled(false);
-         btnSpace.setBackground(SnapshotLabel.deleteColor);
+         btnSpace.setBackground(SnapshotLabel.deleteOldColor);
       }
       return btnSpace;
    }
@@ -562,17 +540,16 @@ public class BacksnapGui implements MouseListener {
    public void mouseEntered(MouseEvent e) {/* */}
    @Override
    public void mouseExited(MouseEvent e) {/* */}
-   private JPanel getPanelInfo() {
-      if (panelInfo == null) {
-         panelInfo=new JPanel();
-         panelInfo.setBorder(
-                  new TitledBorder(null, "Backup Progress:", TitledBorder.LEADING, TitledBorder.TOP, null, null));
-         panelInfo.setLayout(new BorderLayout(0, 0));
-         panelInfo.add(getPanelProgress(), BorderLayout.WEST);
-         panelInfo.add(getPanelPv());
-         panelInfo.add(getPanelSpeed(), BorderLayout.EAST);
+   private JPanel getPanelRun() {
+      if (panelRun == null) {
+         panelRun=new JPanel();
+         panelRun.setBorder(new TitledBorder(null, "Progress:", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+         panelRun.setLayout(new BorderLayout(0, 0));
+         panelRun.add(getPanelProgress(), BorderLayout.WEST);
+         panelRun.add(getPanelPv());
+         // panelRun.add(getPanelSpeed(), BorderLayout.EAST);
       }
-      return panelInfo;
+      return panelRun;
    }
    private JPanel getPanelProgress() {
       if (panelProgress == null) {
@@ -596,7 +573,7 @@ public class BacksnapGui implements MouseListener {
    public JProgressBar getProgressBar() {
       if (progressBar == null) {
          progressBar=new JProgressBar();
-         progressBar.setForeground(SnapshotLabel.backupColor);
+         progressBar.setForeground(SnapshotLabel.allesOkColor);
          progressBar.setBackground(SnapshotLabel.naheColor);
          progressBar.setMaximum(1000);
          progressBar.setValue(1);
@@ -623,18 +600,18 @@ public class BacksnapGui implements MouseListener {
          panelSpeed=new JPanel();
          panelSpeed.setBorder(new EmptyBorder(0, 5, 0, 10));
          panelSpeed.setLayout(new BorderLayout(0, 0));
-         panelSpeed.add(getSpeedBar(), BorderLayout.CENTER);
-         panelSpeed.add(getTglPause(), BorderLayout.EAST);
+         panelSpeed.add(getSpeedBar(), BorderLayout.NORTH);
+         panelSpeed.add(getTglPause(), BorderLayout.SOUTH);
       }
       return panelSpeed;
    }
    public JProgressBar getSpeedBar() {
       if (speedBar == null) {
          speedBar=new JProgressBar();
-         speedBar.setForeground(SnapshotLabel.naheColor);
-         speedBar.setBackground(SnapshotLabel.deleteColor);
+         speedBar.setForeground(SnapshotLabel.allesOkColor);
+         speedBar.setBackground(SnapshotLabel.markInProgressColor);
          speedBar.setMaximum(100);
-         speedBar.setValue(100);
+         speedBar.setValue(0);
          speedBar.setStringPainted(true);
          speedBar.setString(" running ");
       }
@@ -648,7 +625,7 @@ public class BacksnapGui implements MouseListener {
    }
    public JToggleButton getTglPause() {
       if (tglPause == null) {
-         tglPause=new JToggleButton("pause");
+         tglPause=new JToggleButton("pause for Maintenance");
       }
       return tglPause;
    }
@@ -672,13 +649,23 @@ public class BacksnapGui implements MouseListener {
    public void mark(Snapshot s) {
       for (SnapshotLabel sl1:getPanelBackup().labelTree_UUID.values())
          if (sl1.snapshot == s) {
-            sl1.setBackground(SnapshotLabel.markColor);
+            sl1.setBackground(SnapshotLabel.markInProgressColor);
             getPanelBackup().repaint(100);
          }
       for (SnapshotLabel sl2:getPanelSrc().labelTree_UUID.values())
          if (sl2.snapshot == s) {
-            sl2.setBackground(SnapshotLabel.markColor);
+            sl2.setBackground(SnapshotLabel.markInProgressColor);
             getPanelSrc().repaint(100);
          }
+   }
+   private JPanel getPanel_1() {
+      if (panel_1 == null) {
+         panel_1=new JPanel();
+         panel_1.setBorder(new TitledBorder(null, "Maintenance", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+         panel_1.setLayout(new BorderLayout(0, 0));
+         panel_1.add(getPanelWartung(), BorderLayout.CENTER);
+         panel_1.add(getPanelSpeed(), BorderLayout.WEST);
+      }
+      return panel_1;
    }
 }

@@ -226,14 +226,16 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    private JPanel getPanelInfo() {
       if (panelInfo == null) {
          panelInfo=new JPanel();
-         panelInfo.setLayout(new GridLayout(2, 0, 0, 0));
+         FlowLayout fl_panelInfo = new FlowLayout(FlowLayout.LEFT, 5, 5);
+         fl_panelInfo.setAlignOnBaseline(true);
+         panelInfo.setLayout(fl_panelInfo);
          panelInfo.add(getLblPc());
-         panelInfo.add(getLblVolume());
-         panelInfo.add(getLblSubvolume());
-         panelInfo.add(getLblMountPoint());
          panelInfo.add(getInfoPc());
+         panelInfo.add(getLblVolume());
          panelInfo.add(getInfoVolume());
+         panelInfo.add(getLblSubvolume());
          panelInfo.add(getInfoSubvolume());
+         panelInfo.add(getLblMountPoint());
          panelInfo.add(getInfoMountPoint());
       }
       return panelInfo;
@@ -246,19 +248,19 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    }
    private JLabel getLblVolume() {
       if (lblVolume == null) {
-         lblVolume=new JLabel("Volume:");
+         lblVolume=new JLabel("   Volume:");
       }
       return lblVolume;
    }
    private JLabel getLblSubvolume() {
       if (lblSubvolume == null) {
-         lblSubvolume=new JLabel("Subvolume:");
+         lblSubvolume=new JLabel("   Subvolume:");
       }
       return lblSubvolume;
    }
    private JLabel getLblMountPoint() {
       if (lblMountPoint == null) {
-         lblMountPoint=new JLabel("mounted as: ");
+         lblMountPoint=new JLabel("   mounted as: ");
       }
       return lblMountPoint;
    }

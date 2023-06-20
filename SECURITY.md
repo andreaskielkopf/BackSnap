@@ -21,13 +21,14 @@ This can be achieved by using ssh-keys and by restricting their usage to some of
 
 #### You need permission to
  * id
- * mount
+ * mount 
  * mount -t btrfs
  * btrfs send
  * /bin/btrfs send
  * btrfs subvolume show
  * btrfs subvolume list
  * btrfs filesystem show
+ * btrfs property set (only timeshift)
  * /bin/rsync -vcptgo
  * 
 
