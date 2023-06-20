@@ -20,8 +20,9 @@ import javax.swing.border.TitledBorder;
 public class SnapshotDetail extends JPanel {
    private static final long serialVersionUID=-7659329578660282348L;
    private JPanel            panel_1;
-   private JPanel            panelInfo;
+   private JPanel            panelLbl;
    private TitledBorder      tBorder;
+   private JPanel            panelInfo;
    public SnapshotDetail() {
       initialize();
    }
@@ -38,6 +39,7 @@ public class SnapshotDetail extends JPanel {
          panel_1=new JPanel();
          panel_1.setBorder(getTBorder());
          panel_1.setLayout(new BorderLayout(0, 0));
+         panel_1.add(getPanelLbl(), BorderLayout.WEST);
          panel_1.add(getPanelInfo(), BorderLayout.CENTER);
       }
       return panel_1;
@@ -53,22 +55,33 @@ public class SnapshotDetail extends JPanel {
    public void setTitle(String title) {
       tBorder.setTitle(title);
    }
-   private JPanel getPanelInfo() {
-      if (panelInfo == null) {
-         panelInfo=new JPanel();
-         panelInfo.setLayout(new GridLayout(0, 2, 0, 0));
+   private JPanel getPanelLbl() {
+      if (panelLbl == null) {
+         panelLbl=new JPanel();
+         panelLbl.setLayout(new GridLayout(0, 1, 0, 0));
       }
-      return panelInfo;
+      return panelLbl;
    }
    public void setInfo(String title, Stream<Entry<String, String>> infoStream) {
       setTitle(title);
-      JPanel pi=getPanelInfo();
-      pi.removeAll();
+      JPanel pLbl =getPanelLbl();
+      JPanel pInfo=getPanelInfo();
+      pLbl.removeAll();
+      pInfo.removeAll();
       infoStream.forEachOrdered(e -> {
-         pi.add(new JLabel(e.getKey() + ":"));
-         pi.add(new JLabel(e.getValue()));
+         JLabel label=new JLabel(e.getKey());
+         label.setHorizontalAlignment(SwingConstants.TRAILING);
+         pLbl.add(label);
+         pInfo.add(new JLabel(e.getValue()));
       });
-      pi.revalidate();
+      revalidate();
       repaint(50);
+   }
+   private JPanel getPanelInfo() {
+      if (panelInfo == null) {
+         panelInfo=new JPanel();
+         panelInfo.setLayout(new GridLayout(0, 1, 0, 0));
+      }
+      return panelInfo;
    }
 }

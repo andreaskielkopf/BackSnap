@@ -185,22 +185,22 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    // return ap;
    // }
    public Stream<Entry<String, String>> getInfo() {
-      Map<String, String> infoMap=new TreeMap<>();
+      Map<String, String> infoMap=new LinkedHashMap<>();
       // infoMap.put("0 mount", mount.mountPath().toString());
-      infoMap.put("1 dirName()", dirName());
-      infoMap.put("2 btrfsPath", btrfsPath.toString());
-      infoMap.put("3 otime", otime);
-      infoMap.put("4 uuid", uuid);      
+//      infoMap.put("dirName : ", dirName());
+      infoMap.put("btrfsPath : ", btrfsPath.toString());
+      infoMap.put("otime : ", otime);
+      infoMap.put("uuid : ", uuid);
       // infoMap.put("3 mountPath", getMountPath().toString());
-      infoMap.put("5 parent_uuid", parent_uuid);
-      infoMap.put("6 received_uuid", received_uuid);
+      infoMap.put("parent_uuid : ", parent_uuid);
+      infoMap.put("received_uuid : ", received_uuid);
       // infoMap.put("g gen", gen.toString());
       // infoMap.put("h cgen", cgen.toString());
       // infoMap.put("i id", id.toString());
       // infoMap.put("j top_level", top_level.toString());
       // infoMap.put("k parent", parent.toString());
       // infoMap.put("m key", key());
-      return infoMap.entrySet().parallelStream();
+      return infoMap.entrySet().stream();
    }
    public static void mkain(String[] args) {
       try {
