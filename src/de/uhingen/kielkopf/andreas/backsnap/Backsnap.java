@@ -60,7 +60,7 @@ public class Backsnap {
    public final static Flag   DELETEOLD          =new Flag('o', "deleteold");         // mark old snapshots for deletion
    public final static Flag   KEEP_MINIMUM       =new Flag('m', "keepminimum");       // mark all but minimum snapshots
    public static final String BACK_SNAP_VERSION  =                                    // version
-            "BackSnap (beta) for Snapper and Timeshift, Version 0.6.0.3 (2023/06/20)";
+            "BackSnap for Snapper and Timeshift(beta) Version 0.6.0.4 (2023/06/23)";
    public static final Object BTRFS_LOCK         =new Object();
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");

@@ -192,13 +192,27 @@ public class BacksnapGui implements MouseListener {
       // for DELETEOLD get all old snapshots that are "o=999" older than the newest one
       ConcurrentNavigableMap<String, SnapshotLabel> toDeleteOld         =new ConcurrentSkipListMap<>();
       if (Backsnap.DELETEOLD.get()) {
+         int deleteOld=parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), DEFAULT_SPACE);
          if (getPanelSrc().labelTree_DirName.lastEntry() instanceof Entry<String, SnapshotLabel> lastEntry) {
-            int deleteOld=parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), DEFAULT_SPACE);
             Backsnap.logln(8, "delOld: " + deleteOld);
-            SnapshotLabel last   =lastEntry.getValue();
-            int           firstNr=parseIntOrDefault(last.snapshot.dirName(), deleteOld) - deleteOld;
-            if (firstNr > 0) {
-               toDeleteOld=backupLabels_DirName.headMap(Integer.toString(firstNr));
+            SnapshotLabel last=lastEntry.getValue();
+            Snapshot      ls  =last.snapshot;
+            if (ls.btrfsPath().toString().startsWith("/timeshift-btrfs")) {
+               if (backupLabels_DirName.lastEntry() instanceof Entry<String, SnapshotLabel> lastBackupLabel) {
+                  SnapshotLabel lastB=lastBackupLabel.getValue();
+                  Snapshot      lsB  =lastB.snapshot;
+                  int firstId=lastB.snapshot.id() - deleteOld;
+                  for (Entry<String, SnapshotLabel> entry:backupLabels_DirName.descendingMap().entrySet()) {
+                     int id=entry.getValue().snapshot.id();
+                     if (id <= firstId)
+                        toDeleteOld.put(entry.getKey(), entry.getValue());
+                  }
+               }
+            } else {
+               int firstNr=parseIntOrDefault(last.snapshot.dirName(), deleteOld) - deleteOld;
+               if (firstNr > 0) {
+                  toDeleteOld=backupLabels_DirName.headMap(Integer.toString(firstNr));
+               }
             }
          }
       }

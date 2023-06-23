@@ -194,9 +194,9 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       // infoMap.put("3 mountPath", getMountPath().toString());
       infoMap.put("parent_uuid : ", parent_uuid);
       infoMap.put("received_uuid : ", received_uuid);
-      // infoMap.put("g gen", gen.toString());
+       infoMap.put("gen : ", gen.toString());
       // infoMap.put("h cgen", cgen.toString());
-      // infoMap.put("i id", id.toString());
+       infoMap.put("id : ", id.toString());
       // infoMap.put("j top_level", top_level.toString());
       // infoMap.put("k parent", parent.toString());
       // infoMap.put("m key", key());
