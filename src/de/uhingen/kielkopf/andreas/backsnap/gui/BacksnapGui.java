@@ -65,8 +65,8 @@ public class BacksnapGui implements MouseListener {
    private MaintenancePanel                            panelMaintenance;
    private JSplitPane                                  splitPaneMain;
    private JPanel                                      panelParameter;
-   private JLabel                                      lblNewLabel;
-   private JLabel                                      lblNewLabel_2;
+   private JLabel                                      labelParameterInfo;
+   private JLabel                                      lblArgs;
    /**
     * @param args
     */
@@ -609,22 +609,28 @@ public class BacksnapGui implements MouseListener {
       if (panelParameter == null) {
          panelParameter=new JPanel();
          panelParameter.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
-         panelParameter.add(getLblNewLabel());
-         panelParameter.add(getLblNewLabel_2());
+         panelParameter.add(getLabelParameterInfo());
+         panelParameter.add(getLblArgs());
       }
       return panelParameter;
    }
-   private JLabel getLblNewLabel() {
-      if (lblNewLabel == null) {
-         lblNewLabel=new JLabel("provided paramters : ");
+   private JLabel getLabelParameterInfo() {
+      if (labelParameterInfo == null) {
+         labelParameterInfo=new JLabel("Args : ");
       }
-      return lblNewLabel;
+      return labelParameterInfo;
    }
-   private JLabel getLblNewLabel_2() {
-      if (lblNewLabel_2 == null) {
-         lblNewLabel_2=new JLabel("?");
-         lblNewLabel_2.setFont(SnapshotPanel.FONT_INFO);
+   private JLabel getLblArgs() {
+      if (lblArgs == null) {
+         lblArgs=new JLabel("?");
+         lblArgs.setFont(SnapshotPanel.FONT_INFO);
       }
-      return lblNewLabel_2;
+      return lblArgs;
+   }
+   /**
+    * @param argLine
+    */
+   public void setArgs(String argLine) {
+      getLblArgs().setText(argLine);
    }
 }

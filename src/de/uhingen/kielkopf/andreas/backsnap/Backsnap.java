@@ -60,7 +60,7 @@ public class Backsnap {
    public final static Flag   DELETEOLD          =new Flag('o', "deleteold");       // mark old snapshots for deletion
    public final static Flag   KEEP_MINIMUM       =new Flag('m', "keepminimum");     // mark all but minimum snapshots
    public static final String BACK_SNAP_VERSION  =                                  // version
-            "BackSnap for Snapper and Timeshift(beta) Version 0.6.0.5 (2023/06/24)";
+            "BackSnap for Snapper and Timeshift(beta) Version 0.6.0.6 (2023/06/24)";
    public static final Object BTRFS_LOCK         =new Object();
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
@@ -68,6 +68,7 @@ public class Backsnap {
       for (String s:args)
          argLine.append(" ").append(s);
       logln(1, argLine.toString());
+      
       if (VERSION.get()) {
          logln(0, BACK_SNAP_VERSION);
          System.exit(0);
@@ -119,6 +120,7 @@ public class Backsnap {
             bsGui=new BacksnapGui();
             BacksnapGui.setGui(bsGui);
             BacksnapGui.main2(args);
+            bsGui.setArgs(argLine.substring(7));
             bsGui.setSrc(srcConfig);
             bsGui.setBackup(backupTree, backupDir);
             bsGui.getSplitPaneSnapshots().setDividerLocation(1d/3d);
