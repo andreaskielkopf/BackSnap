@@ -45,22 +45,22 @@ public class Backsnap {
    private static Path        srcDir             =null;
    private static Pc          srcPc              =null;
    public static String       TMP_BTRFS_ROOT     ="/tmp/BtrfsRoot";
-   final static Flag          HELP               =new Flag('h', "help");              // show usage
-   final static Flag          VERSION            =new Flag('x', "version");           // show date and version
-   final static Flag          DRYRUN             =new Flag('d', "dryrun");            // do not do anythimg ;-)
-   final static Flag          GUI                =new Flag('g', "gui");               // enable gui (works only with
-                                                                                      // sudo)
-   final static Flag          AUTO               =new Flag('a', "auto");              // auto-close gui when ready
+   final static Flag          HELP               =new Flag('h', "help");            // show usage
+   final static Flag          VERSION            =new Flag('x', "version");         // show date and version
+   final static Flag          DRYRUN             =new Flag('d', "dryrun");          // do not do anythimg ;-)
+   final static Flag          GUI                =new Flag('g', "gui");             // enable gui (works only with
+                                                                                    // sudo)
+   final static Flag          AUTO               =new Flag('a', "auto");            // auto-close gui when ready
    final public static Flag   VERBOSE            =new Flag('v', "verbose");
    final public static Flag   TIMESHIFT          =new Flag('t', "timeshift");
    final public static String SNAPSHOT           ="snapshot";
    final public static String DOT_SNAPSHOTS      =".snapshots";
    final public static String AT_SNAPSHOTS       ="@snapshots";
-   public final static Flag   SINGLESNAPSHOT     =new Flag('s', "singlesnapshot");    // backup exactly one snapshot
-   public final static Flag   DELETEOLD          =new Flag('o', "deleteold");         // mark old snapshots for deletion
-   public final static Flag   KEEP_MINIMUM       =new Flag('m', "keepminimum");       // mark all but minimum snapshots
-   public static final String BACK_SNAP_VERSION  =                                    // version
-            "BackSnap for Snapper and Timeshift(beta) Version 0.6.0.4 (2023/06/23)";
+   public final static Flag   SINGLESNAPSHOT     =new Flag('s', "singlesnapshot");  // backup exactly one snapshot
+   public final static Flag   DELETEOLD          =new Flag('o', "deleteold");       // mark old snapshots for deletion
+   public final static Flag   KEEP_MINIMUM       =new Flag('m', "keepminimum");     // mark all but minimum snapshots
+   public static final String BACK_SNAP_VERSION  =                                  // version
+            "BackSnap for Snapper and Timeshift(beta) Version 0.6.0.5 (2023/06/24)";
    public static final Object BTRFS_LOCK         =new Object();
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
@@ -121,7 +121,7 @@ public class Backsnap {
             BacksnapGui.main2(args);
             bsGui.setSrc(srcConfig);
             bsGui.setBackup(backupTree, backupDir);
-            bsGui.getSplitPane().setDividerLocation(.35d);
+            bsGui.getSplitPaneSnapshots().setDividerLocation(1d/3d);
          }
          try {
             usePv=Paths.get("/bin/pv").toFile().canExecute();
@@ -541,8 +541,8 @@ public class Backsnap {
             }
             if (AUTO.get()) {
                if ((bsGui != null) && (bsGui.frame instanceof Frame frame)) {
-                  JProgressBar  exitBar       =bsGui.getSpeedBar();
-                  JToggleButton pauseButton   =bsGui.getTglPause();
+                  JProgressBar  exitBar       =bsGui.getPanelMaintenance().getSpeedBar();
+                  JToggleButton pauseButton   =bsGui.getPanelMaintenance().getTglPause();
                   int           countdownStart=10;
                   if (AUTO.getParameterOrDefault(10) instanceof Integer n)
                      countdownStart=n;

@@ -5,6 +5,7 @@ package de.uhingen.kielkopf.andreas.backsnap.gui.part;
 
 import java.awt.*;
 import java.awt.event.*;
+
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -19,10 +20,10 @@ import javax.swing.border.TitledBorder;
  */
 public class SnapshotPanel extends JPanel implements ComponentListener, MouseListener {
    private static final long                           serialVersionUID    =-3405881652038164771L;
-   private static final Font                           FONT_INFO           =new Font("Noto Sans", Font.PLAIN, 16);
+   public static final Font                            FONT_INFO           =new Font("Noto Sans", Font.PLAIN, 16);
    private JPanel                                      panelView;
    private SnapshotDetail                              panelDetail;
-   private JPanel                                      panel;
+   private JPanel                                      panelSnapshots;
    private JScrollPane                                 scrollPane;
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_UUID      =new ConcurrentSkipListMap<>();
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_ParentUuid=new ConcurrentSkipListMap<>();
@@ -40,17 +41,16 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    private JLabel                                      infoVolume;
    private JLabel                                      infoSubvolume;
    private JLabel                                      infoMountPoint;
+   private JSplitPane                                  splitPane;
    public SnapshotPanel() {
       setBorder(tBorder);
       initialize();
    }
    private void initialize() {
       setLayout(new BorderLayout(0, 0));
-      add(getPanelDetail(), BorderLayout.SOUTH);
-      // add(getPanelVolumeName(), BorderLayout.NORTH);
-      getPanelView().add(new SnapshotLabel(null));
-      add(getPanel(), BorderLayout.CENTER);
       add(getPanelInfo(), BorderLayout.NORTH);
+      getPanelView().add(new SnapshotLabel(null));
+      add(getSplitPane(), BorderLayout.CENTER);
    }
    public JPanel getPanelView() {
       if (panelView == null) {
@@ -115,6 +115,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    private SnapshotDetail getPanelDetail() {
       if (panelDetail == null) {
          panelDetail=new SnapshotDetail();
+         // panelDetail.setMinimumSize(new Dimension());
       }
       return panelDetail;
    }
@@ -155,14 +156,14 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
       repaint(100);
       return neuList;
    }
-   private JPanel getPanel() {
-      if (panel == null) {
-         panel=new JPanel();
-         panel.addComponentListener(this);
-         panel.setLayout(new BorderLayout(0, 0));
-         panel.add(getScrollPane(), BorderLayout.CENTER);
+   private JPanel getPanelSnapshots() {
+      if (panelSnapshots == null) {
+         panelSnapshots=new JPanel();
+         panelSnapshots.addComponentListener(this);
+         panelSnapshots.setLayout(new BorderLayout(0, 0));
+         panelSnapshots.add(getScrollPane(), BorderLayout.CENTER);
       }
-      return panel;
+      return panelSnapshots;
    }
    private JScrollPane getScrollPane() {
       if (scrollPane == null) {
@@ -212,7 +213,13 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
       if (e.getSource() instanceof SnapshotLabel sl) {
          Snapshot       sn=sl.snapshot;
          SnapshotDetail pd=getPanelDetail();
+         JSplitPane     sp=getSplitPane();
          pd.setInfo("Snapshot " + sn.dirName() + ":", sn.getInfo());
+         if (sp.getBottomComponent() == null) {
+            pd.setMinimumSize(new Dimension(300, 160));
+            sp.setBottomComponent(pd);
+            sp.setDividerLocation(0.85d);
+         }
       }
    }
    @Override
@@ -226,7 +233,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    private JPanel getPanelInfo() {
       if (panelInfo == null) {
          panelInfo=new JPanel();
-         FlowLayout fl_panelInfo = new FlowLayout(FlowLayout.LEFT, 5, 5);
+         FlowLayout fl_panelInfo=new FlowLayout(FlowLayout.LEFT, 5, 5);
          fl_panelInfo.setAlignOnBaseline(true);
          panelInfo.setLayout(fl_panelInfo);
          panelInfo.add(getLblPc());
@@ -306,5 +313,14 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
       getInfoMountPoint().setText(mount.mountPath().toString());
       repaint(100);
    }
-  
+   private JSplitPane getSplitPane() {
+      if (splitPane == null) {
+         // Das 2.Panel erst eintragen, wenn es dargestellt werden muss !
+         splitPane=new JSplitPane(JSplitPane.VERTICAL_SPLIT, true, getPanelSnapshots(), null);
+         splitPane.setOneTouchExpandable(true);
+         splitPane.setResizeWeight(1d);
+         splitPane.setDividerSize((splitPane.getDividerSize() * 3) / 2);
+      }
+      return splitPane;
+   }
 }
