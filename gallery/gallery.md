@@ -33,7 +33,7 @@ Shows the version, and all parameters that where supplied
 * On top: Where do we get the Snapshots from ?
 * Every Snapshot is showed with a "name"
 
-<img src="gui_startup_Src.png" width=40% height=40%> 
+<img src="gui_snapshots.png" width=40% height=40%> 
 * Yellow: snapshot is present, but no backup of it
 * Cyan: Backup is in progress 
 * Green: Backup is already present
