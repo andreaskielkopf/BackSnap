@@ -27,6 +27,7 @@ Some screenshois of BackSnap in action:
 
 #### version
 Shows the version, and all parameters that where supplied
+
 <img src="gui_version.png" width=40% height=40%>
 
 #### snapshots
@@ -34,16 +35,19 @@ Shows the version, and all parameters that where supplied
 * Every Snapshot is showed with a "name"
 
 <img src="gui_snapshots.png" width=40% height=40%> 
+
 * Yellow: snapshot is present, but no backup of it
 * Cyan: Backup is in progress 
 * Green: Backup is already present
 
 #### Info (mouse over on snapshot)
 If you move your mouse over an snapshot, some details of this snapshot will be shown
+
 <img src="gui_snapshot_details.png" width=40% height=40%>
 
 #### progress
 While doing backups this line shows the progress
+
 <img src="gui_progress.png" width=40% height=40%>
 
 #### backup
@@ -51,6 +55,7 @@ While doing backups this line shows the progress
 * Every Bnapshot is showed with a "name"
 
 <img src="gui_backup.png" width=40% height=40%>
+
 * Green: Backup of an existing snapshot
 * Yellow: Backup of a nonexisting snapshot
 * Cyan: Backup is in progress
@@ -62,13 +67,19 @@ Remove some old backups of snapshots that are no longer in use.
 * You select how **old** a backup has to be, to be marked 
 * The old backups are marked red.
 * By pressing the button you remove them
-<img src="gui_free_some_space.png" width=40% height=40%> <img src="gui_free_some_space2.png" width=40% height=40%>
+
+<img src="gui_free_some_space.png" width=40% height=40%>
+<img src="gui_free_some_space2.png" width=40% height=40%>
+
 ##### free some metadata
 Remove some intermediate backups of snapshots that are no longer in use.
 * You decide how many backups to **keep** at least
 * The sugested backups are marked orange
 * You can select / deselect others instead with the mouse
- <img src="gui_free_some_metadata.png" width=40% height=40%> <img src="gui_free_some_metadata2.png" width=40% height=40%>
+* By pressing the button you remove them
+
+ <img src="gui_free_some_metadata.png" width=40% height=40%>
+ <img src="gui_free_some_metadata2.png" width=40% height=40%>
 
 ##### scrub
  -
