@@ -71,7 +71,7 @@ public class MaintenancePanel extends JPanel {
    }
    private JTabbedPane getTabbedPane() {
       if (tabbedPane == null) {
-         tabbedPane=new JTabbedPane(JTabbedPane.LEFT);
+         tabbedPane=new JTabbedPane(SwingConstants.LEFT);
          tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
          tabbedPane.addTab("get space", null, getPanelSpace(),
                   "Remove some older backups to make more space for new backups");
@@ -207,7 +207,7 @@ public class MaintenancePanel extends JPanel {
       if (sliderMeta == null) {
          sliderMeta=new JSlider();
          sliderMeta.setEnabled(false);
-         sliderMeta.setMaximum(500);
+         sliderMeta.setMaximum(1000);
          sliderMeta.setMajorTickSpacing(100);
          sliderMeta.setMinorTickSpacing(20);
          sliderMeta.setPaintLabels(true);

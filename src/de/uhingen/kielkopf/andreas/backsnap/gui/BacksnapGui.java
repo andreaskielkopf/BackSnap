@@ -390,8 +390,7 @@ public class BacksnapGui implements MouseListener {
          panelProgress=new JPanel();
          panelProgress.setLayout(new BorderLayout(10, 0));
          panelProgress.add(getProgressBar(), BorderLayout.WEST);
-         panelProgress.add(getLblPv());
-         panelProgress.add(getSnapshotName(), BorderLayout.EAST);
+         panelProgress.add(getPanel(), BorderLayout.CENTER);
       }
       return panelProgress;
    }
@@ -426,6 +425,7 @@ public class BacksnapGui implements MouseListener {
    private JLabel getLblPv() {
       if (lblPv == null) {
          lblPv=new JLabel("- Infozeile <=>");
+         lblPv.setHorizontalAlignment(SwingConstants.CENTER);
          lblPv.setPreferredSize(new Dimension(200, 30));
       }
       return lblPv;
@@ -433,6 +433,7 @@ public class BacksnapGui implements MouseListener {
    public JLabel getSnapshotName() {
       if (SnapshotName == null) {
          SnapshotName=new JLabel("this Snapshot ;-)");
+         SnapshotName.setHorizontalAlignment(SwingConstants.CENTER);
          SnapshotName.setPreferredSize(new Dimension(200, 30));
       }
       return SnapshotName;
@@ -532,7 +533,7 @@ public class BacksnapGui implements MouseListener {
          speedBar.setMaximum(100);
          speedBar.setValue(0);
          speedBar.setStringPainted(true);
-         speedBar.setString(" running ");
+         speedBar.setString("backup is running");
       }
       return speedBar;
    }
@@ -549,6 +550,7 @@ public class BacksnapGui implements MouseListener {
    }
    private final Dimension PANEL_UNTEN_DIM =new Dimension(10, 80);
    private final Dimension PANEL_UNTEN_DIM2=new Dimension(10, 180);
+   private JPanel panel;
    private JPanel getPanelUnten() {
       if (panelUnten == null) {
          panelUnten=new JPanel();
@@ -559,5 +561,14 @@ public class BacksnapGui implements MouseListener {
          panelUnten.add(getSplitPaneMaintenance());
       }
       return panelUnten;
+   }
+   private JPanel getPanel() {
+      if (panel == null) {
+      	panel = new JPanel();
+      	panel.setLayout(new GridLayout(0, 2, 0, 0));
+      	panel.add(getLblPv());
+      	panel.add(getSnapshotName());
+      }
+      return panel;
    }
 }
