@@ -27,6 +27,7 @@ import de.uhingen.kielkopf.andreas.beans.cli.Flag;
  * @author Andreas Kielkopf
  * @see https://github.com/andreaskielkopf/BackSnap
  * @see https://forum.manjaro.org/t/howto-hilfsprogramm-fur-backup-btrfs-snapshots-mit-send-recieve timeshift
+ * 
  */
 public class Backsnap {
    static String              parentKey          =null;
@@ -68,7 +69,6 @@ public class Backsnap {
       for (String s:args)
          argLine.append(" ").append(s);
       logln(1, argLine.toString());
-      
       if (VERSION.get()) {
          logln(0, BACK_SNAP_VERSION);
          System.exit(0);
@@ -123,7 +123,8 @@ public class Backsnap {
             bsGui.setArgs(argLine.substring(7));
             bsGui.setSrc(srcConfig);
             bsGui.setBackup(backupTree, backupDir);
-            bsGui.getSplitPaneSnapshots().setDividerLocation(1d/3d);
+            bsGui.getSplitPaneSnapshots().setDividerLocation(1d / 3d);
+            // SwingUtilities.invokeLater(() -> bsGui.showMaintenance());
          }
          try {
             usePv=Paths.get("/bin/pv").toFile().canExecute();
@@ -150,6 +151,10 @@ public class Backsnap {
                   System.exit(-8);
                }
             try {
+               // if (bsGui != null) {
+               // SwingUtilities.invokeLater(() -> bsGui.showMaintenance());
+               // SwingUtilities.invokeLater(() -> bsGui.frame.revalidate());
+               // }
                // Backup durchführen
                if (!backup(sourceSnapshot, srcConfig.snapshotMount(), backupTree, backupDir, srcSsh, backupSsh,
                         snapConfigs))
@@ -193,18 +198,17 @@ public class Backsnap {
       Optional<Mount> m3=ml.stream().filter(m -> m.mountPath().toString().equals(srcDir1.toString())).findAny();
       if (m3.isEmpty())
          throw new RuntimeException("Not able to find the right device for: " + srcPc1 + ":" + srcDir1.toString());
-      StringBuilder mountCmd=new StringBuilder();
+      StringBuilder mountSB=new StringBuilder();
       if (doMount) {
-         mountCmd.append("mkdir --mode=000 -p ").append(TMP_BTRFS_ROOT).append(";");
-         mountCmd.append("mount -t btrfs -o subvol=/ ").append(m3.get().devicePath()).append(" ")
-                  .append(TMP_BTRFS_ROOT);
+         mountSB.append("mkdir --mode=000 -p ").append(TMP_BTRFS_ROOT).append(";");
+         mountSB.append("mount -t btrfs -o subvol=/ ").append(m3.get().devicePath()).append(" ").append(TMP_BTRFS_ROOT);
       } else {
-         mountCmd.append("umount ").append(TMP_BTRFS_ROOT).append(";");
-         mountCmd.append("rmdir ").append(TMP_BTRFS_ROOT);
+         mountSB.append("umount ").append(TMP_BTRFS_ROOT).append(";");
+         mountSB.append("rmdir ").append(TMP_BTRFS_ROOT);
       }
-      String cmd=srcPc1.getCmd(mountCmd);
-      logln(4, cmd);// if (!DRYRUN.get())
-      try (CmdStream mountStream=Commandline.executeCached(cmd, null)) { // not cached
+      String mountCmd=srcPc1.getCmd(mountSB);
+      logln(4, mountCmd);// if (!DRYRUN.get())
+      try (CmdStream mountStream=Commandline.executeCached(mountCmd, null)) { // not cached
          mountStream.backgroundErr();
          mountStream.erg().forEach(t -> logln(4, t));
          for (String line:mountStream.errList())
@@ -311,40 +315,40 @@ public class Backsnap {
    }
    private static boolean sendBtrfs(Mount srcVolume, String srcSsh1, String backupSsh, Snapshot s, Path bDir,
             List<SnapConfig> snapConfigs) throws IOException {
-      boolean       sameSsh =(srcSsh1.contains("@") && srcSsh1.equals(backupSsh));
-      StringBuilder send_cmd=new StringBuilder("/bin/btrfs send ");
+      boolean       sameSsh    =(srcSsh1.contains("@") && srcSsh1.equals(backupSsh));
+      StringBuilder btrfsSendSB=new StringBuilder("/bin/btrfs send ");
       if (parentSnapshot != null) // @todo genauer prüfen
-         send_cmd.append("-p ").append(parentSnapshot.getSnapshotMountPath()).append(" ");
+         btrfsSendSB.append("-p ").append(parentSnapshot.getSnapshotMountPath()).append(" ");
       if (s.btrfsPath().toString().contains("timeshift-btrfs"))
          setReadonly(parentSnapshot, s, true);
-      logln(1, "");
-      send_cmd.append(s.getSnapshotMountPath());
+      logln(2, "");
+      btrfsSendSB.append(s.getSnapshotMountPath());
       if (!sameSsh)
          if (srcSsh1.contains("@"))
-            send_cmd.insert(0, "ssh " + srcSsh1 + " '").append("'");
+            btrfsSendSB.insert(0, "ssh " + srcSsh1 + " '").append("'");
          else
-            send_cmd.insert(0, srcSsh1);
+            btrfsSendSB.insert(0, srcSsh1);
       if (usePv)
-         send_cmd.append("|/bin/pv -f");
-      send_cmd.append("|");
+         btrfsSendSB.append("|/bin/pv -f");
+      btrfsSendSB.append("|");
       if (!sameSsh)
          if (backupSsh.contains("@"))
-            send_cmd.append("ssh " + backupSsh + " '");
+            btrfsSendSB.append("ssh " + backupSsh + " '");
          else
-            send_cmd.append(backupSsh);
-      send_cmd.append("/bin/btrfs receive ").append(bDir).append(";/bin/sync");
+            btrfsSendSB.append(backupSsh);
+      btrfsSendSB.append("/bin/btrfs receive ").append(bDir).append(";/bin/sync");
       if (sameSsh)
          if (srcSsh1.contains("@"))
-            send_cmd.insert(0, "ssh " + srcSsh1 + " '");
+            btrfsSendSB.insert(0, "ssh " + srcSsh1 + " '");
       // else
       // send_cmd.insert(0, srcSsh); // @todo für einzelnes sudo anpassen ?
       if (backupSsh.contains("@"))
-         send_cmd.append("'");
-      logln(1, send_cmd.toString());
+         btrfsSendSB.append("'");
+      logln(2, btrfsSendSB.toString());
       if (!DRYRUN.get())
          synchronized (BTRFS_LOCK) {
-            try (CmdStream btrfs_send=Commandline.executeCached(send_cmd, null)) {
-               task=Commandline.background.submit(() -> btrfs_send.err().forEach(line -> {
+            try (CmdStream btrfsSendStream=Commandline.executeCached(btrfsSendSB, null)) {
+               task=Commandline.background.submit(() -> btrfsSendStream.err().forEach(line -> {
                   if (line.contains("ERROR: cannot find parent subvolume"))
                      Backsnap.canNotFindParent=Backsnap.parentKey;
                   if (line.contains("No route to host") || line.contains("Connection closed")
@@ -374,7 +378,7 @@ public class Backsnap {
                      show(line);
                   }
                }));
-               btrfs_send.erg().forEach(line -> {
+               btrfsSendStream.erg().forEach(line -> {
                   if (lastLine != 0) {
                      lastLine=0;
                      logln(3, "");
@@ -396,14 +400,14 @@ public class Backsnap {
    private static void setReadonly(Snapshot parent, Snapshot snapshot, boolean readonly) throws IOException {
       if (!snapshot.btrfsPath().toString().contains("timeshift"))
          return;
-      StringBuilder readonlyCmd=new StringBuilder();
+      StringBuilder readonlySB=new StringBuilder();
       if (parent != null)
-         readonlyCmd.append("btrfs property set ").append(parent.getSnapshotMountPath()).append(" ro ").append(readonly)
+         readonlySB.append("btrfs property set ").append(parent.getSnapshotMountPath()).append(" ro ").append(readonly)
                   .append(";");
-      readonlyCmd.append("btrfs property set ").append(snapshot.getSnapshotMountPath()).append(" ro ").append(readonly);
-      String cmd=snapshot.mount().pc().getCmd(readonlyCmd);
-      logln(4, cmd);// if (!DRYRUN.get())
-      try (CmdStream readonlyStream=Commandline.executeCached(cmd, null)) { // not cached
+      readonlySB.append("btrfs property set ").append(snapshot.getSnapshotMountPath()).append(" ro ").append(readonly);
+      String readonlyCmd=snapshot.mount().pc().getCmd(readonlySB);
+      logln(4, readonlyCmd);// if (!DRYRUN.get())
+      try (CmdStream readonlyStream=Commandline.executeCached(readonlyCmd, null)) { // not cached
          readonlyStream.backgroundErr();
          readonlyStream.erg().forEach(t -> logln(4, t));
          for (String line:readonlyStream.errList())
@@ -427,27 +431,28 @@ public class Backsnap {
       // bsGui.getLblPv().repaint(50);
    }
    private static void rsyncFiles(String srcSsh1, String backupSsh, Path sDir, Path bDir) throws IOException {
-      StringBuilder copyCmd=new StringBuilder("/bin/rsync -vdcptgo --exclude \"@*\" --exclude \"" + SNAPSHOT + "\" ");
+      StringBuilder rsyncSB=new StringBuilder("/bin/rsync -vdcptgo --exclude \"@*\" --exclude \"" + SNAPSHOT + "\" ");
       if (DRYRUN.get())
-         copyCmd.append("--dry-run ");
+         rsyncSB.append("--dry-run ");
       if (!srcSsh1.equals(backupSsh))
          if (srcSsh1.contains("@"))
-            copyCmd.append(srcSsh1).append(":");
-      copyCmd.append(sDir.getParent()).append("/ ");
+            rsyncSB.append(srcSsh1).append(":");
+      rsyncSB.append(sDir.getParent()).append("/ ");
       if (!srcSsh1.equals(backupSsh))
          if (backupSsh.contains("@"))
-            copyCmd.append(backupSsh).append(":");
-      copyCmd.append(bDir).append("/");
+            rsyncSB.append(backupSsh).append(":");
+      rsyncSB.append(bDir).append("/");
       if (srcSsh1.equals(backupSsh))
          if (srcSsh1.contains("@"))
-            copyCmd.insert(0, "ssh " + srcSsh1 + " '").append("'"); // gesamten Befehl senden ;-)
+            rsyncSB.insert(0, "ssh " + srcSsh1 + " '").append("'"); // gesamten Befehl senden ;-)
          else
-            copyCmd.insert(0, srcSsh1); // nur sudo, kein quoting !
-      logln(4, copyCmd.toString());// if (!DRYRUN.get())
-      try (CmdStream rsync=Commandline.executeCached(copyCmd.toString(), null)) { // not cached
-         rsync.backgroundErr();
-         rsync.erg().forEach(t -> logln(4, t));
-         for (String line:rsync.errList())
+            rsyncSB.insert(0, srcSsh1); // nur sudo, kein quoting !
+      String rsyncCmd=rsyncSB.toString();
+      logln(4, rsyncCmd);// if (!DRYRUN.get())
+      try (CmdStream rsyncStream=Commandline.executeCached(rsyncCmd, null)) { // not cached
+         rsyncStream.backgroundErr();
+         rsyncStream.erg().forEach(t -> logln(4, t));
+         for (String line:rsyncStream.errList())
             if (line.contains("No route to host") || line.contains("Connection closed")
                      || line.contains("connection unexpectedly closed")) {
                Backsnap.connectionLost=10;
@@ -456,15 +461,15 @@ public class Backsnap {
       }
    }
    public static void removeSnapshot(Snapshot s) throws IOException {
-      StringBuilder removeCmd=new StringBuilder("/bin/btrfs subvolume delete -Cv ").append(s.getBackupMountPath());
-      String        cmd      =s.mount().pc().getCmd(removeCmd);
+      StringBuilder removeSB=new StringBuilder("/bin/btrfs subvolume delete -Cv ").append(s.getBackupMountPath());
+      String        removeCmd      =s.mount().pc().getCmd(removeSB);
       // if ((s.mount().pc().extern() instanceof String x) && (!x.isBlank()))
       // if (x.startsWith("sudo "))
       // remove_cmd.insert(0, x);
       // else
       // remove_cmd.insert(0, "ssh " + x + " '").append("'");
       // logln(4, "");
-      log(4, cmd);
+      log(4, removeCmd);
       // if (!DRYRUN.get())
       synchronized (BTRFS_LOCK) {
          if (GUI.get()) {
@@ -478,15 +483,15 @@ public class Backsnap {
             sl.repaint(100);
             bsGui.mark(s);
          }
-         try (CmdStream remove_snap=Commandline.executeCached(cmd, null)) {
-            remove_snap.backgroundErr();
+         try (CmdStream removeStream=Commandline.executeCached(removeCmd, null)) {
+            removeStream.backgroundErr();
             logln(1, "");
-            remove_snap.erg().forEach(line -> {
+            removeStream.erg().forEach(line -> {
                log(1, line);
                if (GUI.get())
                   bsGui.lblPvSetText(line);
             });
-            remove_snap.waitFor();
+            removeStream.waitFor();
          }
       }
    }
@@ -504,16 +509,16 @@ public class Backsnap {
          if (backupSsh.isBlank())
             if (d.toFile().mkdirs())
                return; // erst mit sudo, dann noch mal mit localhost probieren
-         StringBuilder mkdirCmd=new StringBuilder("mkdir -pv ").append(d);
+         StringBuilder mkdirSB=new StringBuilder("mkdir -pv ").append(d);
          if (backupSsh.contains("@"))
-            mkdirCmd.insert(0, "ssh " + backupSsh + " '").append("'");
+            mkdirSB.insert(0, "ssh " + backupSsh + " '").append("'");
          else
-            mkdirCmd.insert(0, backupSsh);
-         try (CmdStream mkdir=Commandline.executeCached(mkdirCmd, null)) {
-            mkdir.backgroundErr();
-            if (mkdir.erg().peek(t -> logln(6, t)).anyMatch(Pattern.compile("mkdir").asPredicate()))
+            mkdirSB.insert(0, backupSsh);
+         try (CmdStream mkdirStream=Commandline.executeCached(mkdirSB, null)) {
+            mkdirStream.backgroundErr();
+            if (mkdirStream.erg().peek(t -> logln(6, t)).anyMatch(Pattern.compile("mkdir").asPredicate()))
                return;
-            if (mkdir.errList().isEmpty())
+            if (mkdirStream.errList().isEmpty())
                return;
          }
       }
@@ -543,8 +548,8 @@ public class Backsnap {
             }
             if (AUTO.get()) {
                if ((bsGui != null) && (bsGui.frame instanceof Frame frame)) {
-                  JProgressBar  exitBar       =bsGui.getPanelMaintenance().getSpeedBar();
-                  JToggleButton pauseButton   =bsGui.getPanelMaintenance().getTglPause();
+                  JProgressBar  exitBar       =bsGui.getSpeedBar();
+                  JToggleButton pauseButton   =bsGui.getTglPause();
                   int           countdownStart=10;
                   if (AUTO.getParameterOrDefault(10) instanceof Integer n)
                      countdownStart=n;

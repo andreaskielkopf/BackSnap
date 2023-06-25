@@ -35,15 +35,15 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
    }
    private void populate() throws IOException {// otime kommt nur bei snapshots
       // mit -a bekommt man alle Snapshots für dieses Device
-      StringBuilder subvolumeListCmd=new StringBuilder("btrfs subvolume list -apcguqR ").append(mount.mountPath());
-      String        cmd             =mount.pc().getCmd(subvolumeListCmd);
+      StringBuilder subvolumeListCommand=new StringBuilder("btrfs subvolume list -apcguqR ").append(mount.mountPath());
+      String        subvolumeListCmd             =mount.pc().getCmd(subvolumeListCommand);
       // if ((mount.extern() instanceof String x) && (!x.isBlank()))
       // if (x.startsWith("sudo "))
       // subvolumeListCmd.insert(0, x);
       // else
       // subvolumeListCmd.insert(0, "ssh " + x + " '").append("'");
-      Backsnap.logln(3, cmd);
-      try (CmdStream snapshotStream=Commandline.executeCached(cmd, mount.keyD())) {
+      Backsnap.logln(3, subvolumeListCmd);
+      try (CmdStream snapshotStream=Commandline.executeCached(subvolumeListCmd, mount.keyD())) {
          snapshotStream.backgroundErr();
          snapshotStream.erg().forEachOrdered(line -> {
             try {

@@ -16,7 +16,6 @@
         <file path="/backsnap/backup"/>
         <javaElement handleIdentifier="=backsnap/src"/>
         <file path="/backsnap/gallery/guitest_de.md"/>
-        <javaElement handleIdentifier="=Beans/src&lt;de.uhingen.kielkopf.andreas.beans.cli{Flag.java"/>
         <file path="/backsnap/gallery/install_de.md"/>
         <file path="/backsnap/gallery/restore_de.md"/>
         <file path="/backsnap/gallery/clitest_en.md"/>
@@ -27,6 +26,7 @@
         <file path="/backsnap/SECURITY.md"/>
         <file path="/backsnap/WieEsFunktioniert.md"/>
         <file path="/backsnap/gallery/device_en.md"/>
+        <javaElement handleIdentifier="=Beans/src&lt;de.uhingen.kielkopf.andreas.beans.cli{Flag.java"/>
         <file path="/backsnap/gallery/gallery.md"/>
         <file path="/backsnap/gallery/restore_en.md"/>
         <file path="/backsnap/gallery/backup_en.md"/>

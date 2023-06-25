@@ -40,26 +40,6 @@ public record SubVolumeList(Pc pc, ConcurrentSkipListMap<String, Mount> mountTre
          mountTree.put(mount.keyM(), mount);
          mount.populate();
       }
-      // StringBuilder mountCmd=new StringBuilder("mount -t btrfs");
-      // if (!extern.isBlank())
-      // if (extern.startsWith("sudo"))
-      // mountCmd.insert(0, extern);
-      // else
-      // mountCmd.insert(0, "ssh " + extern + " '").append("'");
-      // Backsnap.logln(3, mountCmd.toString());
-      // try (CmdStream mountList=Commandline.executeCached(mountCmd)) {
-      // mountList.backgroundErr();
-      // for (String line:mountList.erg().toList())
-      // mountTree.put(new Mount(this, line).keyM(), new Mount(this, line));
-      // for (Mount mount:mountTree.values())
-      // mount.populate(); // Snapshots zuweisen
-      // mountList.waitFor();
-      // for (String line:mountList.errList())
-      // if (line.contains("No route to host") || line.contains("Connection closed")
-      // || line.contains("connection unexpectedly closed"))
-      // throw new IOException(line);
-      // Backsnap.logln(3, "");
-      // }
    }
    /**
     * @param vorschlag

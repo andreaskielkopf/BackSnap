@@ -28,8 +28,7 @@ public class MaintenancePanel extends JPanel {
    private JPanel            panelSpace;
    private JPanel            panelScrub;
    private JPanel            panelBalance;
-   private JProgressBar      speedBar;
-   private JToggleButton     tglPause;
+   // private JToggleButton tglPause;
    private JPanel            panelInfo;
    private JSlider           sliderSpace;
    private JCheckBox         chckSpace;
@@ -37,8 +36,8 @@ public class MaintenancePanel extends JPanel {
    private JButton           btnSpace;
    private JLabel            lblSpace;
    private JButton           btnMeta;
-   private int               DEFAULT_META    =249;
-   private int               DEFAULT_SPACE   =999;
+   public static int         DEFAULT_META    =249;
+   public static int         DEFAULT_SPACE   =999;
    private JSlider           sliderMeta;
    private JLabel            lblMeta;
    private BacksnapGui       bsGui;
@@ -63,8 +62,6 @@ public class MaintenancePanel extends JPanel {
    private JPanel getPanelWartung() {
       if (panelWartung == null) {
          panelWartung=new JPanel();
-         panelWartung
-                  .setBorder(new TitledBorder(null, "Maintenance", TitledBorder.LEADING, TitledBorder.TOP, null, null));
          panelWartung.setPreferredSize(new Dimension(500, 125));
          // panelWartung.setMinimumSize(new Dimension(10, 250));
          panelWartung.setLayout(new BorderLayout(0, 0));
@@ -72,36 +69,18 @@ public class MaintenancePanel extends JPanel {
       }
       return panelWartung;
    }
-   public JProgressBar getSpeedBar() {
-      if (speedBar == null) {
-         speedBar=new JProgressBar();
-         speedBar.setForeground(SnapshotLabel.allesOkColor);
-         speedBar.setBackground(SnapshotLabel.markInProgressColor);
-         speedBar.setMaximum(100);
-         speedBar.setValue(0);
-         speedBar.setStringPainted(true);
-         speedBar.setString(" running ");
-      }
-      return speedBar;
-   }
-   public JToggleButton getTglPause() {
-      if (tglPause == null) {
-         tglPause=new JToggleButton("pause for Maintenance");
-      }
-      return tglPause;
-   }
    private JTabbedPane getTabbedPane() {
       if (tabbedPane == null) {
          tabbedPane=new JTabbedPane(JTabbedPane.LEFT);
          tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
-         tabbedPane.addTab("backup info", null, getPanelInfo(), "After the backups, take a break to do maintenance");
-         tabbedPane.setEnabledAt(0, true);
          tabbedPane.addTab("get space", null, getPanelSpace(),
                   "Remove some older backups to make more space for new backups");
          tabbedPane.addTab("clean up", null, getPanelMeta(), "Clean up some intermediate backups to clean up metadata");
-         tabbedPane.addTab("scrub", null, getPanelScrub(), null);
-         tabbedPane.setEnabledAt(3, false);
+         tabbedPane.addTab("backup info", null, getPanelInfo(), "After the backups, take a break to do maintenance");
          tabbedPane.addTab("balance", null, getPanelBalance(), null);
+         tabbedPane.addTab("scrub", null, getPanelScrub(), null);
+         tabbedPane.setEnabledAt(2, false);
+         tabbedPane.setEnabledAt(3, false);
          tabbedPane.setEnabledAt(4, false);
       }
       return tabbedPane;
@@ -132,7 +111,7 @@ public class MaintenancePanel extends JPanel {
       }
       return panelMeta;
    }
-   private JButton getBtnSpace() {
+   public JButton getBtnSpace() {
       if (btnSpace == null) {
          btnSpace=new JButton("Delete some old snapshots");
          if (bsGui != null)
@@ -155,8 +134,8 @@ public class MaintenancePanel extends JPanel {
       Backsnap.DELETEOLD.set(s);
       getSliderSpace().setEnabled(s);
       getBtnSpace().setEnabled(s);
-      if (s)
-         getTglPause().setSelected(s);
+      if (s && bsGui != null && !bsGui.getTglPause().isSelected())
+         SwingUtilities.invokeLater(() -> bsGui.getTglPause().doClick());
    }
    public JCheckBox getChckSpace() {
       if (chckSpace == null) {
@@ -167,16 +146,16 @@ public class MaintenancePanel extends JPanel {
       }
       return chckSpace;
    }
-   private void flagMeta() {
+   public void flagMeta() {
       boolean s=getChckMeta().isSelected();
       Backsnap.log(3, "-------------- getChckMeta() actionPerformed");
       Backsnap.KEEP_MINIMUM.set(s);
       getSliderMeta().setEnabled(s);
       getBtnMeta().setEnabled(s);
-      if (s)
-         getTglPause().setSelected(s);
+      if (s && bsGui != null && !bsGui.getTglPause().isSelected())
+         SwingUtilities.invokeLater(() -> bsGui.getTglPause().doClick());
    }
-   private JButton getBtnMeta() {
+   public JButton getBtnMeta() {
       if (btnMeta == null) {
          btnMeta=new JButton("Delete some unneeded snapshots");
          if (bsGui != null)
@@ -186,7 +165,7 @@ public class MaintenancePanel extends JPanel {
       }
       return btnMeta;
    }
-   private JCheckBox getChckMeta() {
+   public JCheckBox getChckMeta() {
       if (chckMeta == null) {
          chckMeta=new JCheckBox("-m, --keepminimum");
          chckMeta.setHorizontalTextPosition(SwingConstants.LEADING);
@@ -195,7 +174,7 @@ public class MaintenancePanel extends JPanel {
       }
       return chckMeta;
    }
-   private JSlider getSliderSpace() {
+   public JSlider getSliderSpace() {
       if (sliderSpace == null) {
          sliderSpace=new JSlider();
          sliderSpace.setEnabled(Backsnap.DELETEOLD.get());
@@ -224,7 +203,7 @@ public class MaintenancePanel extends JPanel {
       }
       return sliderSpace;
    }
-   private JSlider getSliderMeta() {
+   public JSlider getSliderMeta() {
       if (sliderMeta == null) {
          sliderMeta=new JSlider();
          sliderMeta.setEnabled(false);
@@ -271,9 +250,6 @@ public class MaintenancePanel extends JPanel {
    private JPanel getPanelInfo() {
       if (panelInfo == null) {
          panelInfo=new JPanel();
-         panelInfo.setLayout(new BorderLayout(0, 0));
-         panelInfo.add(getSpeedBar(), BorderLayout.NORTH);
-         panelInfo.add(getTglPause(), BorderLayout.WEST);
       }
       return panelInfo;
    }
