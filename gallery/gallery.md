@@ -24,6 +24,7 @@ Sie finden mich im [manjaro-forum](https://forum.manjaro.org/t/howto-hilfsprogra
 You can find me in the [manjaro-forum](https://forum.manjaro.org/t/howto-hilfsprogramm-fur-backup-btrfs-snapshots-mit-send-recieve/130154) as "andreas85"
 ## pictures
 Some screenshois of BackSnap in action:
+![BackSnap in action](gui.png  "BackSnap gui")
 
 #### version
 Shows the version, and all parameters that where supplied
