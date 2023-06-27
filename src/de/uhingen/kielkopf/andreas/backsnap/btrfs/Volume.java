@@ -52,8 +52,7 @@ public record Volume(String extern, Path device, String label, String uuid) {
       StringBuilder sb=new StringBuilder("Volume [")//
                .append("uuid=").append(uuid()).append(" ")//
                .append(extern()).append(":").append(device())//
-               .append(" ").append(label()).append("]")//
-      ;
+               .append(" ").append(label()).append("]");
       return sb.toString();
    }
    public static ConcurrentSkipListMap<String, Volume> getList(String extern, boolean onlyMounted) {
@@ -89,6 +88,7 @@ public record Volume(String extern, Path device, String label, String uuid) {
    /**
     * @param filesystemShowCmd
     * @param extern2
+    * @deprecated
     */
    public static void injectSsh(StringBuilder cmd, String extern) {
       if ((extern instanceof String x) && (!x.isBlank()))

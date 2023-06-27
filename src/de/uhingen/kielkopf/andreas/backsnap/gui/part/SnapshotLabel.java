@@ -36,15 +36,15 @@ public class SnapshotLabel extends JLabel {
       setBackground(snapshot.isBackup() ? aktuellColor : snapshotColor);
       setText(name);
    }
-   final static Color        unknownColor =Color.RED.darker();
-   final static Color        snapshotColor=Color.YELLOW.brighter();
-   public final static Color aktuellColor =Color.YELLOW.darker();
-   public final static Color delete2Color =Color.ORANGE;
-   public final static Color backupColor  =Color.GREEN.brighter(); // muß bleiben
-   public final static Color keepColor    =Color.CYAN.brighter();
-   public final static Color deleteColor  =Color.RED.brighter();   // darf weg
-   public final static Color naheColor    =Color.ORANGE.brighter();
-   public final static Color markColor    =Color.CYAN;
+   final static Color        unknownColor       =Color.RED.darker();
+   final static Color        snapshotColor      =Color.YELLOW.brighter();
+   public final static Color aktuellColor       =Color.YELLOW.darker();
+   public final static Color delete2Color       =Color.ORANGE;
+   public final static Color allesOkColor       =Color.GREEN.brighter(); // muß bleiben
+   // public final static Color keepColor =Color.CYAN.brighter();
+   public final static Color deleteOldColor     =Color.RED.brighter();   // darf weg
+   public final static Color naheColor          =Color.ORANGE.brighter();
+   public final static Color markInProgressColor=Color.CYAN;
    private void initialize() {
       setBorder(new CompoundBorder(new LineBorder(new Color(0, 0, 0), 2, true), new EmptyBorder(5, 5, 5, 5)));
       setOpaque(true);
@@ -69,8 +69,7 @@ public class SnapshotLabel extends JLabel {
    }
    @Override
    public String toString() {
-      StringBuilder sb=new StringBuilder(snapshot.dirName());
-      return sb.toString();
+      return new StringBuilder(snapshot.dirName()).toString();
    }
    @Override
    public synchronized void addMouseListener(MouseListener l) {

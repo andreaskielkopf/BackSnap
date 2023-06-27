@@ -14,14 +14,9 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
-import de.uhingen.kielkopf.andreas.backsnap.Commandline;
-import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.Mount;
-import de.uhingen.kielkopf.andreas.backsnap.btrfs.SubVolumeList;
 
 import java.awt.event.ActionListener;
-import java.io.IOException;
-import java.util.Optional;
 import java.awt.event.ActionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
@@ -48,7 +43,7 @@ public class Computer extends JPanel {
    private String                  titel           ="?";
    private TitledBorder            titelBorder;
    private JButton                 btnNewButton;
-   private String                  extern          ="sudo";
+   // private String extern ="sudo";
    private DefaultListModel<Mount> listModel;
    /**
     * Create the panel.
@@ -207,60 +202,11 @@ public class Computer extends JPanel {
          btnNewButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
-               invokeLater(() -> test());
+               // invokeLater(() -> test());
             }
          });
       }
       return btnNewButton;
-   }
-   /** Test the connection */
-   protected void test() {
-      calculateExtern();
-      boolean ok=false;
-      Backsnap.logln(7, "test " + extern);
-      if (extern.equals("sudo")) { // nur sudo lokal
-         try (CmdStream sudoTest=Commandline.executeCached("id", null)) {
-            sudoTest.backgroundErr();
-            Optional<String> isRoot=sudoTest.erg().filter(t -> t.contains("uid=0(root)")).findAny();
-            ok=isRoot.isPresent();
-         } catch (IOException e) {
-            e.printStackTrace();
-         }
-         getTestInfo().setText(ok ? "sudo did work" : "you must start this programm with sudo !");
-         getTestInfo().setBackground(ok ? Color.GREEN : Color.RED);
-      } else { // wir müssen mit ssh arbeiten
-         StringBuilder sb=new StringBuilder("btrfs filesystem show -d");
-         // String cacheKey=extern + ":" + sb.toString();
-         sb.insert(0, "ssh " + extern + " '").append("'");
-         try (CmdStream sudoTest=Commandline.executeCached(sb, null)) {
-            sudoTest.backgroundErr();
-            sudoTest.erg().forEach(t -> Backsnap.logln(7, t));
-            // sudoTest.close(); // schließt den stream und ermöglicht zugriff auf die Konserver
-            ok=sudoTest.errList().isEmpty();
-            if (!ok)
-               sudoTest.errList().forEach(t -> Backsnap.logln(7, t));
-         } catch (IOException e) {
-            ok=false;
-            e.printStackTrace();
-         }
-         getTestInfo().setText(ok ? extern + " did work" : "could not connect to " + extern + " !");
-         getTestInfo().setBackground(ok ? Color.GREEN : Color.RED);
-      }
-      if (ok)
-         invokeLater(() -> fillForm());
-   }
-   /**
-    * 
-    */
-   private void fillForm() {
-      String srcSsh=extern.contains("@") ? extern : "";
-      try {
-         getListModell().clear();
-         Commandline.removeFromCache("mount " + extern);
-         getListModell().addAll(new SubVolumeList(srcSsh).mountTree().values());
-      } catch (IOException e) {
-         e.printStackTrace();
-      }
    }
    /**
     * @return
@@ -275,7 +221,7 @@ public class Computer extends JPanel {
       if (benutzer.getSelectedItem() instanceof String b) {
          boolean s=(b.equals("sudo"));
          getComputerName().setEnabled(!s);
-         extern=s ? b : b + "@" + getComputerName().getText();
+         // extern=s ? b : b + "@" + getComputerName().getText();
          // System.out.println(extern);
       }
    }

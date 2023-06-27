@@ -12,37 +12,37 @@ import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
  * @author Andreas Kielkopf
  *
  */
-public record SnapConfig(Mount original, Mount kopie) {
+public record SnapConfig(Mount volumeMount, Mount snapshotMount) {
    /**
-    * Ermittle die Paare von original subvolume und subvolume mit den snapshots
+    * Ermittle die Paare von volumeMount subvolume und subvolume mit den snapshotMount
     * 
     * @param srcSubVolumes
     * @return
     */
    public static List<SnapConfig> getList(SubVolumeList srcSubVolumes) {
       ArrayList<SnapConfig> l=new ArrayList<>();
-      for (Mount original:srcSubVolumes.mountTree().values()) { // über alle subvolumes laufen
-         if (original.btrfsMap().isEmpty())
+      for (Mount volumeMount:srcSubVolumes.mountTree().values()) { // über alle subvolumes laufen
+         if (volumeMount.otimeKeyMap().isEmpty())
             continue;
-         o: for (Snapshot o:original.btrfsMap().values()) {
+         o: for (Snapshot o:volumeMount.otimeKeyMap().values()) {
             Path btrfsPath=o.btrfsPath();
-            for (Mount kopie:srcSubVolumes.mountTree().values()) { // über alle subvolumes laufen
-               if (!original.devicePath().equals(kopie.devicePath())) // nur auf diesem device kann es snapshots geben
+            for (Mount snapshotMount:srcSubVolumes.mountTree().values()) { // über alle subvolumes laufen
+               if (!volumeMount.devicePath().equals(snapshotMount.devicePath())) // nur auf diesem device kann es snapshotMount geben
                   continue;
-               Path sdir=kopie.btrfsPath();
-               int  le2 =kopie.btrfsMap().size();
-               if (le2 > 1) {// von der kopie darf es keine eigenen snapshots geben
+               Path sdir=snapshotMount.btrfsPath();
+               int  le2 =snapshotMount.btrfsMap().size();
+               if (le2 > 1) {// von der snapshotMount darf es keine eigenen snapshotMount geben
                   // sdir+="/";
                   if (!btrfsPath.startsWith(sdir + "/"))
                      continue;
-                  l.add(new SnapConfig(original, kopie));
+                  l.add(new SnapConfig(volumeMount, snapshotMount));
                   break o;
                }
-               if (sdir.equals(original.btrfsPath())) // das darf nicht das selbe sein
+               if (sdir.equals(volumeMount.btrfsPath())) // das darf nicht das selbe sein
                   continue;
                if (!btrfsPath.startsWith(sdir))
                   continue;
-               l.add(new SnapConfig(original, kopie));
+               l.add(new SnapConfig(volumeMount, snapshotMount));
                break o;
             }
             System.out.println("nix gefunden");
@@ -54,21 +54,16 @@ public record SnapConfig(Mount original, Mount kopie) {
    public static SnapConfig getConfig(List<SnapConfig> list, Path srcDir) {
       for (SnapConfig snapConfig:list) {
          Backsnap.logln(9, snapConfig.toString());
-         if (snapConfig.original.mountPath().equals(srcDir))
+         if (snapConfig.volumeMount.mountPath().equals(srcDir))
             return snapConfig;
-         if (snapConfig.kopie.mountPath().equals(srcDir))
+         if (snapConfig.snapshotMount.mountPath().equals(srcDir))
             return snapConfig;
       }
       return null;
    }
    @Override
    public String toString() {
-      StringBuilder builder=new StringBuilder();
-      builder.append("SnapConfig [original=");
-      builder.append(original.mountPath());
-      builder.append(", kopie=");
-      builder.append(kopie.mountPath());
-      builder.append("]");
-      return builder.toString();
+      return new StringBuilder("SnapConfig [volumeMount=").append(volumeMount.mountPath()).append(", snapshotMount=")
+               .append(snapshotMount.mountPath()).append("]").toString();
    }
 }

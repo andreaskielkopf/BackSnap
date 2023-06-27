@@ -100,7 +100,7 @@ public class Commandline {
          brErg.close(); // erg wurde gelesen
          process.destroy();
          if ((key != null) && (!cache.containsKey(key))) {
-            // System.out.println("enable " + key + " in cache");
+//            System.out.println("enable " + key + " in cache");
             cache.put(key, this);
          }
       }

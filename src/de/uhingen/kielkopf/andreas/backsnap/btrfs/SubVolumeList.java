@@ -11,17 +11,13 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentSkipListMap;
 
-import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
-import de.uhingen.kielkopf.andreas.backsnap.Commandline;
-import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
-
 /**
  * Create a List of all subVolumes of this pc, that are mounted explicit
  * 
  * @author Andreas Kielkopf
  *
  */
-public record SubVolumeList(String extern, ConcurrentSkipListMap<String, Mount> mountTree) {
+public record SubVolumeList(Pc pc, ConcurrentSkipListMap<String, Mount> mountTree) {
    /**
     * @param string
     *           mit Zugang zum PC
@@ -29,8 +25,8 @@ public record SubVolumeList(String extern, ConcurrentSkipListMap<String, Mount> 
     *           Liste mit Snapshots dieses PCs
     * @throws IOException
     */
-   public SubVolumeList(String extern) throws IOException {
-      this(extern, new ConcurrentSkipListMap<>());
+   public SubVolumeList(Pc pc) throws IOException {
+      this(pc, new ConcurrentSkipListMap<>());
       populate();
    }
    /**
@@ -40,25 +36,9 @@ public record SubVolumeList(String extern, ConcurrentSkipListMap<String, Mount> 
     * @throws IOException
     */
    private void populate() throws IOException {
-      StringBuilder mountCmd=new StringBuilder("mount|grep btrfs");
-      if (!extern.isBlank())
-         if (extern.startsWith("sudo"))
-            mountCmd.insert(0, extern);
-         else
-            mountCmd.insert(0, "ssh " + extern + " '").append("'");
-      Backsnap.logln(3, mountCmd.toString());
-      try (CmdStream mountList=Commandline.executeCached(mountCmd)) {
-         mountList.backgroundErr();
-         for (String line:mountList.erg().toList())
-            mountTree.put(new Mount(this, line).keyM(), new Mount(this, line));
-         for (Mount mount:mountTree.values())
-            mount.populate(); // Snapshots zuweisen
-         mountList.waitFor();
-         for (String line:mountList.errList())
-            if (line.contains("No route to host") || line.contains("Connection closed")
-                     || line.contains("connection unexpectedly closed"))
-               throw new IOException(line);
-         Backsnap.logln(3, "");
+      for (Mount mount:Mount.getMountList(pc, this).values()) {
+         mountTree.put(mount.keyM(), mount);
+         mount.populate();
       }
    }
    /**
@@ -85,6 +65,10 @@ public record SubVolumeList(String extern, ConcurrentSkipListMap<String, Mount> 
       Path pp=p.getParent();
       if (pp.getParent() == null)
          return null;
-      return getBackupVolume(pp.toString());
+      Mount bv=getBackupVolume(pp.toString());
+      try {
+         bv.populate();
+      } catch (IOException e1) {/* */ }
+      return bv;
    }
 }
