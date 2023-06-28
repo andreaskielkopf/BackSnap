@@ -3,6 +3,8 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.gui;
 
+import static de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotPanel.FONT_INFO;
+import static de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotPanel.FONT_INFO_B;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
@@ -43,7 +45,7 @@ public class BacksnapGui implements MouseListener {
    private JPanel                                      panelEnde;
    private JProgressBar                                progressBar;
    private JLabel                                      lblPv;
-   private JLabel                                      SnapshotName;
+   // private JLabel SnapshotName;
    public final static String                          BLUE        ="<font size=+1 color=\"3333ff\">";
    public final static String                          NORMAL      ="</font>";
    public final static String                          IGEL1       ="<=>";
@@ -187,7 +189,7 @@ public class BacksnapGui implements MouseListener {
             if (keineSackgasse.containsValue(child))
                break; // Bloß keine Endlosschleife !
             Snapshot s=child.snapshot;
-            keineSackgasse.put(s.key(), child);
+            keineSackgasse.put(s.keyO(), child);
             String        parent_uuid=s.parent_uuid();
             SnapshotLabel parent     =backupLabels_Uuid.get(parent_uuid);
             child=parent;
@@ -390,7 +392,8 @@ public class BacksnapGui implements MouseListener {
          panelProgress=new JPanel();
          panelProgress.setLayout(new BorderLayout(10, 0));
          panelProgress.add(getProgressBar(), BorderLayout.WEST);
-         panelProgress.add(getPanel(), BorderLayout.CENTER);
+         panelProgress.add(getPanelInfoLive(), BorderLayout.CENTER);
+         panelProgress.add(getPanelLive(), BorderLayout.EAST);
       }
       return panelProgress;
    }
@@ -415,29 +418,40 @@ public class BacksnapGui implements MouseListener {
       }
       return progressBar;
    }
-   public void lblPvSetText(String s1) {
-      String s2="<html>" + s1.replace(' ', '.').replace(IGEL1, IGEL2);
-      if (s2.contentEquals(getLblPv().getText()))
+   public void lblPvSetText(String s0) {
+      if (s0.contains("<")) {
+         String[] s3=(s0 + " ").split("[\\[\\]]");
+         getLblProgress().setText(" [ " + s3[3] + " ] ");
+         getLblProgress().repaint(50);
+         // System.out.println();
+         // System.out.println(s0);
+         getLblDurchsatz().setText(s3[0] + " [" + s3[1] + "] ");
+         getLblDurchsatz().repaint(50);
          return;
-      getLblPv().setText(s2); // System.out.println(s2);
-      getPanelEnde().repaint(100);
+      }
+      // if (s0.contentEquals(getLblPv().getText()))
+      // return;
+      // getLblPv().setText(s0); // System.out.println(s2);
+      // getPanelEnde().repaint(100);
+      getLblPv().setText(""); // System.out.println(s2);
+      getLblPv().repaint(50);
    }
    private JLabel getLblPv() {
       if (lblPv == null) {
-         lblPv=new JLabel("- Infozeile <=>");
+         lblPv=new JLabel("Info");
          lblPv.setHorizontalAlignment(SwingConstants.CENTER);
          lblPv.setPreferredSize(new Dimension(200, 30));
       }
       return lblPv;
    }
-   public JLabel getSnapshotName() {
-      if (SnapshotName == null) {
-         SnapshotName=new JLabel("this Snapshot ;-)");
-         SnapshotName.setHorizontalAlignment(SwingConstants.CENTER);
-         SnapshotName.setPreferredSize(new Dimension(200, 30));
-      }
-      return SnapshotName;
-   }
+   // public JLabel getSnapshotName() {
+   // if (SnapshotName == null) {
+   // SnapshotName=new JLabel("this Snapshot ;-)");
+   // SnapshotName.setHorizontalAlignment(SwingConstants.CENTER);
+   // SnapshotName.setPreferredSize(new Dimension(200, 30));
+   // }
+   // return SnapshotName;
+   // }
    /**
     * @param s
     */
@@ -490,7 +504,7 @@ public class BacksnapGui implements MouseListener {
    private JLabel getLblArgs() {
       if (lblArgs == null) {
          lblArgs=new JLabel("?");
-         lblArgs.setFont(SnapshotPanel.FONT_INFO);
+         lblArgs.setFont(FONT_INFO);
       }
       return lblArgs;
    }
@@ -550,7 +564,16 @@ public class BacksnapGui implements MouseListener {
    }
    private final Dimension PANEL_UNTEN_DIM =new Dimension(10, 80);
    private final Dimension PANEL_UNTEN_DIM2=new Dimension(10, 180);
-   private JPanel panel;
+   private JPanel          panel;
+   private JLabel          lblBased;
+   private JLabel          lblSnapshot;
+   private JLabel          lblWhat;
+   private JLabel          lblParent;
+   private JPanel          panelLive;
+   private JLabel          lblDurchsatz;
+   private JLabel          lblProgress;
+   private JLabel          lblSpeed;
+   private JLabel          lblwork;
    private JPanel getPanelUnten() {
       if (panelUnten == null) {
          panelUnten=new JPanel();
@@ -562,13 +585,89 @@ public class BacksnapGui implements MouseListener {
       }
       return panelUnten;
    }
-   private JPanel getPanel() {
+   public JPanel getPanelInfoLive() {
       if (panel == null) {
-      	panel = new JPanel();
-      	panel.setLayout(new GridLayout(0, 2, 0, 0));
-      	panel.add(getLblPv());
-      	panel.add(getSnapshotName());
+         panel=new JPanel();
+         panel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
+         // panel.add(getSnapshotName());
+         panel.add(getLblWhat());
+         panel.add(getLblSnapshot());
+         panel.add(getLblBased());
+         panel.add(getLblParent());
+         panel.add(getLblSpeed());
+         panel.add(getLblDurchsatz());
+         panel.add(getLblwork());
+         panel.add(getLblProgress());
       }
       return panel;
+   }
+   public JLabel getLblBased() {
+      if (lblBased == null) {
+         lblBased=new JLabel("  : ");
+         lblBased.setVerticalAlignment(SwingConstants.BOTTOM);
+      }
+      return lblBased;
+   }
+   public JLabel getLblSnapshot() {
+      if (lblSnapshot == null) {
+         lblSnapshot=new JLabel(" ");
+         lblSnapshot.setVerticalAlignment(SwingConstants.BOTTOM);
+         lblSnapshot.setFont(FONT_INFO);
+      }
+      return lblSnapshot;
+   }
+   public JLabel getLblWhat() {
+      if (lblWhat == null) {
+         lblWhat=new JLabel(" : ");
+         lblWhat.setVerticalAlignment(SwingConstants.BOTTOM);
+      }
+      return lblWhat;
+   }
+   public JLabel getLblParent() {
+      if (lblParent == null) {
+         lblParent=new JLabel(" ");
+         lblParent.setVerticalAlignment(SwingConstants.BOTTOM);
+         lblParent.setFont(FONT_INFO);
+      }
+      return lblParent;
+   }
+   private JPanel getPanelLive() {
+      if (panelLive == null) {
+         panelLive=new JPanel();
+         panelLive.setLayout(new BorderLayout(0, 0));
+         panelLive.add(getLblPv());
+      }
+      return panelLive;
+   }
+   private JLabel getLblDurchsatz() {
+      if (lblDurchsatz == null) {
+         lblDurchsatz=new JLabel(" -");
+         lblDurchsatz.setVerticalAlignment(SwingConstants.BOTTOM);
+         lblDurchsatz.setFont(FONT_INFO);
+      }
+      return lblDurchsatz;
+   }
+   private JLabel getLblProgress() {
+      if (lblProgress == null) {
+         lblProgress=new JLabel(" ");
+         lblProgress.setOpaque(true);
+         lblProgress.setBackground(SnapshotLabel.markInProgressColor);
+         lblProgress.setFont(FONT_INFO_B);
+      }
+      return lblProgress;
+   }
+   private JLabel getLblSpeed() {
+      if (lblSpeed == null) {
+         lblSpeed=new JLabel("  speed : ");
+         lblSpeed.setVerticalAlignment(SwingConstants.BOTTOM);
+      }
+      return lblSpeed;
+   }
+   private JLabel getLblwork() {
+      if (lblwork == null) {
+         lblwork=new JLabel(" : ");
+         lblwork.setVerticalAlignment(SwingConstants.BOTTOM);
+      }
+      return lblwork;
    }
 }

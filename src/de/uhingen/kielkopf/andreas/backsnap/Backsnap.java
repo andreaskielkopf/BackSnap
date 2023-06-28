@@ -61,7 +61,7 @@ public class Backsnap {
    public final static Flag   DELETEOLD          =new Flag('o', "deleteold");       // mark old snapshots for deletion
    public final static Flag   KEEP_MINIMUM       =new Flag('m', "keepminimum");     // mark all but minimum snapshots
    public static final String BACK_SNAP_VERSION  =                                  // version
-            "BackSnap for Snapper and Timeshift(beta) Version 0.6.0.8 (2023/06/26)";
+            "BackSnap for Snapper and Timeshift(beta) Version 0.6.0.9 (2023/06/28)";
    public static final Object BTRFS_LOCK         =new Object();
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
@@ -260,11 +260,12 @@ public class Backsnap {
       if (bsGui != null) {
          String text="<html>" + srcSnapshot.getSnapshotMountPath().toString();
          logln(7, text);
-         JLabel sl         =bsGui.getSnapshotName();
-         String dirname    =srcSnapshot.dirName();
-         String blueDirname=BacksnapGui.BLUE + dirname + BacksnapGui.NORMAL;
-         sl.setText(text.replace(dirname, blueDirname));
-         sl.repaint(100);
+         bsGui.getLblWhat().setText("backup of : ");
+         bsGui.getLblSnapshot().setText(srcSnapshot.dirName());
+         
+         bsGui.getLblBased().setText((parentSnapshot == null) ? " " : "   based on : ");
+         bsGui.getLblParent().setText((parentSnapshot == null) ? " " : parentSnapshot.dirName());
+         bsGui.getPanelInfoLive().repaint(50);
       }
       if (srcSnapshot.isBackup()) {
          err.println("Überspringe backup vom backup: " + srcSnapshot.dirName());
@@ -317,6 +318,13 @@ public class Backsnap {
             List<SnapConfig> snapConfigs) throws IOException {
       boolean       sameSsh    =(srcSsh1.contains("@") && srcSsh1.equals(backupSsh));
       StringBuilder btrfsSendSB=new StringBuilder("/bin/btrfs send ");
+      if (bsGui != null) {
+         bsGui.getLblWhat().setText("backup of : ");
+         bsGui.getLblSnapshot().setText(s.dirName());
+         bsGui.getLblBased().setText((parentSnapshot == null) ? " " : "   based on : ");
+         bsGui.getLblParent().setText((parentSnapshot == null) ? " " : parentSnapshot.dirName());
+         bsGui.getPanelInfoLive().repaint(50);
+      }
       if (parentSnapshot != null) // @todo genauer prüfen
          btrfsSendSB.append("-p ").append(parentSnapshot.getSnapshotMountPath()).append(" ");
       if (s.btrfsPath().toString().contains("timeshift-btrfs"))
@@ -461,26 +469,27 @@ public class Backsnap {
       }
    }
    public static void removeSnapshot(Snapshot s) throws IOException {
-      StringBuilder removeSB=new StringBuilder("/bin/btrfs subvolume delete -Cv ").append(s.getBackupMountPath());
-      String        removeCmd      =s.mount().pc().getCmd(removeSB);
-      // if ((s.mount().pc().extern() instanceof String x) && (!x.isBlank()))
-      // if (x.startsWith("sudo "))
-      // remove_cmd.insert(0, x);
-      // else
-      // remove_cmd.insert(0, "ssh " + x + " '").append("'");
-      // logln(4, "");
+      StringBuilder removeSB =new StringBuilder("/bin/btrfs subvolume delete -Cv ").append(s.getBackupMountPath());
+      String        removeCmd=s.mount().pc().getCmd(removeSB);
+      if (bsGui != null) {
+         bsGui.getLblWhat().setText("remove backup of : ");
+         bsGui.getLblSnapshot().setText(s.dirName());
+         bsGui.getLblBased().setText(" ");
+         bsGui.getLblParent().setText(" ");
+         bsGui.getPanelInfoLive().repaint(50);
+      }
       log(4, removeCmd);
       // if (!DRYRUN.get())
       synchronized (BTRFS_LOCK) {
          if (GUI.get()) {
-            JLabel sl  =bsGui.getSnapshotName();
+            // JLabel sl =bsGui.getSnapshotName();
             String text="<html>" + s.btrfsPath().toString();
             logln(7, text);
-            String dirname    =s.dirName();
-            String blueDirname=BacksnapGui.BLUE + dirname + BacksnapGui.NORMAL;
-            sl.setText(text.replace(dirname, blueDirname));
+            // String dirname =s.dirName();
+            // String blueDirname=BacksnapGui.BLUE + dirname + BacksnapGui.NORMAL;
+            // sl.setText(text.replace(dirname, blueDirname));
             // bsGui.lblPvSetText("delete # "+s.dirName());
-            sl.repaint(100);
+            // sl.repaint(100);
             bsGui.mark(s);
          }
          try (CmdStream removeStream=Commandline.executeCached(removeCmd, null)) {
@@ -542,8 +551,8 @@ public class Backsnap {
          log(4, " ready");
          if (GUI.get()) {
             if (bsGui != null) {
-               JLabel sl=bsGui.getSnapshotName();
-               sl.setText("Ready to exit".toString());
+               JProgressBar sl=bsGui.getSpeedBar();
+               sl.setString("Ready to exit".toString());
                sl.repaint(100);
             }
             if (AUTO.get()) {

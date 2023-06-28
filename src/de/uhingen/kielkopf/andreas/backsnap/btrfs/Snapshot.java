@@ -9,7 +9,7 @@ import static de.uhingen.kielkopf.andreas.backsnap.Backsnap.DOT_SNAPSHOTS;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
-
+import java.text.DecimalFormat;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
@@ -90,12 +90,22 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       Matcher m=NUMERIC_DIRNAME.matcher(btrfsPath.toString());
       if (m.find())
          return dir2key(m.group(1)) + btrfsPath.toString(); // ??? numerisch sortieren ;-)
-//      System.err.println("§: " + btrfsPath.toString());
+      // System.err.println("§: " + btrfsPath.toString());
       return btrfsPath.toString();
    }
    public String keyO() {
-      return new StringBuilder((mount == null) ? "null:" : mount().keyM()).append(otime()).append(id())
+      return new StringBuilder((mount == null) ? "null:" : mount().keyM()).append(otime()).append(idN())
                .append(btrfsPath().getFileName()).toString();
+   }
+   static DecimalFormat df=new DecimalFormat("0000000000");
+   /**
+    * @return sortable Integer
+    */
+   private String idN() {
+      String s=Integer.toUnsignedString(id());
+      String t="0".repeat(11 - s.length()) + s;
+//      System.out.println(t);
+      return t;
    }
    final public static String dir2key(String dir) { // ??? numerisch sortieren ;-)
       return (dir.length() >= SORT_LEN) ? dir : ".".repeat(SORT_LEN - dir.length()).concat(dir);
@@ -187,16 +197,16 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    public Stream<Entry<String, String>> getInfo() {
       Map<String, String> infoMap=new LinkedHashMap<>();
       // infoMap.put("0 mount", mount.mountPath().toString());
-//      infoMap.put("dirName : ", dirName());
+      // infoMap.put("dirName : ", dirName());
       infoMap.put("btrfsPath : ", btrfsPath.toString());
       infoMap.put("otime : ", otime);
       infoMap.put("uuid : ", uuid);
       // infoMap.put("3 mountPath", getMountPath().toString());
       infoMap.put("parent_uuid : ", parent_uuid);
       infoMap.put("received_uuid : ", received_uuid);
-       infoMap.put("gen : ", gen.toString());
+      infoMap.put("gen : ", gen.toString());
       // infoMap.put("h cgen", cgen.toString());
-       infoMap.put("id : ", id.toString());
+      infoMap.put("id : ", id.toString());
       // infoMap.put("j top_level", top_level.toString());
       // infoMap.put("k parent", parent.toString());
       // infoMap.put("m key", key());
@@ -243,7 +253,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
                   System.out.println("Found snapshots for: " + e.getKey() + " at (" + commonName + ")");
                   for (Entry<Path, Snapshot> e4:subv.btrfsMap().entrySet())
                      if (e4.getValue() instanceof Snapshot s) // @Todo obsolet ?
-                        System.out.println(" -> " + e4.getKey() + " -> " + s.key()); // System.out.println();
+                        System.out.println(" -> " + e4.getKey() + " -> " + s.dirName()); // System.out.println();
                } else
                   System.out.println("NO snapshots of: " + e.getKey());
             }
@@ -275,7 +285,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          }
          for (Snapshot snapshot:snapshots) {
             if (snapshot.received_uuid() instanceof String ru)
-               System.out.println(snapshot.key() + " => " + snapshot.toString());
+               System.out.println(snapshot.dirName() + " => " + snapshot.toString());
          }
          Commandline.cleanup();
       } catch (IOException e) {

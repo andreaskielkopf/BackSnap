@@ -21,6 +21,7 @@ import javax.swing.border.TitledBorder;
 public class SnapshotPanel extends JPanel implements ComponentListener, MouseListener {
    private static final long                           serialVersionUID    =-3405881652038164771L;
    public static final Font                            FONT_INFO           =new Font("Noto Sans", Font.PLAIN, 16);
+   public static final Font                            FONT_INFO_B           =new Font("Noto Sans", Font.BOLD, 16);
    private JPanel                                      panelView;
    private SnapshotDetail                              panelDetail;
    private JPanel                                      panelSnapshots;
