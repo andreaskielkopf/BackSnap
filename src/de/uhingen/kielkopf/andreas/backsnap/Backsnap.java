@@ -60,8 +60,8 @@ public class Backsnap {
    public final static Flag   SINGLESNAPSHOT     =new Flag('s', "singlesnapshot");   // backup exactly one snapshot
    public final static Flag   DELETEOLD          =new Flag('o', "deleteold");        // mark old snapshots for deletion
    public final static Flag   KEEP_MINIMUM       =new Flag('m', "keepminimum");      // mark all but minimum snapshots
-   public static final String BACK_SNAP_VERSION  =                                   // version
-            "BackSnap for Snapper and Timeshift(beta) Version 0.6.0.15 (2023/06/30)";
+   public static final String BACK_SNAP_VERSION  =                                  // version
+            "BackSnap for Snapper and Timeshift(beta) Version 0.6.0.18 (2023/06/30)";
    public static final Object BTRFS_LOCK         =new Object();
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
@@ -262,11 +262,11 @@ public class Backsnap {
       if (bsGui != null) {
          String text="<html>" + srcSnapshot.getSnapshotMountPath().toString();
          logln(7, text);
-         bsGui.getLblWhat().setText("backup of : ");
-         bsGui.getLblSnapshot().setText(srcSnapshot.dirName());
-         bsGui.getLblBased().setText((parentSnapshot == null) ? " " : "   based on : ");
-         bsGui.getLblParent().setText((parentSnapshot == null) ? " " : parentSnapshot.dirName());
-         bsGui.getPanelInfoLive().repaint(50);
+         bsGui.getLblSnapshot().setText("backup of : ");
+         bsGui.getTxtSnapshot().setText(srcSnapshot.dirName());
+         bsGui.getLblParent().setText((parentSnapshot == null) ? " " : "based on:");
+         bsGui.getTxtParent().setText((parentSnapshot == null) ? " " : parentSnapshot.dirName());
+         bsGui.getPanelWork().repaint(50);
       }
       if (srcSnapshot.isBackup()) {
          err.println("Überspringe backup vom backup: " + srcSnapshot.dirName());
@@ -320,11 +320,11 @@ public class Backsnap {
       boolean       sameSsh    =(srcSsh1.contains("@") && srcSsh1.equals(backupSsh));
       StringBuilder btrfsSendSB=new StringBuilder("/bin/btrfs send ");
       if (bsGui != null) {
-         bsGui.getLblWhat().setText("backup of : ");
-         bsGui.getLblSnapshot().setText(s.dirName());
-         bsGui.getLblBased().setText((parentSnapshot == null) ? " " : "   based on : ");
-         bsGui.getLblParent().setText((parentSnapshot == null) ? " " : parentSnapshot.dirName());
-         bsGui.getPanelInfoLive().repaint(50);
+         bsGui.getLblSnapshot().setText("backup of : ");
+         bsGui.getTxtSnapshot().setText(s.dirName());
+         bsGui.getLblParent().setText((parentSnapshot == null) ? " " : "based on:");
+         bsGui.getTxtParent().setText((parentSnapshot == null) ? " " : parentSnapshot.dirName());
+         bsGui.getPanelWork().repaint(50);
       }
       if (parentSnapshot != null) // @todo genauer prüfen
          btrfsSendSB.append("-p ").append(parentSnapshot.getSnapshotMountPath()).append(" ");
@@ -473,11 +473,11 @@ public class Backsnap {
       StringBuilder removeSB =new StringBuilder("/bin/btrfs subvolume delete -Cv ").append(s.getBackupMountPath());
       String        removeCmd=s.mount().pc().getCmd(removeSB);
       if (bsGui != null) {
-         bsGui.getLblWhat().setText("remove backup of : ");
-         bsGui.getLblSnapshot().setText(s.dirName());
-         bsGui.getLblBased().setText(" ");
+         bsGui.getLblSnapshot().setText("remove backup of:");
+         bsGui.getTxtSnapshot().setText(s.dirName());
          bsGui.getLblParent().setText(" ");
-         bsGui.getPanelInfoLive().repaint(50);
+         bsGui.getTxtParent().setText(" ");
+         bsGui.getPanelWork().repaint(50);
       }
       log(4, removeCmd);
       // if (!DRYRUN.get())
