@@ -5,7 +5,7 @@ package de.uhingen.kielkopf.andreas.backsnap.gui.part;
 
 import java.awt.*;
 import java.awt.event.*;
-
+import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -43,11 +43,11 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    private JLabel                                      infoSubvolume;
    private JLabel                                      infoMountPoint;
    private JSplitPane                                  splitPane;
-   public SnapshotPanel() {
+   public SnapshotPanel() throws IOException {
       setBorder(tBorder);
       initialize();
    }
-   private void initialize() {
+   private void initialize() throws IOException {
       setLayout(new BorderLayout(0, 0));
       add(getPanelInfo(), BorderLayout.NORTH);
       getPanelView().add(new SnapshotLabel(null));
@@ -124,8 +124,9 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
     * @param receivedSnapshots
     * @param srcVolume
     * @return
+    * @throws IOException 
     */
-   public ConcurrentSkipListMap<String, Snapshot> setVolume(Mount subVolume, Collection<Snapshot> list) {
+   public ConcurrentSkipListMap<String, Snapshot> setVolume(Mount subVolume, Collection<Snapshot> list) throws IOException {
       ConcurrentSkipListMap<String, Snapshot> neuList=new ConcurrentSkipListMap<>();
       for (Snapshot snap:list)
          if (!labelTree_UUID.containsKey(snap.uuid()))

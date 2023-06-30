@@ -25,7 +25,7 @@ mount | grep -E " $BS_MOUNT " ||
 
 function backup {
 # This script has to be run in a terminal with sudo to get the grapical version !
-    backsnap -gt -v=1 -a=15 $1 $BS_MOUNT/$2 || exit
+    backsnap -gt -v=1 -a=12 $1 $BS_MOUNT/$2 || exit
 # alternative cli-version is called:    
 #   backsnap -v3 $1 $BS_MOUNT/$2 || exit    
     echo  "OK"
@@ -53,6 +53,13 @@ backup root@notebook:/home notebook.home
 # gast sichern
 backup root@gast:/ gast
 backup root@gast:/home gast.home
+
+# timeshift sichern
+backup root@timeshift:/ timeshift
+backup root@timeshift:/home timeshift.home
+# timeshift sichern
+backup root@timeshift:/ 
+backup root@timeshift:/home 
 
 # Laufwerk unmounten:
 sync

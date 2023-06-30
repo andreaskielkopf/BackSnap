@@ -61,7 +61,7 @@ public class Backsnap {
    public final static Flag   DELETEOLD          =new Flag('o', "deleteold");        // mark old snapshots for deletion
    public final static Flag   KEEP_MINIMUM       =new Flag('m', "keepminimum");      // mark all but minimum snapshots
    public static final String BACK_SNAP_VERSION  =                                   // version
-            "BackSnap for Snapper and Timeshift(beta) Version 0.6.0.12 (2023/06/29)";
+            "BackSnap for Snapper and Timeshift(beta) Version 0.6.0.15 (2023/06/30)";
    public static final Object BTRFS_LOCK         =new Object();
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
@@ -99,7 +99,12 @@ public class Backsnap {
             throw new RuntimeException("Ingnoring, because there are no snapshots in: " + srcDir);
          logln(1, "Backup snapshots from " + srcConfig.volumeMount().keyM());
          // BackupVolume ermitteln
-         String backup   =Flag.getParameterOrDefault(1, "@BackSnap");
+         String backup=Flag.getParameterOrDefault(1, "Back@Snap");
+         if (backup.equals("Back@Snap")) {
+            err.println("2nd parameter missing. Where should i save the backups ?");
+            ende("X");
+            System.exit(0);
+         }
          String backupSsh=backup.contains(":") ? backup.substring(0, backup.indexOf(":")) : "";
          String backupDir=backupSsh.isBlank() ? backup : backup.substring(backupSsh.length() + 1);
          if (backupSsh.startsWith("sudo"))
@@ -171,7 +176,8 @@ public class Backsnap {
             }
          }
       } catch (IOException e) {
-         if (e.getMessage().startsWith("ssh: connect to host"))
+         if ((e.getMessage().startsWith("ssh: connect to host"))
+                  || (e.getMessage().startsWith("Could not find snapshot:")))
             System.err.println(e.getMessage());
          else
             e.printStackTrace();

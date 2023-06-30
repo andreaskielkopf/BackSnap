@@ -10,6 +10,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
+import java.time.Instant;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
@@ -104,7 +105,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    private String idN() {
       String s=Integer.toUnsignedString(id());
       String t="0".repeat(11 - s.length()) + s;
-//      System.out.println(t);
+      // System.out.println(t);
       return t;
    }
    final public static String dir2key(String dir) { // ??? numerisch sortieren ;-)
@@ -114,8 +115,22 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       Matcher m=DIRNAME.matcher(btrfsPath.toString());
       if (m.find())
          return m.group(1);
-      String dn=btrfsPath.getParent().getFileName().toString();
-      return dn;
+      Path dn=btrfsPath.getParent().getFileName();
+      if (dn == null)
+         return null;
+      return dn.toString();
+   }
+   /**
+    * Das soll den Zeitpunkt liefern, an dem der Snapshot gemacht wurde, wenn der berechnet werden kann
+    * 
+    * @return Instant
+    */
+   final public Instant stunden() {
+      try { // if (dn.length() == "2023-06-29_20-00-01".length()) {
+         String[] t=dirName().split("_"); // System.out.println(dn + " --> " + i);
+         return Instant.parse(t[0] + "T" + t[1].replace('-', ':') + "Z");
+      } catch (Exception e) {/* ignore */ }
+      return null;
    }
    /**
     * @return Mount dieses Snapshots sofern im Pfad enthalten

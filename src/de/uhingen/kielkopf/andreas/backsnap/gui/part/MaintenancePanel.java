@@ -16,6 +16,7 @@ import javax.swing.event.ChangeListener;
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
 import java.awt.Dimension;
+import java.io.IOException;
 
 /**
  * @author Andreas Kielkopf
@@ -36,8 +37,8 @@ public class MaintenancePanel extends JPanel {
    private JButton           btnSpace;
    private JLabel            lblSpace;
    private JButton           btnMeta;
-   public static int         DEFAULT_META    =249;
-   public static int         DEFAULT_SPACE   =999;
+   public static int         DEFAULT_META    =499;
+   public static int         DEFAULT_SPACE   =1999;
    private JSlider           sliderMeta;
    private JLabel            lblMeta;
    private BacksnapGui       bsGui;
@@ -115,7 +116,13 @@ public class MaintenancePanel extends JPanel {
       if (btnSpace == null) {
          btnSpace=new JButton("Delete some old snapshots");
          if (bsGui != null)
-            btnSpace.addActionListener(e -> bsGui.delete(getBtnSpace(), SnapshotLabel.deleteOldColor));
+            btnSpace.addActionListener(e -> {
+               try {
+                  bsGui.delete(getBtnSpace(), SnapshotLabel.deleteOldColor);
+               } catch (IOException e1) {
+                  e1.printStackTrace();
+               }
+            });
          btnSpace.setEnabled(false);
          btnSpace.setBackground(SnapshotLabel.deleteOldColor);
       }
@@ -159,7 +166,13 @@ public class MaintenancePanel extends JPanel {
       if (btnMeta == null) {
          btnMeta=new JButton("Delete some unneeded snapshots");
          if (bsGui != null)
-            btnMeta.addActionListener(e -> bsGui.delete(getBtnMeta(), SnapshotLabel.delete2Color));
+            btnMeta.addActionListener(e -> {
+               try {
+                  bsGui.delete(getBtnMeta(), SnapshotLabel.delete2Color);
+               } catch (IOException e1) {
+                  e1.printStackTrace();
+               }
+            });
          btnMeta.setEnabled(false);
          btnMeta.setBackground(SnapshotLabel.delete2Color);
       }
@@ -196,7 +209,11 @@ public class MaintenancePanel extends JPanel {
                   getLblSpace().setText(text);
                   if (!getSliderSpace().getValueIsAdjusting()) {
                      Backsnap.DELETEOLD.setParameter(text);
-                     bsGui.abgleich();
+                     try {
+                        bsGui.abgleich();
+                     } catch (IOException e1) {
+                        e1.printStackTrace();
+                     }
                   }
                }
             });
@@ -221,7 +238,11 @@ public class MaintenancePanel extends JPanel {
                   getLblMeta().setText(text);
                   if (!getSliderMeta().getValueIsAdjusting()) {
                      Backsnap.KEEP_MINIMUM.setParameter(text);
-                     bsGui.abgleich();
+                     try {
+                        bsGui.abgleich();
+                     } catch (IOException e1) {
+                        e1.printStackTrace();
+                     }
                   }
                }
             });

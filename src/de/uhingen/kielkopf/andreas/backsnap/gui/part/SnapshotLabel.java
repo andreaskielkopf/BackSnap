@@ -5,6 +5,7 @@ package de.uhingen.kielkopf.andreas.backsnap.gui.part;
 
 import java.awt.Color;
 import java.awt.event.MouseListener;
+import java.io.IOException;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import javax.swing.JLabel;
@@ -26,13 +27,16 @@ public class SnapshotLabel extends JLabel {
    }
    /**
     * @param snapshot
+    * @throws IOException 
     */
-   public SnapshotLabel(Snapshot snapshot1) {
+   public SnapshotLabel(Snapshot snapshot1) throws IOException {
       this();
       if (snapshot1 == null)
          return;
       snapshot=snapshot1;
       String name=snapshot.dirName();
+      if (name == null)
+         throw new IOException("Could not find snapshot: " + snapshot1.toString());
       setBackground(snapshot.isBackup() ? aktuellColor : snapshotColor);
       setText(name);
    }
@@ -55,8 +59,9 @@ public class SnapshotLabel extends JLabel {
    /**
     * @param snapshot2
     * @return
+    * @throws IOException 
     */
-   public static SnapshotLabel getSnapshotLabel(Snapshot snapshot2) {
+   public static SnapshotLabel getSnapshotLabel(Snapshot snapshot2) throws IOException {
       SnapshotLabel snapLabel=null;
       if (labels.get(snapshot2.uuid()) instanceof SnapshotLabel sl) {
          snapLabel=sl;
