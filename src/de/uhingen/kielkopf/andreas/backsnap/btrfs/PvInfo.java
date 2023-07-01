@@ -17,7 +17,7 @@ public record PvInfo(String size, String time, String speed, String progress) {
    public PvInfo(String pv) {
       this(Snapshot.getString(SIZE.matcher(pv)), Snapshot.getString(TIME.matcher(pv)),
                Snapshot.getString(SPEED.matcher(pv)), Snapshot.getString(PROGRESS.matcher(pv)));
-      System.out.println(pv);
+//      System.out.println(pv);
    }
    public String size() {
       return size != null ? size : "";

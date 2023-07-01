@@ -5,6 +5,7 @@
 * In the **[timeshift](../timeshift/gallery/gallery.md)** branch is a beta version for use with "timeshift"
 
 ![BackSnap in action](./gallery/gui.png  "BackSnap gui")
+With BackSnap, regular backups are no longer a burden, but an easy task.
 
 ## Prologue
 ###### A snapshot is not a backup!

@@ -445,47 +445,41 @@ public class BacksnapGui implements MouseListener {
       }
       return progressBar;
    }
-   public void lblPvSetText(String s0) {
-      PvInfo pv=new PvInfo(s0);
-      if (!pv.progress().isEmpty()) {
-         getTxtSize().setText(pv.size());
-         getTxtTime().setText(pv.time());
-         getTxtSpeed().setText(pv.speed());
-         getTxtWork().setText(pv.progress());
-         getPanelWork().revalidate();
-         getPanelWork().repaint(50);
-         return;
-      }
-      if (s0.contains("<")) {
-         String[] s1=s0.trim().split("\\] \\[");
-         if (s1.length == 2) {
-            String[] s3=s1[0].replace(" B", "_B").replace("[ ", "[_").split(" ");
-            if (s3.length == 3) {
-               getTxtSize().setText(s3[0].replace('_', ' '));
-               getTxtTime().setText(s3[1]);
-               getTxtSpeed().setText(s3[2].replace("[", ""));
-               getTxtWork().setText(" " + s1[1].replace(' ', '.').replace("]", " "));
-               // getTxtWork().repaint(50);
-               // System.out.println();
-               // System.out.println(s0);
-               // getTxtSpeed().setText(s3[0] + " [" + s3[1] + "] ");
-               // getTxtSpeed().repaint(50);
-               getPanelWork().revalidate();
-               getPanelWork().repaint(50);
-               return;
-            }
-            System.out.println("s3=" + s3.length);
-            System.out.println(s3);
+   public void lblPvSetText(final String s0) {
+      EventQueue.invokeLater(() -> {
+         final PvInfo pv=new PvInfo(s0);
+         if (!pv.progress().isEmpty()) {
+            getTxtSize().setText(pv.size());
+            getTxtTime().setText(pv.time());
+            getTxtSpeed().setText(pv.speed());
+            getTxtWork().setText(pv.progress());
+            getPanelWork().revalidate();
+            getTxtWork().repaint(50);
+            getPanelWork().repaint(50);
+            return;
          }
-         System.out.println("s1=" + s1.length);
-         System.out.println(s1);
-      }
-      // if (s0.contentEquals(getLblPv().getText()))
-      // return;
-      // getLblPv().setText(s0); // System.out.println(s2);
-      // getPanelEnde().repaint(100);
-      getLblPv().setText(""); // System.out.println(s2);
-      getLblPv().repaint(50);
+         if (s0.contains("<")) {
+            String[] s1=s0.trim().split("\\] \\[");
+            if (s1.length == 2) {
+               String[] s3=s1[0].replace(" B", "_B").replace("[ ", "[_").split(" ");
+               if (s3.length == 3) {
+                  getTxtSize().setText(s3[0].replace('_', ' '));
+                  getTxtTime().setText(s3[1]);
+                  getTxtSpeed().setText(s3[2].replace("[", ""));
+                  getTxtWork().setText(" " + s1[1].replace(' ', '.').replace("]", " "));
+                  getPanelWork().revalidate();
+                  getPanelWork().repaint(50);
+                  return;
+               }
+               System.out.println("s3=" + s3.length);
+               System.out.println(s3);
+            }
+            System.out.println("s1=" + s1.length);
+            System.out.println(s1);
+         }
+         getLblPv().setText(""); // System.out.println(s2);
+         getLblPv().repaint(50);
+      });
    }
    private JLabel getLblPv() {
       if (lblPv == null) {

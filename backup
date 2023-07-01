@@ -57,9 +57,10 @@ backup root@gast:/home gast.home
 # timeshift sichern
 backup root@timeshift:/ timeshift
 backup root@timeshift:/home timeshift.home
-# timeshift sichern
-backup root@timeshift:/ 
-backup root@timeshift:/home 
+
+# timeshift sichern mit Fehlermeldung weil Parameter 2 fehlt
+# backup root@timeshift:/ 
+# backup root@timeshift:/home 
 
 # Laufwerk unmounten:
 sync
