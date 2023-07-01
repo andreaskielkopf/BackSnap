@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 
 import javax.swing.*;
@@ -30,39 +31,41 @@ import de.uhingen.kielkopf.andreas.beans.cli.Flag;
  * 
  */
 public class Backsnap {
-   static String              parentKey          =null;
-   private static Snapshot    parentSnapshot     =null;
-   private static boolean     usePv              =false;
-   static int                 lastLine           =0;
-   static String              canNotFindParent   =null;
-   static int                 connectionLost     =0;
-   static Future<?>           task               =null;
-   private static BacksnapGui bsGui              =null;
-   private static String      refreshGUIcKey     =null;
-   private static Mount       refreshBackupVolume=null;
-   private static String      refreshBackupDir   =null;
-   private static int         textVorhanden      =0;
-   private static String      srcSsh             =null;
-   private static Path        srcDir             =null;
-   private static Pc          srcPc              =null;
-   public static String       TMP_BTRFS_ROOT     ="/tmp/BtrfsRoot";
-   final static Flag          HELP               =new Flag('h', "help");             // show usage
-   final static Flag          VERSION            =new Flag('x', "version");          // show date and version
-   final static Flag          DRYRUN             =new Flag('d', "dryrun");           // do not do anythimg ;-)
-   final static Flag          GUI                =new Flag('g', "gui");              // enable gui (works only with
-                                                                                     // sudo)
-   final static Flag          AUTO               =new Flag('a', "auto");             // auto-close gui when ready
-   final public static Flag   VERBOSE            =new Flag('v', "verbose");
-   final public static Flag   TIMESHIFT          =new Flag('t', "timeshift");
-   final public static String SNAPSHOT           ="snapshot";
-   final public static String DOT_SNAPSHOTS      =".snapshots";
-   final public static String AT_SNAPSHOTS       ="@snapshots";
-   public final static Flag   SINGLESNAPSHOT     =new Flag('s', "singlesnapshot");   // backup exactly one snapshot
-   public final static Flag   DELETEOLD          =new Flag('o', "deleteold");        // mark old snapshots for deletion
-   public final static Flag   KEEP_MINIMUM       =new Flag('m', "keepminimum");      // mark all but minimum snapshots
-   public static final String BACK_SNAP_VERSION  =                                  // version
-            "BackSnap for Snapper and Timeshift(beta) Version 0.6.0.21 (2023/07/01)";
-   public static final Object BTRFS_LOCK         =new Object();
+   static String                     parentKey          =null;
+   private static Snapshot           parentSnapshot     =null;
+   private static boolean            usePv              =false;
+   static int                        lastLine           =0;
+   static String                     canNotFindParent   =null;
+   static int                        connectionLost     =0;
+   static Future<?>                  task               =null;
+   private static BacksnapGui        bsGui              =null;
+   private static String             refreshGUIcKey     =null;
+   private static Mount              refreshBackupVolume=null;
+   private static String             refreshBackupDir   =null;
+   private static int                textVorhanden      =0;
+   private static String             srcSsh             =null;
+   private static Path               srcDir             =null;
+   private static Pc                 srcPc              =null;
+   public static String              TMP_BTRFS_ROOT     ="/tmp/BtrfsRoot";
+   final static Flag                 HELP               =new Flag('h', "help");           // show usage
+   final static Flag                 VERSION            =new Flag('x', "version");        // show date and version
+   final static Flag                 DRYRUN             =new Flag('d', "dryrun");         // do not do anythimg ;-)
+   final static Flag                 GUI                =new Flag('g', "gui");            // enable gui (works only with
+                                                                                          // sudo)
+   final static Flag                 AUTO               =new Flag('a', "auto");           // auto-close gui when ready
+   final public static Flag          VERBOSE            =new Flag('v', "verbose");
+   final public static Flag          TIMESHIFT          =new Flag('t', "timeshift");
+   final public static String        SNAPSHOT           ="snapshot";
+   final public static String        DOT_SNAPSHOTS      =".snapshots";
+   final public static String        AT_SNAPSHOTS       ="@snapshots";
+   public final static Flag          SINGLESNAPSHOT     =new Flag('s', "singlesnapshot"); // backup exactly one snapshot
+   public final static Flag          DELETEOLD          =new Flag('o', "deleteold");      // mark old snapshots for
+                                                                                          // deletion
+   public final static Flag          KEEP_MINIMUM       =new Flag('m', "keepminimum");    // mark all but minimum
+                                                                                          // snapshots
+   public static final String        BACK_SNAP_VERSION  =                                 // version
+            "BackSnap for Snapper and Timeshift(beta) Version 0.6.0.22 (2023/07/01)";
+   public static final ReentrantLock BTRFS_LOCK       =new ReentrantLock();
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
       StringBuilder argLine=new StringBuilder("args > ");
@@ -84,7 +87,10 @@ public class Backsnap {
          srcSsh="sudo ";
       if (srcDir.endsWith(DOT_SNAPSHOTS))
          srcDir=srcDir.getParent();
+      BTRFS_LOCK.lock();
       try {
+         if (bsGui != null)
+            SwingUtilities.invokeLater(() -> bsGui.getPanelMaintenance().updateButtons());
          srcPc=new Pc(srcSsh);
          if (TIMESHIFT.get())
             mountBtrfsRoot(srcPc, srcDir, true);
@@ -162,9 +168,11 @@ public class Backsnap {
                            + Integer.toString(srcConfig.volumeMount().otimeKeyMap().size()));
                   progressbar.repaint(50);
                }
+               // synchronized (BTRFS_LOCK) {
                if (!backup(sourceSnapshot, srcConfig.snapshotMount(), backupTree, backupDir, srcSsh, backupSsh,
                         snapConfigs))
                   continue;
+               // }
                // Anzeige im Progressbar anpassen
                if (bsGui != null)
                   refreshGUI(backupVolume, backupDir, backupSsh);
@@ -183,6 +191,10 @@ public class Backsnap {
             e.printStackTrace();
          ende("Xabbruch");
          System.exit(-1);
+      } finally {
+         BTRFS_LOCK.unlock();
+         if (bsGui != null)
+            SwingUtilities.invokeLater(() -> bsGui.getPanelMaintenance().updateButtons());
       }
       ende("X");
       System.exit(-2);
@@ -354,48 +366,54 @@ public class Backsnap {
       if (backupSsh.contains("@"))
          btrfsSendSB.append("'");
       logln(2, btrfsSendSB.toString());
-      if (!DRYRUN.get())
-         synchronized (BTRFS_LOCK) {
-            try (CmdStream btrfsSendStream=Commandline.executeCached(btrfsSendSB, null)) {
-               task=Commandline.background.submit(() -> btrfsSendStream.err().forEach(line -> {
-                  if (line.contains("ERROR: cannot find parent subvolume"))
-                     Backsnap.canNotFindParent=Backsnap.parentKey;
-                  if (line.contains("No route to host") || line.contains("Connection closed")
-                           || line.contains("connection unexpectedly closed"))
-                     Backsnap.connectionLost=10;
-                  if (line.contains("<=>")) { // from pv
-                     err.print(line);
-                     show(line);
-                     String lf=(Backsnap.lastLine == 0) ? "\n" : "\r";
-                     err.print(lf);
-                     Backsnap.lastLine=line.length();
-                     if (line.contains(":00 ")) {
-                        err.print("\n");
-                        Backsnap.connectionLost=0;
-                     }
-                     if (line.contains("0,00 B/s")) {
-                        err.println();
-                        err.println("HipCup");
-                        Backsnap.connectionLost++;
-                     }
-                  } else {
-                     if (Backsnap.lastLine != 0) {
-                        Backsnap.lastLine=0;
-                        err.println();
-                     }
-                     err.println(line);
-                     show(line);
+      if (!DRYRUN.get()) {
+         BTRFS_LOCK.lock();
+         try (CmdStream btrfsSendStream=Commandline.executeCached(btrfsSendSB, null)) {
+            if (bsGui != null)
+               SwingUtilities.invokeLater(() -> bsGui.getPanelMaintenance().updateButtons());
+            task=Commandline.background.submit(() -> btrfsSendStream.err().forEach(line -> {
+               if (line.contains("ERROR: cannot find parent subvolume"))
+                  Backsnap.canNotFindParent=Backsnap.parentKey;
+               if (line.contains("No route to host") || line.contains("Connection closed")
+                        || line.contains("connection unexpectedly closed"))
+                  Backsnap.connectionLost=10;
+               if (line.contains("<=>")) { // from pv
+                  err.print(line);
+                  show(line);
+                  String lf=(Backsnap.lastLine == 0) ? "\n" : "\r";
+                  err.print(lf);
+                  Backsnap.lastLine=line.length();
+                  if (line.contains(":00 ")) {
+                     err.print("\n");
+                     Backsnap.connectionLost=0;
                   }
-               }));
-               btrfsSendStream.erg().forEach(line -> {
-                  if (lastLine != 0) {
-                     lastLine=0;
-                     logln(3, "");
+                  if (line.contains("0,00 B/s")) {
+                     err.println();
+                     err.println("HipCup");
+                     Backsnap.connectionLost++;
                   }
+               } else {
+                  if (Backsnap.lastLine != 0) {
+                     Backsnap.lastLine=0;
+                     err.println();
+                  }
+                  err.println(line);
+                  show(line);
+               }
+            }));
+            btrfsSendStream.erg().forEach(line -> {
+               if (lastLine != 0) {
+                  lastLine=0;
                   logln(3, "");
-               });
-            } // ende("S");// B
-         }
+               }
+               logln(3, "");
+            });
+         } finally {
+            BTRFS_LOCK.unlock();
+            if (bsGui != null)
+               SwingUtilities.invokeLater(() -> bsGui.getPanelMaintenance().updateButtons());
+         } // ende("S");// B
+      }
       if (s.btrfsPath().toString().contains("timeshift-btrfs"))
          setReadonly(parentSnapshot, s, false);
       return true;
@@ -409,22 +427,32 @@ public class Backsnap {
    private static void setReadonly(Snapshot parent, Snapshot snapshot, boolean readonly) throws IOException {
       if (!snapshot.btrfsPath().toString().contains("timeshift"))
          return;
-      StringBuilder readonlySB=new StringBuilder();
-      if (parent != null)
-         readonlySB.append("btrfs property set ").append(parent.getSnapshotMountPath()).append(" ro ").append(readonly)
-                  .append(";");
-      readonlySB.append("btrfs property set ").append(snapshot.getSnapshotMountPath()).append(" ro ").append(readonly);
-      String readonlyCmd=snapshot.mount().pc().getCmd(readonlySB);
-      logln(4, readonlyCmd);// if (!DRYRUN.get())
-      try (CmdStream readonlyStream=Commandline.executeCached(readonlyCmd, null)) { // not cached
-         readonlyStream.backgroundErr();
-         readonlyStream.erg().forEach(t -> logln(4, t));
-         for (String line:readonlyStream.errList())
-            if (line.contains("No route to host") || line.contains("Connection closed")
-                     || line.contains("connection unexpectedly closed")) {
-               Backsnap.connectionLost=10;
-               break;
-            } // ende("");// R
+      BTRFS_LOCK.lock();
+      try {
+         if (bsGui != null)
+            SwingUtilities.invokeLater(() -> bsGui.getPanelMaintenance().updateButtons());
+         StringBuilder readonlySB=new StringBuilder();
+         if (parent != null)
+            readonlySB.append("btrfs property set ").append(parent.getSnapshotMountPath()).append(" ro ")
+                     .append(readonly).append(";");
+         readonlySB.append("btrfs property set ").append(snapshot.getSnapshotMountPath()).append(" ro ")
+                  .append(readonly);
+         String readonlyCmd=snapshot.mount().pc().getCmd(readonlySB);
+         logln(4, readonlyCmd);// if (!DRYRUN.get())
+         try (CmdStream readonlyStream=Commandline.executeCached(readonlyCmd, null)) { // not cached
+            readonlyStream.backgroundErr();
+            readonlyStream.erg().forEach(t -> logln(4, t));
+            for (String line:readonlyStream.errList())
+               if (line.contains("No route to host") || line.contains("Connection closed")
+                        || line.contains("connection unexpectedly closed")) {
+                  Backsnap.connectionLost=10;
+                  break;
+               } // ende("");// R
+         }
+      } finally {
+         BTRFS_LOCK.unlock();
+         if (bsGui != null)
+            SwingUtilities.invokeLater(() -> bsGui.getPanelMaintenance().updateButtons());
       }
    }
    static StringBuilder pv=new StringBuilder("- Info -");
@@ -469,6 +497,12 @@ public class Backsnap {
             } // ende("");// R
       }
    }
+   /**
+    * löscht eines der Backups im Auftrag der GUI
+    * 
+    * @param s
+    * @throws IOException
+    */
    public static void removeSnapshot(Snapshot s) throws IOException {
       StringBuilder removeSB =new StringBuilder("/bin/btrfs subvolume delete -Cv ").append(s.getBackupMountPath());
       String        removeCmd=s.mount().pc().getCmd(removeSB);
@@ -481,8 +515,11 @@ public class Backsnap {
       }
       log(4, removeCmd);
       // if (!DRYRUN.get())
-      synchronized (BTRFS_LOCK) {
-         if (GUI.get()) {
+      BTRFS_LOCK.lock();
+      try {
+         if (bsGui != null) {
+            SwingUtilities.invokeLater(() -> bsGui.getPanelMaintenance().updateButtons());
+            // if (GUI.get()) {
             // JLabel sl =bsGui.getSnapshotName();
             String text="<html>" + s.btrfsPath().toString();
             logln(7, text);
@@ -503,6 +540,10 @@ public class Backsnap {
             });
             removeStream.waitFor();
          }
+      } finally {
+         BTRFS_LOCK.unlock();
+         if (bsGui != null)
+            SwingUtilities.invokeLater(() -> bsGui.getPanelMaintenance().updateButtons());
       }
    }
    /**

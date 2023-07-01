@@ -43,6 +43,10 @@ public class MaintenancePanel extends JPanel {
    private JLabel            lblMeta;
    private BacksnapGui       bsGui;
    private JPanel            panelMeta;
+   private JPanel            panel;
+   private JLabel            lblDisabled;
+   private JPanel            panel_1;
+   private JLabel            lblDisabled_1;
    /**
     * Create the panel.
     */
@@ -91,11 +95,11 @@ public class MaintenancePanel extends JPanel {
          panelSpace=new JPanel();
          panelSpace.setBorder(
                   new TitledBorder(null, "free some space", TitledBorder.LEADING, TitledBorder.TOP, null, null));
-         panelSpace.setLayout(new BorderLayout(0, 0));
+         panelSpace.setLayout(new BorderLayout(10, 0));
          panelSpace.add(getChckSpace(), BorderLayout.WEST);
          panelSpace.add(getSliderSpace(), BorderLayout.SOUTH);
          panelSpace.add(getBtnSpace(), BorderLayout.EAST);
-         panelSpace.add(getLblSpace(), BorderLayout.CENTER);
+         panelSpace.add(getPanel(), BorderLayout.CENTER);
       }
       return panelSpace;
    }
@@ -104,11 +108,11 @@ public class MaintenancePanel extends JPanel {
          panelMeta=new JPanel();
          panelMeta.setBorder(
                   new TitledBorder(null, "free some metadata", TitledBorder.LEADING, TitledBorder.TOP, null, null));
-         panelMeta.setLayout(new BorderLayout(0, 0));
+         panelMeta.setLayout(new BorderLayout(10, 0));
          panelMeta.add(getChckMeta(), BorderLayout.WEST);
          panelMeta.add(getSliderMeta(), BorderLayout.SOUTH);
          panelMeta.add(getBtnMeta(), BorderLayout.EAST);
-         panelMeta.add(getLblMeta(), BorderLayout.CENTER);
+         panelMeta.add(getPanel_1(), BorderLayout.CENTER);
       }
       return panelMeta;
    }
@@ -140,7 +144,7 @@ public class MaintenancePanel extends JPanel {
       Backsnap.logln(3, "--------------- getChckSpace() actionPerformed");
       Backsnap.DELETEOLD.set(s);
       getSliderSpace().setEnabled(s);
-      getBtnSpace().setEnabled(s);
+      getBtnSpace().setEnabled(s & !Backsnap.BTRFS_LOCK.isLocked());
       if (s && bsGui != null && !bsGui.getTglPause().isSelected())
          SwingUtilities.invokeLater(() -> bsGui.getTglPause().doClick());
    }
@@ -158,7 +162,7 @@ public class MaintenancePanel extends JPanel {
       Backsnap.log(3, "-------------- getChckMeta() actionPerformed");
       Backsnap.KEEP_MINIMUM.set(s);
       getSliderMeta().setEnabled(s);
-      getBtnMeta().setEnabled(s);
+      getBtnMeta().setEnabled(s & !Backsnap.BTRFS_LOCK.isLocked());
       if (s && bsGui != null && !bsGui.getTglPause().isSelected())
          SwingUtilities.invokeLater(() -> bsGui.getTglPause().doClick());
    }
@@ -273,5 +277,45 @@ public class MaintenancePanel extends JPanel {
          panelInfo=new JPanel();
       }
       return panelInfo;
+   }
+   public void updateButtons() {
+      getBtnSpace().setEnabled(getChckSpace().isSelected() & !Backsnap.BTRFS_LOCK.isLocked());
+      getBtnMeta().setEnabled(getChckMeta().isSelected() & !Backsnap.BTRFS_LOCK.isLocked());
+      getLblDisabled().setVisible(Backsnap.BTRFS_LOCK.isLocked());
+      getLblDisabled_1().setVisible(Backsnap.BTRFS_LOCK.isLocked());
+      getPanelSpace().revalidate();
+      getPanelSpace().repaint(50);
+//      getPanelMeta().revalidate();
+      getPanelMeta().repaint(50);
+   }
+   private JPanel getPanel() {
+      if (panel == null) {
+         panel=new JPanel();
+         panel.setLayout(new BorderLayout(0, 0));
+         panel.add(getLblSpace(), BorderLayout.WEST);
+         panel.add(getLblDisabled(), BorderLayout.EAST);
+      }
+      return panel;
+   }
+   private JLabel getLblDisabled() {
+      if (lblDisabled == null) {
+         lblDisabled=new JLabel("deleting of backups is disabled while backups are running");
+      }
+      return lblDisabled;
+   }
+   private JPanel getPanel_1() {
+      if (panel_1 == null) {
+         panel_1=new JPanel();
+         panel_1.setLayout(new BorderLayout(0, 0));
+         panel_1.add(getLblMeta(), BorderLayout.WEST);
+         panel_1.add(getLblDisabled_1(), BorderLayout.EAST);
+      }
+      return panel_1;
+   }
+   private JLabel getLblDisabled_1() {
+      if (lblDisabled_1 == null) {
+         lblDisabled_1=new JLabel("deleting of backups is disabled while backups are running");
+      }
+      return lblDisabled_1;
    }
 }

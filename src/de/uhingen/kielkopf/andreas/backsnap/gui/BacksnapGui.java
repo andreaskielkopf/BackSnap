@@ -10,8 +10,7 @@ import java.awt.event.*;
 import java.util.*;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentNavigableMap;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.*;
 
 import javax.swing.*;
 
@@ -293,42 +292,49 @@ public class BacksnapGui implements MouseListener {
                Backsnap.logln(6, "to remove " + label.getText());
                toRemove.add(label.snapshot);
             }
-      Commandline.background.submit(new Runnable() {
-         @Override
-         public void run() {
-            jButton.setEnabled(false);
-            for (Snapshot snapshot:toRemove) {
-               if (jButton == getPanelMaintenance().getBtnMeta())
-                  if (!getPanelMaintenance().getChckMeta().isSelected())
-                     continue;
-               if (jButton == getPanelMaintenance().getBtnSpace())
-                  if (!getPanelMaintenance().getChckSpace().isSelected())
-                     continue;
-               try {
-                  Backsnap.removeSnapshot(snapshot);
-               } catch (IOException e1) { /* */ }
-               try {
-                  EventQueue.invokeAndWait(() -> {
-                     try {
-                        Backsnap.refreshGUI();
-                        abgleich();
-                        getPanelBackup().repaint(50);
-                     } catch (final Exception e2) {
-                        e2.printStackTrace();
+      try {
+         if (Backsnap.BTRFS_LOCK.tryLock(1, TimeUnit.SECONDS))
+            try {
+               Commandline.background.submit(new Runnable() {
+                  @Override
+                  public void run() {
+                     jButton.setEnabled(false);
+                     for (Snapshot snapshot:toRemove) {
+                        if (jButton == getPanelMaintenance().getBtnMeta())
+                           if (!getPanelMaintenance().getChckMeta().isSelected())
+                              continue;
+                        if (jButton == getPanelMaintenance().getBtnSpace())
+                           if (!getPanelMaintenance().getChckSpace().isSelected())
+                              continue;
+                        try {
+                           Backsnap.removeSnapshot(snapshot);
+                        } catch (IOException e1) { /* */ }
+                        try {
+                           EventQueue.invokeAndWait(() -> {
+                              try {
+                                 Backsnap.refreshGUI();
+                                 abgleich();
+                                 getPanelBackup().repaint(50);
+                              } catch (final Exception e2) {
+                                 e2.printStackTrace();
+                              }
+                           });
+                        } catch (InvocationTargetException e) {
+                           e.printStackTrace();
+                        } catch (InterruptedException e) {
+                           e.printStackTrace();
+                        }
+                        if (Backsnap.SINGLESNAPSHOT.get())
+                           break;
                      }
-                  });
-               } catch (InvocationTargetException e) {
-                  e.printStackTrace();
-               } catch (InterruptedException e) {
-                  e.printStackTrace();
-               }
-               if (Backsnap.SINGLESNAPSHOT.get())
-                  break;
+                     Backsnap.logln(1, "");
+                     jButton.setEnabled(true);
+                  }
+               });
+            } finally {
+               Backsnap.BTRFS_LOCK.unlock();
             }
-            Backsnap.logln(1, "");
-            jButton.setEnabled(true);
-         }
-      });
+      } catch (InterruptedException ignore) { /* */ }
    }
    final static public int parseIntOrDefault(String s, int def) {
       if (s != null)
