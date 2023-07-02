@@ -43,7 +43,7 @@ public class Computer extends JPanel {
    private String                  titel           ="?";
    private TitledBorder            titelBorder;
    private JButton                 btnNewButton;
-   // private String extern ="sudo";
+
    private DefaultListModel<Mount> listModel;
    /**
     * Create the panel.

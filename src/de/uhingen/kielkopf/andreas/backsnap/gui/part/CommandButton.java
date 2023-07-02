@@ -50,7 +50,6 @@ public class CommandButton extends JPanel {
    private JPanel getPanel() {
       if (panel == null) {
          panel=new JPanel();
-         // panel.setBorder(new TitledBorder(null, "x. Command", TitledBorder.LEADING, TitledBorder.TOP, null, null));
          panel.setBorder(getTitledBorder());
          panel.setLayout(new BorderLayout(0, 0));
          panel.add(getScrollPane(), BorderLayout.CENTER);

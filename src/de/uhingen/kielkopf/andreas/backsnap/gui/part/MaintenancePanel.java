@@ -29,7 +29,6 @@ public class MaintenancePanel extends JPanel {
    private JPanel            panelSpace;
    private JPanel            panelScrub;
    private JPanel            panelBalance;
-   // private JToggleButton tglPause;
    private JPanel            panelInfo;
    private JSlider           sliderSpace;
    private JCheckBox         chckSpace;
@@ -68,7 +67,6 @@ public class MaintenancePanel extends JPanel {
       if (panelWartung == null) {
          panelWartung=new JPanel();
          panelWartung.setPreferredSize(new Dimension(500, 125));
-         // panelWartung.setMinimumSize(new Dimension(10, 250));
          panelWartung.setLayout(new BorderLayout(0, 0));
          panelWartung.add(getTabbedPane(), BorderLayout.CENTER);
       }
@@ -283,9 +281,9 @@ public class MaintenancePanel extends JPanel {
       getBtnMeta().setEnabled(getChckMeta().isSelected() & !Backsnap.BTRFS_LOCK.isLocked());
       getLblDisabled().setVisible(Backsnap.BTRFS_LOCK.isLocked());
       getLblDisabled_1().setVisible(Backsnap.BTRFS_LOCK.isLocked());
-      getPanelSpace().revalidate();
+      // getPanelSpace().revalidate();
       getPanelSpace().repaint(50);
-//      getPanelMeta().revalidate();
+      // getPanelMeta().revalidate();
       getPanelMeta().repaint(50);
    }
    private JPanel getPanel() {

@@ -90,6 +90,7 @@ public record Volume(String extern, Path device, String label, String uuid) {
     * @param extern2
     * @deprecated
     */
+   @Deprecated
    public static void injectSsh(StringBuilder cmd, String extern) {
       if ((extern instanceof String x) && (!x.isBlank()))
          if (x.startsWith("sudo "))

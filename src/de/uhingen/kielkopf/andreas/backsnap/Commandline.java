@@ -20,9 +20,7 @@ public class Commandline {
     * @return
     * @throws IOException
     */
-   // public static CmdStream execute(StringBuilder cmd) throws IOException {
-   // return executeCached(cmd.toString(), null);
-   // }
+   
    public static CmdStream executeCached(StringBuilder cmd, String key) throws IOException {
       return executeCached(cmd.toString(), key);
    }
@@ -30,21 +28,7 @@ public class Commandline {
       String cmd=cmd1.toString();
       return executeCached(cmd, cmd);
    }
-   // /**
-   // * Einen Befehl ausführen, Fehlermeldungen direkt ausgeben, stdout als stream zurückgeben
-   // *
-   // * @param cmd
-   // * @return 2 x Stream<String>
-   // * @throws IOException
-   // */
-   // @SuppressWarnings("resource")
-   // static CmdStream execute(String cmd) throws IOException {
-   // Process process=processBuilder.command(List.of("/bin/bash", "-c", cmd)).start();
-   // // processList.add(process); // collect all Lines into streams
-   // return new CmdStream(process, new BufferedReader(new InputStreamReader(process.getInputStream(), UTF_8)).lines(),
-   // new BufferedReader(new InputStreamReader(process.getErrorStream(), UTF_8)).lines(), new ArrayList<>(),
-   // new ArrayList<>(), null);
-   // }
+   
    /**
     * Einen Befehl ausführen, Fehlermeldungen direkt ausgeben, stdout als stream zurückgeben
     * 

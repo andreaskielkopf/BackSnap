@@ -78,13 +78,8 @@ public record Mount(SubVolumeList mountList, Pc pc, Path devicePath, Path mountP
    public void populate() throws IOException {
       SnapTree      snapTree         =SnapTree.getSnapTree(this);
       boolean       snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.dateMap().isEmpty() : false;
-      StringBuilder subvolumeShowSB =new StringBuilder("btrfs subvolume show ").append(mountPath);
-      // if ((extern instanceof String x) && (!x.isBlank()))
-      // if (x.startsWith("sudo "))
-      // subvolumeShowCmd.insert(0, x);
-      // else
-      // subvolumeShowCmd.insert(0, "ssh " + x + " '").append("'");
-      String        subvolumeSchowCmd              =pc.getCmd(subvolumeShowSB);
+      StringBuilder subvolumeShowSB  =new StringBuilder("btrfs subvolume show ").append(mountPath);
+      String        subvolumeSchowCmd=pc.getCmd(subvolumeShowSB);
       Backsnap.logln(3, subvolumeSchowCmd);
       try (CmdStream snapshotStream=Commandline.executeCached(subvolumeSchowCmd, keyM())) {
          snapshotStream.backgroundErr();
@@ -124,13 +119,8 @@ public record Mount(SubVolumeList mountList, Pc pc, Path devicePath, Path mountP
    public void updateSnapshots() throws IOException {
       SnapTree      snapTree         =SnapTree.getSnapTree(this);
       boolean       snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.dateMap().isEmpty() : false;
-      StringBuilder subvolumeShowSB =new StringBuilder("btrfs subvolume show ").append(mountPath);
-      // if ((extern instanceof String x) && (!x.isBlank()))
-      // if (x.startsWith("sudo "))
-      // subvolumeShowCmd.insert(0, x);
-      // else
-      // subvolumeShowCmd.insert(0, "ssh " + x + " '").append("'");
-      String        subvolumeShowCmd              =pc.getCmd(subvolumeShowSB);
+      StringBuilder subvolumeShowSB  =new StringBuilder("btrfs subvolume show ").append(mountPath);
+      String        subvolumeShowCmd =pc.getCmd(subvolumeShowSB);
       Backsnap.logln(3, subvolumeShowCmd);
       try (CmdStream snapshotStream=Commandline.executeCached(subvolumeShowCmd, keyM())) {
          snapshotStream.backgroundErr();
@@ -174,13 +164,8 @@ public record Mount(SubVolumeList mountList, Pc pc, Path devicePath, Path mountP
     * @throws IOException
     */
    public static ConcurrentSkipListMap<Path, Mount> getMountList(Pc pc, SubVolumeList svl) throws IOException {
-      StringBuilder mountSB=new StringBuilder("mount -t btrfs");
-      // if (!extern.isBlank())
-      // if (extern.startsWith("sudo"))
-      // mountCmd.insert(0, extern);
-      // else
-      // mountCmd.insert(0, "ssh " + extern + " '").append("'");
-      String        mountCmd     =pc.getCmd(mountSB);
+      StringBuilder mountSB =new StringBuilder("mount -t btrfs");
+      String        mountCmd=pc.getCmd(mountSB);
       Backsnap.logln(3, mountCmd);
       ConcurrentSkipListMap<Path, Mount> mountList2=new ConcurrentSkipListMap<>();
       String                             key       =mountCmd;

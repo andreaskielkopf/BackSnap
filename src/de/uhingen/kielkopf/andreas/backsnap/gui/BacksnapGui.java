@@ -45,7 +45,6 @@ public class BacksnapGui implements MouseListener {
    private JPanel                                      panelEnde;
    private JProgressBar                                progressBar;
    private JLabel                                      lblPv;
-   // private JLabel SnapshotName;
    public final static String                          BLUE        ="<font size=+1 color=\"3333ff\">";
    public final static String                          NORMAL      ="</font>";
    public final static String                          IGEL1       ="<=>";
@@ -164,7 +163,6 @@ public class BacksnapGui implements MouseListener {
       ConcurrentSkipListMap<String, SnapshotLabel>  backupLabels_Uuid   =getPanelBackup().labelTree_UUID;
       ConcurrentSkipListMap<String, SnapshotLabel>  backupLabels_KeyO   =getPanelBackup().labelTree_KeyO;
       ConcurrentSkipListMap<String, SnapshotLabel>  backupLabels_DirName=getPanelBackup().labelTree_DirName;
-      // ConcurrentSkipListMap<String, SnapshotLabel> deleteLabels =new ConcurrentSkipListMap<>();
       // SINGLESNAPSHOT make or delete only one(1) snapshot per call
       // for DELETEOLD get all old snapshots that are "o=999" older than the newest one
       ConcurrentNavigableMap<String, SnapshotLabel> toDeleteOld         =new ConcurrentSkipListMap<>();
@@ -495,14 +493,6 @@ public class BacksnapGui implements MouseListener {
       }
       return lblPv;
    }
-   // public JLabel getSnapshotName() {
-   // if (SnapshotName == null) {
-   // SnapshotName=new JLabel("this Snapshot ;-)");
-   // SnapshotName.setHorizontalAlignment(SwingConstants.CENTER);
-   // SnapshotName.setPreferredSize(new Dimension(200, 30));
-   // }
-   // return SnapshotName;
-   // }
    /**
     * @param s
     * @throws IOException
@@ -575,7 +565,6 @@ public class BacksnapGui implements MouseListener {
       return tglPause;
    }
    public void showMaintenance() {
-      // System.err.println("Manienance" + getTglPause().isSelected());
       if (getTglPause().isSelected()) {
          getPanelUnten().setPreferredSize(PANEL_UNTEN_DIM2);
          getSplitPaneMaintenance().setDividerLocation(1d);
@@ -645,7 +634,6 @@ public class BacksnapGui implements MouseListener {
       if (panelWork == null) {
          panelWork=new JPanel();
          panelWork.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
-         // panel.add(getSnapshotName());
          panelWork.add(getLblSnapshot());
          panelWork.add(getTxtSnapshot());
          panelWork.add(getLblParent());

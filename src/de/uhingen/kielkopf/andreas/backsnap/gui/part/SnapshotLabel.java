@@ -27,7 +27,7 @@ public class SnapshotLabel extends JLabel {
    }
    /**
     * @param snapshot
-    * @throws IOException 
+    * @throws IOException
     */
    public SnapshotLabel(Snapshot snapshot1) throws IOException {
       this();
@@ -45,7 +45,6 @@ public class SnapshotLabel extends JLabel {
    public final static Color aktuellColor       =Color.YELLOW.darker();
    public final static Color delete2Color       =Color.ORANGE;
    public final static Color allesOkColor       =Color.GREEN.brighter(); // muß bleiben
-   // public final static Color keepColor =Color.CYAN.brighter();
    public final static Color deleteOldColor     =Color.RED.brighter();   // darf weg
    public final static Color naheColor          =Color.ORANGE.brighter();
    public final static Color markInProgressColor=Color.CYAN;
@@ -59,7 +58,7 @@ public class SnapshotLabel extends JLabel {
    /**
     * @param snapshot2
     * @return
-    * @throws IOException 
+    * @throws IOException
     */
    public static SnapshotLabel getSnapshotLabel(Snapshot snapshot2) throws IOException {
       SnapshotLabel snapLabel=null;

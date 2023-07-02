@@ -21,7 +21,7 @@ import javax.swing.border.TitledBorder;
 public class SnapshotPanel extends JPanel implements ComponentListener, MouseListener {
    private static final long                           serialVersionUID    =-3405881652038164771L;
    public static final Font                            FONT_INFO           =new Font("Noto Sans", Font.PLAIN, 16);
-   public static final Font                            FONT_INFO_B           =new Font("Noto Sans", Font.BOLD, 16);
+   public static final Font                            FONT_INFO_B         =new Font("Noto Sans", Font.BOLD, 16);
    private JPanel                                      panelView;
    private SnapshotDetail                              panelDetail;
    private JPanel                                      panelSnapshots;
@@ -116,7 +116,6 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    private SnapshotDetail getPanelDetail() {
       if (panelDetail == null) {
          panelDetail=new SnapshotDetail();
-         // panelDetail.setMinimumSize(new Dimension());
       }
       return panelDetail;
    }
@@ -124,9 +123,10 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
     * @param receivedSnapshots
     * @param srcVolume
     * @return
-    * @throws IOException 
+    * @throws IOException
     */
-   public ConcurrentSkipListMap<String, Snapshot> setVolume(Mount subVolume, Collection<Snapshot> list) throws IOException {
+   public ConcurrentSkipListMap<String, Snapshot> setVolume(Mount subVolume, Collection<Snapshot> list)
+            throws IOException {
       ConcurrentSkipListMap<String, Snapshot> neuList=new ConcurrentSkipListMap<>();
       for (Snapshot snap:list)
          if (!labelTree_UUID.containsKey(snap.uuid()))

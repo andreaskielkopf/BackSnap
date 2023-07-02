@@ -36,12 +36,7 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
    private void populate() throws IOException {// otime kommt nur bei snapshots
       // mit -a bekommt man alle Snapshots für dieses Device
       StringBuilder subvolumeListCommand=new StringBuilder("btrfs subvolume list -apcguqR ").append(mount.mountPath());
-      String        subvolumeListCmd             =mount.pc().getCmd(subvolumeListCommand);
-      // if ((mount.extern() instanceof String x) && (!x.isBlank()))
-      // if (x.startsWith("sudo "))
-      // subvolumeListCmd.insert(0, x);
-      // else
-      // subvolumeListCmd.insert(0, "ssh " + x + " '").append("'");
+      String        subvolumeListCmd    =mount.pc().getCmd(subvolumeListCommand);
       Backsnap.logln(3, subvolumeListCmd);
       try (CmdStream snapshotStream=Commandline.executeCached(subvolumeListCmd, mount.keyD())) {
          snapshotStream.backgroundErr();
@@ -49,14 +44,12 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
             try {
                if (line.contains("timeshift"))
                   Backsnap.logln(8, line);
-               
                Snapshot snapshot=new Snapshot(mount, line);
                btrfsPathMap.put(snapshot.btrfsPath(), snapshot);// nach pfad sortiert
                uuidMap.put(snapshot.uuid(), snapshot);
                dateMap.put(snapshot.keyO(), snapshot);
                if (snapshot.isBackup())
                   rUuidMap.put(snapshot.received_uuid(), snapshot);
-               // System.out.print(".");
             } catch (FileNotFoundException e) {
                e.printStackTrace();
             }

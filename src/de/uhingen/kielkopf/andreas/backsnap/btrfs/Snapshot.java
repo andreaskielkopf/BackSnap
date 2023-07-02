@@ -77,7 +77,6 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    final public static Path getPath(Matcher m) {
       if (m.find())
          return Path.of("/", m.group(1)); // absolut Path
-      // System.out.println(m.toString());
       return null;
    }
    private static Pattern createPatternFor(String s) {
@@ -91,7 +90,6 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       Matcher m=NUMERIC_DIRNAME.matcher(btrfsPath.toString());
       if (m.find())
          return dir2key(m.group(1)) + btrfsPath.toString(); // ??? numerisch sortieren ;-)
-      // System.err.println("§: " + btrfsPath.toString());
       return btrfsPath.toString();
    }
    public String keyO() {
@@ -105,7 +103,6 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    private String idN() {
       String s=Integer.toUnsignedString(id());
       String t="0".repeat(11 - s.length()) + s;
-      // System.out.println(t);
       return t;
    }
    final public static String dir2key(String dir) { // ??? numerisch sortieren ;-)
@@ -126,8 +123,8 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
     * @return Instant
     */
    final public Instant stunden() {
-      try { // if (dn.length() == "2023-06-29_20-00-01".length()) {
-         String[] t=dirName().split("_"); // System.out.println(dn + " --> " + i);
+      try {
+         String[] t=dirName().split("_");
          return Instant.parse(t[0] + "T" + t[1].replace('-', ':') + "Z");
       } catch (Exception e) {/* ignore */ }
       return null;
@@ -182,8 +179,6 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    static private Mount getMount(Mount mount0, Path btrfsPath1) {
       if (btrfsPath1 == null)
          return null;
-      // if (btrfsPath1.toString().contains("20318"))
-      // System.out.println(btrfsPath1);
       Path  b2 =btrfsPath1;
       Mount erg=null;      // default ?
       if (!b2.toString().contains("timeshift-btrfs")) {
@@ -204,33 +199,20 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
             return null;
       return erg;
    }
-   // public Path getPathOn(Path root, List<SnapConfig> snapConfigs) {
-   // Path rp=mount.btrfsPath().relativize(btrfsPath());
-   // Path ap=mount.mountPath().resolve(rp);
-   // return ap;
-   // }
    public Stream<Entry<String, String>> getInfo() {
       Map<String, String> infoMap=new LinkedHashMap<>();
-      // infoMap.put("0 mount", mount.mountPath().toString());
-      // infoMap.put("dirName : ", dirName());
       infoMap.put("btrfsPath : ", btrfsPath.toString());
       infoMap.put("otime : ", otime);
       infoMap.put("uuid : ", uuid);
-      // infoMap.put("3 mountPath", getMountPath().toString());
       infoMap.put("parent_uuid : ", parent_uuid);
       infoMap.put("received_uuid : ", received_uuid);
       infoMap.put("gen : ", gen.toString());
-      // infoMap.put("h cgen", cgen.toString());
       infoMap.put("id : ", id.toString());
-      // infoMap.put("j top_level", top_level.toString());
-      // infoMap.put("k parent", parent.toString());
-      // infoMap.put("m key", key());
       return infoMap.entrySet().stream();
    }
    public static void mkain(String[] args) {
       try {
-         Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " /mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro");// Parameter
-                                                                                                    // sammeln
+         Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " /mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro");// Par. sammeln
          String backupDir=Flag.getParameterOrDefault(1, "@BackSnap");
          String source   =Flag.getParameter(0);
          String externSsh=source.contains(":") ? source.substring(0, source.indexOf(":")) : "";
@@ -268,7 +250,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
                   System.out.println("Found snapshots for: " + e.getKey() + " at (" + commonName + ")");
                   for (Entry<Path, Snapshot> e4:subv.btrfsMap().entrySet())
                      if (e4.getValue() instanceof Snapshot s) // @Todo obsolet ?
-                        System.out.println(" -> " + e4.getKey() + " -> " + s.dirName()); // System.out.println();
+                        System.out.println(" -> " + e4.getKey() + " -> " + s.dirName());
                } else
                   System.out.println("NO snapshots of: " + e.getKey());
             }
@@ -287,8 +269,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
             std.backgroundErr();
             std.erg().forEach(line -> {
                try {
-                  System.out.println(line);
-                  // snapshots.add(new Snapshot(" " + line));
+                  System.out.println(line); // snapshots.add(new Snapshot(" " + line));
                } catch (Exception e) {
                   System.err.println(e);
                }

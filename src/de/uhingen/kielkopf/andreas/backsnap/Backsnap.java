@@ -64,8 +64,8 @@ public class Backsnap {
    public final static Flag          KEEP_MINIMUM       =new Flag('m', "keepminimum");    // mark all but minimum
                                                                                           // snapshots
    public static final String        BACK_SNAP_VERSION  =                                 // version
-            "BackSnap for Snapper and Timeshift(beta) Version 0.6.0.22 (2023/07/01)";
-   public static final ReentrantLock BTRFS_LOCK       =new ReentrantLock();
+            "BackSnap for Snapper and Timeshift(beta) Version 0.6.0.23 (2023/07/01)";
+   public static final ReentrantLock BTRFS_LOCK         =new ReentrantLock();
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
       StringBuilder argLine=new StringBuilder("args > ");
@@ -94,7 +94,6 @@ public class Backsnap {
          srcPc=new Pc(srcSsh);
          if (TIMESHIFT.get())
             mountBtrfsRoot(srcPc, srcDir, true);
-         // srcPc=new Pc(srcSsh);
          // Start collecting information
          SubVolumeList    srcSubVolumes=new SubVolumeList(srcPc);
          List<SnapConfig> snapConfigs  =SnapConfig.getList(srcSubVolumes);
@@ -135,7 +134,6 @@ public class Backsnap {
             bsGui.setSrc(srcConfig);
             bsGui.setBackup(backupTree, backupDir);
             bsGui.getSplitPaneSnapshots().setDividerLocation(1d / 3d);
-            // SwingUtilities.invokeLater(() -> bsGui.showMaintenance());
          }
          try {
             usePv=Paths.get("/bin/pv").toFile().canExecute();
@@ -168,11 +166,9 @@ public class Backsnap {
                            + Integer.toString(srcConfig.volumeMount().otimeKeyMap().size()));
                   progressbar.repaint(50);
                }
-               // synchronized (BTRFS_LOCK) {
                if (!backup(sourceSnapshot, srcConfig.snapshotMount(), backupTree, backupDir, srcSsh, backupSsh,
                         snapConfigs))
                   continue;
-               // }
                // Anzeige im Progressbar anpassen
                if (bsGui != null)
                   refreshGUI(backupVolume, backupDir, backupSsh);
@@ -323,8 +319,6 @@ public class Backsnap {
          bsGui.mark(srcSnapshot);
       if (sendBtrfs(srcVolume, srcSsh1, backupSsh, srcSnapshot, bDir, snapConfigs))
          parentSnapshot=srcSnapshot;
-      // ende("Xstop");
-      // System.exit(-11);
       return true;
    }
    private static boolean sendBtrfs(Mount srcVolume, String srcSsh1, String backupSsh, Snapshot s, Path bDir,
@@ -465,7 +459,6 @@ public class Backsnap {
       if (line.equals("\n") || line.equals("\r"))
          return;
       bsGui.lblPvSetText(line);
-      // bsGui.getLblPv().repaint(50);
    }
    private static void rsyncFiles(String srcSsh1, String backupSsh, Path sDir, Path bDir) throws IOException {
       StringBuilder rsyncSB=new StringBuilder("/bin/rsync -vdcptgo --exclude \"@*\" --exclude \"" + SNAPSHOT + "\" ");
@@ -519,15 +512,8 @@ public class Backsnap {
       try {
          if (bsGui != null) {
             SwingUtilities.invokeLater(() -> bsGui.getPanelMaintenance().updateButtons());
-            // if (GUI.get()) {
-            // JLabel sl =bsGui.getSnapshotName();
             String text="<html>" + s.btrfsPath().toString();
             logln(7, text);
-            // String dirname =s.dirName();
-            // String blueDirname=BacksnapGui.BLUE + dirname + BacksnapGui.NORMAL;
-            // sl.setText(text.replace(dirname, blueDirname));
-            // bsGui.lblPvSetText("delete # "+s.dirName());
-            // sl.repaint(100);
             bsGui.mark(s);
          }
          try (CmdStream removeStream=Commandline.executeCached(removeCmd, null)) {
@@ -624,7 +610,7 @@ public class Backsnap {
                      if (bsGui.frame == null)
                         break;
                      Thread.sleep(1000);
-                  } catch (InterruptedException ignore) {}
+                  } catch (InterruptedException ignore) {/* */}
          }
          if (TIMESHIFT.get())
             try {
