@@ -14,6 +14,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
+import de.uhingen.kielkopf.andreas.backsnap.btrfs.Usage;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
 import java.awt.Dimension;
 import java.io.IOException;
@@ -26,10 +27,10 @@ public class MaintenancePanel extends JPanel {
    private static final long serialVersionUID=-6113424454048132514L;
    private JPanel            panelWartung;
    private JTabbedPane       tabbedPane;
-   private JPanel            panelSpace;
-   private JPanel            panelScrub;
-   private JPanel            panelBalance;
-   private JPanel            panelInfo;
+   private PanelSpace        panelSpace;
+   private PanelScrub        panelScrub;
+   private PanelBalance      panelBalance;
+   private PanelInfo         panelInfo;
    private JSlider           sliderSpace;
    private JCheckBox         chckSpace;
    private JCheckBox         chckMeta;
@@ -41,7 +42,7 @@ public class MaintenancePanel extends JPanel {
    private JSlider           sliderMeta;
    private JLabel            lblMeta;
    private BacksnapGui       bsGui;
-   private JPanel            panelMeta;
+   private PanelMeta         panelMeta;
    private JPanel            panel;
    private JLabel            lblDisabled;
    private JPanel            panel_1;
@@ -76,21 +77,21 @@ public class MaintenancePanel extends JPanel {
       if (tabbedPane == null) {
          tabbedPane=new JTabbedPane(SwingConstants.LEFT);
          tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+         tabbedPane.addTab("backup info", null, getPanelInfo(), "After the backups, take a break to do maintenance");
          tabbedPane.addTab("get space", null, getPanelSpace(),
                   "Remove some older backups to make more space for new backups");
          tabbedPane.addTab("clean up", null, getPanelMeta(), "Clean up some intermediate backups to clean up metadata");
-         tabbedPane.addTab("backup info", null, getPanelInfo(), "After the backups, take a break to do maintenance");
+         tabbedPane.setEnabledAt(2, true);
          tabbedPane.addTab("balance", null, getPanelBalance(), null);
          tabbedPane.addTab("scrub", null, getPanelScrub(), null);
-         tabbedPane.setEnabledAt(2, false);
          tabbedPane.setEnabledAt(3, false);
          tabbedPane.setEnabledAt(4, false);
       }
       return tabbedPane;
    }
-   private JPanel getPanelSpace() {
+   private PanelSpace getPanelSpace() {
       if (panelSpace == null) {
-         panelSpace=new JPanel();
+         panelSpace=new PanelSpace();
          panelSpace.setBorder(
                   new TitledBorder(null, "free some space", TitledBorder.LEADING, TitledBorder.TOP, null, null));
          panelSpace.setLayout(new BorderLayout(10, 0));
@@ -101,9 +102,9 @@ public class MaintenancePanel extends JPanel {
       }
       return panelSpace;
    }
-   private JPanel getPanelMeta() {
+   private PanelMeta getPanelMeta() {
       if (panelMeta == null) {
-         panelMeta=new JPanel();
+         panelMeta=new PanelMeta();
          panelMeta.setBorder(
                   new TitledBorder(null, "free some metadata", TitledBorder.LEADING, TitledBorder.TOP, null, null));
          panelMeta.setLayout(new BorderLayout(10, 0));
@@ -258,21 +259,21 @@ public class MaintenancePanel extends JPanel {
       }
       return lblMeta;
    }
-   private JPanel getPanelScrub() {
+   private PanelScrub getPanelScrub() {
       if (panelScrub == null) {
-         panelScrub=new JPanel();
+         panelScrub=new PanelScrub();
       }
       return panelScrub;
    }
-   private JPanel getPanelBalance() {
+   private PanelBalance getPanelBalance() {
       if (panelBalance == null) {
-         panelBalance=new JPanel();
+         panelBalance=new PanelBalance();
       }
       return panelBalance;
    }
-   private JPanel getPanelInfo() {
+   private PanelInfo getPanelInfo() {
       if (panelInfo == null) {
-         panelInfo=new JPanel();
+         panelInfo=new PanelInfo();
       }
       return panelInfo;
    }
@@ -315,5 +316,12 @@ public class MaintenancePanel extends JPanel {
          lblDisabled_1=new JLabel("deleting of backups is disabled while backups are running");
       }
       return lblDisabled_1;
+   }
+   /**
+    * @param usage
+    */
+   public void setUsage(Usage usage) {
+     
+      getPanelInfo().setUsage(usage);
    }
 }

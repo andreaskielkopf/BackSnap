@@ -64,7 +64,7 @@ public class Backsnap {
    public final static Flag          KEEP_MINIMUM       =new Flag('m', "keepminimum");    // mark all but minimum
                                                                                           // snapshots
    public static final String        BACK_SNAP_VERSION  =                                 // version
-            "BackSnap for Snapper and Timeshift(beta) Version 0.6.0.23 (2023/07/01)";
+            "BackSnap for Snapper and Timeshift(beta) Version 0.6.1.1 (2023/07/02)";
    public static final ReentrantLock BTRFS_LOCK         =new ReentrantLock();
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
@@ -124,7 +124,10 @@ public class Backsnap {
             throw new RuntimeException("Could not find backupDir: " + backupDir);
          if (backupVolume.devicePath().equals(srcConfig.volumeMount().devicePath()) && samePC)
             throw new RuntimeException("Backup not possible onto same device: " + backupDir + " <= " + srcDir);
-         logln(2, "Try to use backupDir  " + backupVolume.keyM());
+         Usage usage=new Usage(backupVolume, false);
+         if (usage.needsBalance())
+            System.err.println("It seems urgently advisable to balance the backup volume");
+           logln(2, "Try to use backupDir  " + backupVolume.keyM());
          SnapTree backupTree=SnapTree.getSnapTree(backupVolume/* , backupVolume.mountPoint(), backupSsh */);
          if (GUI.get()) {
             bsGui=new BacksnapGui();
@@ -133,6 +136,7 @@ public class Backsnap {
             bsGui.setArgs(argLine.substring(7));
             bsGui.setSrc(srcConfig);
             bsGui.setBackup(backupTree, backupDir);
+            bsGui.setUsage(usage);
             bsGui.getSplitPaneSnapshots().setDividerLocation(1d / 3d);
          }
          try {
@@ -147,6 +151,10 @@ public class Backsnap {
          int counter=0;
          if (bsGui != null)
             bsGui.getProgressBar().setMaximum(srcConfig.volumeMount().otimeKeyMap().size());
+         if (usage.isFull())
+            throw new RuntimeException(
+                     "Backup volume has less than 10GiB unallocated: " + usage.unallcoated() + " of " + usage.size());
+      
          for (Snapshot sourceSnapshot:srcConfig.volumeMount().otimeKeyMap().values()) {
             counter++;
             if (canNotFindParent != null) {
@@ -238,15 +246,24 @@ public class Backsnap {
     * 
     */
    private static void refreshGUI(Mount backupVolume, String backupDir, String backupSsh) throws IOException {
-      String extern    =backupVolume.pc().extern();
-      Path   devicePath=backupVolume.devicePath();
-      String cacheKey  =extern + ":" + devicePath;
-      Commandline.removeFromCache(cacheKey);
-      SnapTree backupTree=new SnapTree(backupVolume);// umgeht den cache
-      bsGui.setBackup(backupTree, backupDir);
-      refreshGUIcKey=cacheKey;
-      refreshBackupVolume=backupVolume;
-      refreshBackupDir=backupDir;
+      SwingUtilities.invokeLater(() -> {
+         String extern    =backupVolume.pc().extern();
+         Path   devicePath=backupVolume.devicePath();
+         String cacheKey  =extern + ":" + devicePath;
+         Commandline.removeFromCache(cacheKey);
+         SnapTree backupTree;
+         try {
+            backupTree=new SnapTree(backupVolume);
+            bsGui.setBackup(backupTree, backupDir);
+            Usage usage=new Usage(backupVolume, false);
+            bsGui.getPanelMaintenance().setUsage(usage);
+         } catch (IOException e) {
+            e.printStackTrace();
+         }
+         refreshGUIcKey=cacheKey;
+         refreshBackupVolume=backupVolume;
+         refreshBackupDir=backupDir;
+      });
    }
    public static void refreshGUI() throws IOException {
       if (refreshGUIcKey == null)
@@ -317,12 +334,11 @@ public class Backsnap {
       rsyncFiles(srcSsh1, backupSsh, sDir, bDir);
       if (GUI.get())
          bsGui.mark(srcSnapshot);
-      if (sendBtrfs(srcVolume, srcSsh1, backupSsh, srcSnapshot, bDir, snapConfigs))
+      if (sendBtrfs(srcSsh1, backupSsh, srcSnapshot, bDir))
          parentSnapshot=srcSnapshot;
       return true;
    }
-   private static boolean sendBtrfs(Mount srcVolume, String srcSsh1, String backupSsh, Snapshot s, Path bDir,
-            List<SnapConfig> snapConfigs) throws IOException {
+   private static boolean sendBtrfs(String srcSsh1, String backupSsh, Snapshot s, Path bDir) throws IOException {
       boolean       sameSsh    =(srcSsh1.contains("@") && srcSsh1.equals(backupSsh));
       StringBuilder btrfsSendSB=new StringBuilder("/bin/btrfs send ");
       if (bsGui != null) {

@@ -53,7 +53,7 @@ public class BacksnapGui implements MouseListener {
    private JSplitPane                                  splitPaneMaintenance;
    private JPanel                                      panelParameter;
    private JLabel                                      labelParameterInfo;
-   private JLabel                                      lblArgs;
+   private JTextField                                  lblArgs;
    private JToggleButton                               tglPause;
    /**
     * @param args
@@ -543,9 +543,10 @@ public class BacksnapGui implements MouseListener {
       }
       return labelParameterInfo;
    }
-   private JLabel getLblArgs() {
+   private JTextField getLblArgs() {
       if (lblArgs == null) {
-         lblArgs=new JLabel("?");
+         lblArgs=new JTextField("?");
+         lblArgs.setEditable(false);
          lblArgs.setFont(FONT_INFO);
       }
       return lblArgs;
@@ -746,5 +747,15 @@ public class BacksnapGui implements MouseListener {
          txtSize.setEditable(false);
       }
       return txtSize;
+   }
+   /**
+    * @param usage
+    */
+   public void setUsage(Usage usage) {
+      if (usage.isFull() || usage.needsBalance()) {
+         getTglPause().setSelected(false);
+         getTglPause().doClick();
+      }
+      getPanelMaintenance().setUsage(usage);
    }
 }

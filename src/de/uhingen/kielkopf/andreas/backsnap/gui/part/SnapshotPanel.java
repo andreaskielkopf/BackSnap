@@ -38,10 +38,10 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    private JLabel                                      lblVolume;
    private JLabel                                      lblSubvolume;
    private JLabel                                      lblMountPoint;
-   private JLabel                                      infoPc;
-   private JLabel                                      infoVolume;
-   private JLabel                                      infoSubvolume;
-   private JLabel                                      infoMountPoint;
+   private JTextField                                      infoPc;
+   private JTextField                                      infoVolume;
+   private JTextField                                      infoSubvolume;
+   private JTextField                                      infoMountPoint;
    private JSplitPane                                  splitPane;
    public SnapshotPanel() throws IOException {
       setBorder(tBorder);
@@ -273,33 +273,36 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
       }
       return lblMountPoint;
    }
-   public JLabel getInfoPc() {
+   public JTextField getInfoPc() {
       if (infoPc == null) {
-         infoPc=new JLabel("local");
+         infoPc=new JTextField("local");
          infoPc.setFont(FONT_INFO);
          infoPc.setHorizontalAlignment(SwingConstants.CENTER);
       }
       return infoPc;
    }
-   public JLabel getInfoVolume() {
+   public JTextField getInfoVolume() {
       if (infoVolume == null) {
-         infoVolume=new JLabel("/dev/sdz");
+         infoVolume=new JTextField("/dev/sdz");
+         infoVolume.setEditable(false);
          infoVolume.setFont(FONT_INFO);
          infoVolume.setHorizontalAlignment(SwingConstants.CENTER);
       }
       return infoVolume;
    }
-   public JLabel getInfoSubvolume() {
+   public JTextField getInfoSubvolume() {
       if (infoSubvolume == null) {
-         infoSubvolume=new JLabel("/@");
+         infoSubvolume=new JTextField("/@");
+         infoSubvolume.setEditable(false);
          infoSubvolume.setFont(FONT_INFO);
          infoSubvolume.setHorizontalAlignment(SwingConstants.CENTER);
       }
       return infoSubvolume;
    }
-   public JLabel getInfoMountPoint() {
+   public JTextField getInfoMountPoint() {
       if (infoMountPoint == null) {
-         infoMountPoint=new JLabel("/");
+         infoMountPoint=new JTextField("/");
+         infoMountPoint.setEditable(false);
          infoMountPoint.setFont(FONT_INFO);
          infoMountPoint.setHorizontalAlignment(SwingConstants.CENTER);
       }

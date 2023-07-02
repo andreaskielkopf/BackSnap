@@ -12,22 +12,22 @@
     </manifest>
     <selectedElements exportClassFiles="true" exportJavaFiles="true" exportOutputFolder="false">
         <file path="/backsnap/gallery/install_en.md"/>
-        <file path="/backsnap/gallery/device_de.md"/>
         <file path="/backsnap/backup"/>
+        <file path="/backsnap/gallery/device_de.md"/>
         <javaElement handleIdentifier="=backsnap/src"/>
         <file path="/backsnap/gallery/guitest_de.md"/>
         <file path="/backsnap/gallery/install_de.md"/>
         <file path="/backsnap/gallery/restore_de.md"/>
         <file path="/backsnap/gallery/clitest_en.md"/>
         <file path="/backsnap/backsnap.jardesc"/>
-        <javaElement handleIdentifier="=Beans/src&lt;de.uhingen.kielkopf.andreas.beans.cli{Flag.java"/>
-        <file path="/backsnap/gallery/backup_de.md"/>
         <file path="/backsnap/readme.md"/>
+        <file path="/backsnap/gallery/backup_de.md"/>
         <file path="/backsnap/gallery/clitest_de.md"/>
         <file path="/backsnap/SECURITY.md"/>
-        <file path="/backsnap/WieEsFunktioniert.md"/>
         <file path="/backsnap/gallery/device_en.md"/>
+        <file path="/backsnap/WieEsFunktioniert.md"/>
         <file path="/backsnap/gallery/gallery.md"/>
+        <javaElement handleIdentifier="=Beans/src&lt;de.uhingen.kielkopf.andreas.beans.cli{Flag.java"/>
         <file path="/backsnap/gallery/restore_en.md"/>
         <file path="/backsnap/gallery/backup_en.md"/>
         <file path="/backsnap/gallery/ssh_de.md"/>
