@@ -16,16 +16,17 @@ import de.uhingen.kielkopf.andreas.backsnap.btrfs.Snapshot;
 
 /**
  * @author Andreas Kielkopf
- *
  */
 public class SnapshotLabel extends JLabel {
    private static final long                                   serialVersionUID=5111240176198425385L;
-   private static ConcurrentSkipListMap<String, SnapshotLabel> labels          =new ConcurrentSkipListMap<>();
+   private static ConcurrentSkipListMap<String, SnapshotLabel> cache           =new ConcurrentSkipListMap<>();
    public Snapshot                                             snapshot;
    public SnapshotLabel() {
       initialize();
    }
    /**
+    * Ein Label das einen Snapshot oder ein Backup von einem Snapshot grafisch repräsentiert
+    * 
     * @param snapshot
     * @throws IOException
     */
@@ -40,7 +41,7 @@ public class SnapshotLabel extends JLabel {
       setBackground(snapshot.isBackup() ? aktuellColor : snapshotColor);
       setText(name);
    }
-   final static Color        unknownColor       =Color.RED.darker();
+   final static Color        unknownColor       =Color.GRAY.brighter();
    final static Color        snapshotColor      =Color.YELLOW.brighter();
    public final static Color aktuellColor       =Color.YELLOW.darker();
    public final static Color delete2Color       =Color.ORANGE;
@@ -49,27 +50,26 @@ public class SnapshotLabel extends JLabel {
    public final static Color naheColor          =Color.ORANGE.brighter();
    public final static Color markInProgressColor=Color.CYAN;
    private void initialize() {
-      setBorder(new CompoundBorder(new LineBorder(new Color(0, 0, 0), 2, true), new EmptyBorder(5, 5, 5, 5)));
+      setBorder(new CompoundBorder(new MatteBorder(1, 1, 1, 1, (Color) new Color(0, 0, 0)), new EmptyBorder(1, 4, 1, 4)));
       setOpaque(true);
       setBackground(unknownColor);
       setHorizontalAlignment(SwingConstants.CENTER);
-      setText("name");
    }
    /**
+    * Wiederverwendung eines bereits erzeugten Labels aus dem cache
+    * 
     * @param snapshot2
-    * @return
+    * @return vorhandenes label oder neues
     * @throws IOException
     */
    public static SnapshotLabel getSnapshotLabel(Snapshot snapshot2) throws IOException {
-      SnapshotLabel snapLabel=null;
-      if (labels.get(snapshot2.uuid()) instanceof SnapshotLabel sl) {
-         snapLabel=sl;
-         snapLabel.setBackground(snapshot2.isBackup() ? aktuellColor : snapshotColor);
-      } else {
-         snapLabel=new SnapshotLabel(snapshot2);
-         labels.put(snapshot2.uuid(), snapLabel);
-      }
-      return snapLabel;
+      if (snapshot2 == null)
+         return new SnapshotLabel(null);// exception
+      if (!cache.containsKey(snapshot2.uuid()))
+         cache.put(snapshot2.uuid(), new SnapshotLabel(snapshot2));
+      SnapshotLabel sl=cache.get(snapshot2.uuid());
+      sl.setBackground(snapshot2.isBackup() ? aktuellColor : snapshotColor);
+      return sl;
    }
    @Override
    public String toString() {

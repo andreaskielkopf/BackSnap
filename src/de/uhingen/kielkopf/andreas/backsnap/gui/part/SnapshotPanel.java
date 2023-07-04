@@ -7,12 +7,14 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import javax.swing.*;
 
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
+import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
+import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
+
 import javax.swing.border.TitledBorder;
 
 /**
@@ -34,14 +36,14 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    private TitledBorder                                tBorder             =new TitledBorder(null, "Snapshots of ...",
             TitledBorder.LEADING, TitledBorder.TOP, null, null);
    private JPanel                                      panelInfo;
-   private JLabel                                      lblPc;
-   private JLabel                                      lblVolume;
-   private JLabel                                      lblSubvolume;
-   private JLabel                                      lblMountPoint;
-   private JTextField                                      infoPc;
-   private JTextField                                      infoVolume;
-   private JTextField                                      infoSubvolume;
-   private JTextField                                      infoMountPoint;
+   private Lbl                                         lblPc;
+   private Lbl                                         lblVolume;
+   private Lbl                                         lblSubvolume;
+   private Lbl                                         lblMountPoint;
+   private TxtFeld                                     infoPc;
+   private TxtFeld                                     infoVolume;
+   private TxtFeld                                     infoSubvolume;
+   private TxtFeld                                     infoMountPoint;
    private JSplitPane                                  splitPane;
    public SnapshotPanel() throws IOException {
       setBorder(tBorder);
@@ -56,59 +58,55 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    public JPanel getPanelView() {
       if (panelView == null) {
          panelView=new JPanel() {
-            BasicStroke               stroke          =new BasicStroke(3f, BasicStroke.CAP_ROUND,
+            BasicStroke               stroke          =new BasicStroke(1.5f, BasicStroke.CAP_ROUND,
                      BasicStroke.JOIN_ROUND);
             private static final long serialVersionUID=-8623737829256524456L;
             @Override
             public void paint(Graphics g) {
+               final int bolla2=6;
+               final int bolla1=bolla2 / 2;
                if (g instanceof Graphics2D g2d) {
+                  g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                   super.paint(g);
                   g2d.setColor(Color.BLUE);
                   g2d.setStroke(stroke);
-                  int                               w        =getWidth();
-                  Set<Entry<String, SnapshotLabel>> labelTree=labelTree_UUID.entrySet();
-                  for (Entry<String, SnapshotLabel> entry:labelTree) {
-                     SnapshotLabel snap       =entry.getValue();
-                     String        parent_uuid=snap.snapshot.parent_uuid();
-                     SnapshotLabel parent     =labelTree_UUID.get(parent_uuid);
-                     if (parent != null) {
-                        Rectangle snapBounds  =snap.getBounds();
-                        Rectangle parentBounds=parent.getBounds();
-                        double    abstand     =parentBounds.getMaxX() - snapBounds.getMinX();
-                        boolean   t           =(abstand + snapBounds.getWidth() * 2 > w);
-                        boolean   m           =(Math.abs(abstand) < snapBounds.getWidth());
+                  int w=getWidth();
+                  for (SnapshotLabel snap:labelTree_UUID.values())
+                     if (labelTree_UUID.get(snap.snapshot.parent_uuid()) instanceof SnapshotLabel parent) {
+                        Rectangle s      =snap.getBounds();
+                        Rectangle p      =parent.getBounds();
+                        int       px     =p.x;
+                        int       pw     =p.width;
+                        int       py     =p.y;
+                        int       ph     =p.height;
+                        int       sx     =s.x;
+                        int       sy     =s.y;
+                        int       sh     =s.height;
+                        int       abstand=px + pw - sx;
+                        boolean   t      =(abstand + s.getWidth() * 2 > w);
+                        boolean   m      =(Math.abs(abstand) < s.getWidth());
                         if (t) {
                            g2d.setColor(Color.BLACK);
-                           int y=(int) ((parentBounds.getCenterY() + snapBounds.getCenterY()) / 2);
-                           g2d.drawLine((int) parentBounds.getMaxX(), (int) parentBounds.getCenterY(), w, y);
-                           g2d.drawLine(0, y, (int) snapBounds.getMinX(), (int) snapBounds.getCenterY());
+                           int y=(int) ((p.getCenterY() + s.getCenterY()) / 2);
+                           g2d.drawLine(px + pw, py + ph / 2, w, y);
+                           g2d.drawLine(0, y, sx, sy + sh / 2);
                         } else
                            if (m) {
                               g2d.setColor(Color.BLACK);
-                              g2d.drawLine((int) parentBounds.getMaxX(), (int) parentBounds.getCenterY(),
-                                       (int) snapBounds.getMinX(), (int) snapBounds.getCenterY());
+                              g2d.drawLine(px + pw, py + ph / 2, sx, sy + sh / 2);
                            } else {
-                              g2d.setColor(Color.BLUE.darker());
-                              g2d.fillOval((int) parentBounds.getMaxX() - 10, (int) parentBounds.getMaxY() - 10, 10,
-                                       10);
-                              g2d.drawLine((int) parentBounds.getMaxX(), (int) parentBounds.getMaxY() - 5,
-                                       (int) snapBounds.getMinX(), (int) snapBounds.getMinY() + 5);
-                              g2d.drawOval((int) snapBounds.getMinX(), (int) snapBounds.getMinY(), 10, 10);
+                              g2d.setColor(Color.BLUE);
+                              g2d.fillOval(px + pw - bolla2-2, py + ph - bolla2-2, bolla2, bolla2);
+                              g2d.drawLine(px + pw-bolla1-2, py + ph - bolla1-2, sx+bolla1+2, sy + bolla1+2);
+                              g2d.drawOval(sx+2, sy+2, bolla2, bolla2);
                            }
                      }
-                  }
-               }
-            }
-            @Override
-            protected void paintComponent(Graphics g) {
-               if (g instanceof Graphics2D g2d) {
-                  super.paintComponent(g);
-                  g2d.setColor(Color.GREEN);
-                  g2d.drawLine(10, 10, 500, 500);
                }
             }
          };
          FlowLayout flowLayout=(FlowLayout) panelView.getLayout();
+         flowLayout.setVgap(3);
+         flowLayout.setHgap(3);
          flowLayout.setAlignment(FlowLayout.LEFT);
       }
       return panelView;
@@ -192,18 +190,18 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
          }
       });
    }
-   @Override
-   public void componentMoved(ComponentEvent e) { /* noop */ }
-   @Override
-   public void componentShown(ComponentEvent e) { /* noop */ }
-   @Override
-   public void componentHidden(ComponentEvent e) { /* noop */ }
    /**
     * @return
     */
    public ConcurrentSkipListMap<String, SnapshotLabel> getLabels() {
       return labelTree_KeyO;
    }
+   @Override
+   public void componentMoved(ComponentEvent e) { /* noop */ }
+   @Override
+   public void componentShown(ComponentEvent e) { /* noop */ }
+   @Override
+   public void componentHidden(ComponentEvent e) { /* noop */ }
    @Override
    public void mouseClicked(MouseEvent e) { /* noop */ }
    @Override
@@ -235,7 +233,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    private JPanel getPanelInfo() {
       if (panelInfo == null) {
          panelInfo=new JPanel();
-         FlowLayout fl_panelInfo=new FlowLayout(FlowLayout.LEFT, 5, 5);
+         FlowLayout fl_panelInfo=new FlowLayout(FlowLayout.LEFT, 2, 1);
          fl_panelInfo.setAlignOnBaseline(true);
          panelInfo.setLayout(fl_panelInfo);
          panelInfo.add(getLblPc());
@@ -249,62 +247,51 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
       }
       return panelInfo;
    }
-   private JLabel getLblPc() {
+   private Lbl getLblPc() {
       if (lblPc == null) {
-         lblPc=new JLabel("Pc:");
+         lblPc=new Lbl("Pc:");
       }
       return lblPc;
    }
-   private JLabel getLblVolume() {
+   private Lbl getLblVolume() {
       if (lblVolume == null) {
-         lblVolume=new JLabel("   Volume:");
+         lblVolume=new Lbl("Volume:");
       }
       return lblVolume;
    }
-   private JLabel getLblSubvolume() {
+   private Lbl getLblSubvolume() {
       if (lblSubvolume == null) {
-         lblSubvolume=new JLabel("   Subvolume:");
+         lblSubvolume=new Lbl("Subvolume:");
       }
       return lblSubvolume;
    }
-   private JLabel getLblMountPoint() {
+   private Lbl getLblMountPoint() {
       if (lblMountPoint == null) {
-         lblMountPoint=new JLabel("   mounted as: ");
+         lblMountPoint=new Lbl("mounted as: ");
       }
       return lblMountPoint;
    }
-   public JTextField getInfoPc() {
+   public TxtFeld getInfoPc() {
       if (infoPc == null) {
-         infoPc=new JTextField("local");
-         infoPc.setFont(FONT_INFO);
-         infoPc.setHorizontalAlignment(SwingConstants.CENTER);
+         infoPc=new TxtFeld("local");
       }
       return infoPc;
    }
-   public JTextField getInfoVolume() {
+   public TxtFeld getInfoVolume() {
       if (infoVolume == null) {
-         infoVolume=new JTextField("/dev/sdz");
-         infoVolume.setEditable(false);
-         infoVolume.setFont(FONT_INFO);
-         infoVolume.setHorizontalAlignment(SwingConstants.CENTER);
+         infoVolume=new TxtFeld("/dev/sdz");
       }
       return infoVolume;
    }
-   public JTextField getInfoSubvolume() {
+   public TxtFeld getInfoSubvolume() {
       if (infoSubvolume == null) {
-         infoSubvolume=new JTextField("/@");
-         infoSubvolume.setEditable(false);
-         infoSubvolume.setFont(FONT_INFO);
-         infoSubvolume.setHorizontalAlignment(SwingConstants.CENTER);
+         infoSubvolume=new TxtFeld("/@");
       }
       return infoSubvolume;
    }
-   public JTextField getInfoMountPoint() {
+   public TxtFeld getInfoMountPoint() {
       if (infoMountPoint == null) {
-         infoMountPoint=new JTextField("/");
-         infoMountPoint.setEditable(false);
-         infoMountPoint.setFont(FONT_INFO);
-         infoMountPoint.setHorizontalAlignment(SwingConstants.CENTER);
+         infoMountPoint=new TxtFeld("/");
       }
       return infoMountPoint;
    }

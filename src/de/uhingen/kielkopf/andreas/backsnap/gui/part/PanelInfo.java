@@ -1,33 +1,25 @@
-/**
- * 
- */
 package de.uhingen.kielkopf.andreas.backsnap.gui.part;
 
 import javax.swing.JPanel;
-
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.Usage;
-
-import javax.swing.JLabel;
-import javax.swing.JTextField;
-import javax.swing.SwingConstants;
-
+import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
+import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
 import java.awt.*;
 
 /**
  * @author Andreas Kielkopf
- *
  */
 public class PanelInfo extends JPanel {
    private static final long serialVersionUID=-6513777293474216762L;
    private JPanel            panel;
-   private JLabel            lblSize;
+   private Lbl               lblSize;
    private JPanel            panel_1;
-   private JTextField        textSize;
-   private JLabel            lblUnallocated;
-   private JTextField        textUnallocated;
-   private JLabel            lblFree;
-   private JTextField        textFree;
-   private JLabel            lblWarning;
+   private TxtFeld           textSize;
+   private Lbl               lblUnallocated;
+   private TxtFeld           textUnallocated;
+   private Lbl               lblFree;
+   private TxtFeld           textFree;
+   private TxtFeld           textWarning;
    private JPanel            panel_2;
    /**
     * Create the panel.
@@ -41,7 +33,7 @@ public class PanelInfo extends JPanel {
    }
    /**
     * @param usage
-    * 
+    * Setzt die durch usage gewonnenen Infos in die passendne Felder
     */
    public void setUsage(Usage usage) {
       getTextSize().setText(usage.size());
@@ -68,10 +60,9 @@ public class PanelInfo extends JPanel {
       }
       return panel;
    }
-   private JLabel getLblSize() {
+   private Lbl getLblSize() {
       if (lblSize == null) {
-         lblSize=new JLabel("size:");
-         lblSize.setHorizontalAlignment(SwingConstants.TRAILING);
+         lblSize=new Lbl("size:");
       }
       return lblSize;
    }
@@ -84,58 +75,43 @@ public class PanelInfo extends JPanel {
       }
       return panel_1;
    }
-   private JTextField getTextSize() {
+   private TxtFeld getTextSize() {
       if (textSize == null) {
-         textSize=new JTextField();
-         textSize.setFont(SnapshotPanel.FONT_INFO);
-         textSize.setHorizontalAlignment(SwingConstants.CENTER);
-         textSize.setEditable(false);
-         textSize.setColumns(10);
+         textSize=new TxtFeld();
       }
       return textSize;
    }
-   private JLabel getLblUnallocated() {
+   private Lbl getLblUnallocated() {
       if (lblUnallocated == null) {
-         lblUnallocated=new JLabel("unallocated:");
-         lblUnallocated.setHorizontalAlignment(SwingConstants.TRAILING);
+         lblUnallocated=new Lbl("unallocated:");
       }
       return lblUnallocated;
    }
-   private JTextField getTextUnallocated() {
+   private TxtFeld getTextUnallocated() {
       if (textUnallocated == null) {
-         textUnallocated=new JTextField();
-         textUnallocated.setFont(SnapshotPanel.FONT_INFO);
-         textUnallocated.setHorizontalAlignment(SwingConstants.CENTER);
-         textUnallocated.setEditable(false);
-         textUnallocated.setColumns(10);
+         textUnallocated=new TxtFeld();
       }
       return textUnallocated;
    }
-   private JLabel getLblFree() {
+   private Lbl getLblFree() {
       if (lblFree == null) {
-         lblFree=new JLabel("free:");
-         lblFree.setHorizontalAlignment(SwingConstants.TRAILING);
+         lblFree=new Lbl("free:");
       }
       return lblFree;
    }
-   private JTextField getTextFree() {
+   private TxtFeld getTextFree() {
       if (textFree == null) {
-         textFree=new JTextField();
-         textFree.setFont(SnapshotPanel.FONT_INFO);
-         textFree.setHorizontalAlignment(SwingConstants.CENTER);
-         textFree.setEditable(false);
-         textFree.setColumns(10);
+         textFree=new TxtFeld();
       }
       return textFree;
    }
-   private JLabel getLblWarning() {
-      if (lblWarning == null) {
-         lblWarning=new JLabel("-");
-         lblWarning.setOpaque(true);
-         lblWarning.setFont(SnapshotPanel.FONT_INFO_B);
-         lblWarning.setHorizontalAlignment(SwingConstants.CENTER);
+   private TxtFeld getLblWarning() {
+      if (textWarning == null) {
+         textWarning=new TxtFeld(" ");
+         textWarning.setOpaque(true);
+         textWarning.setFont(SnapshotPanel.FONT_INFO_B);
       }
-      return lblWarning;
+      return textWarning;
    }
    private JPanel getPanel_2() {
       if (panel_2 == null) {

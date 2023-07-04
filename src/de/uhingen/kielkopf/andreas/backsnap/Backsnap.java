@@ -64,7 +64,7 @@ public class Backsnap {
    public final static Flag          KEEP_MINIMUM       =new Flag('m', "keepminimum");    // mark all but minimum
                                                                                           // snapshots
    public static final String        BACK_SNAP_VERSION  =                                 // version
-            "BackSnap for Snapper and Timeshift(beta) Version 0.6.1.1 (2023/07/02)";
+            "BackSnap for Snapper and Timeshift(beta) Version 0.6.1.7 (2023/07/04)";
    public static final ReentrantLock BTRFS_LOCK         =new ReentrantLock();
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
@@ -127,7 +127,7 @@ public class Backsnap {
          Usage usage=new Usage(backupVolume, false);
          if (usage.needsBalance())
             System.err.println("It seems urgently advisable to balance the backup volume");
-           logln(2, "Try to use backupDir  " + backupVolume.keyM());
+         logln(2, "Try to use backupDir  " + backupVolume.keyM());
          SnapTree backupTree=SnapTree.getSnapTree(backupVolume/* , backupVolume.mountPoint(), backupSsh */);
          if (GUI.get()) {
             bsGui=new BacksnapGui();
@@ -137,7 +137,11 @@ public class Backsnap {
             bsGui.setSrc(srcConfig);
             bsGui.setBackup(backupTree, backupDir);
             bsGui.setUsage(usage);
-            bsGui.getSplitPaneSnapshots().setDividerLocation(1d / 3d);
+            SwingUtilities.invokeLater(() -> {
+               try {
+                  bsGui.getSplitPaneSnapshots().setDividerLocation(1d / 3d);
+               } catch (IOException ignore) { /* ignore */ }
+            });
          }
          try {
             usePv=Paths.get("/bin/pv").toFile().canExecute();
@@ -154,7 +158,6 @@ public class Backsnap {
          if (usage.isFull())
             throw new RuntimeException(
                      "Backup volume has less than 10GiB unallocated: " + usage.unallcoated() + " of " + usage.size());
-      
          for (Snapshot sourceSnapshot:srcConfig.volumeMount().otimeKeyMap().values()) {
             counter++;
             if (canNotFindParent != null) {

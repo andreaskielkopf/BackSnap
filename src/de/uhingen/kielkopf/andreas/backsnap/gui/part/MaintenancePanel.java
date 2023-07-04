@@ -16,6 +16,8 @@ import javax.swing.event.ChangeListener;
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.Usage;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
+import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
+
 import java.awt.Dimension;
 import java.io.IOException;
 
@@ -35,18 +37,18 @@ public class MaintenancePanel extends JPanel {
    private JCheckBox         chckSpace;
    private JCheckBox         chckMeta;
    private JButton           btnSpace;
-   private JLabel            lblSpace;
+   private Lbl            lblSpace;
    private JButton           btnMeta;
    public static int         DEFAULT_META    =499;
    public static int         DEFAULT_SPACE   =1999;
    private JSlider           sliderMeta;
-   private JLabel            lblMeta;
+   private Lbl            lblMeta;
    private BacksnapGui       bsGui;
    private PanelMeta         panelMeta;
    private JPanel            panel;
-   private JLabel            lblDisabled;
+   private Lbl            lblDisabled;
    private JPanel            panel_1;
-   private JLabel            lblDisabled_1;
+   private Lbl            lblDisabled_1;
    /**
     * Create the panel.
     */
@@ -131,10 +133,10 @@ public class MaintenancePanel extends JPanel {
       }
       return btnSpace;
    }
-   private JLabel getLblSpace() {
+   private Lbl getLblSpace() {
       if (lblSpace == null) {
-         lblSpace=new JLabel("?");
-         lblSpace.setHorizontalAlignment(SwingConstants.CENTER);
+         lblSpace=new Lbl("?");
+        
       }
       return lblSpace;
    }
@@ -252,10 +254,10 @@ public class MaintenancePanel extends JPanel {
       }
       return sliderMeta;
    }
-   private JLabel getLblMeta() {
+   private Lbl getLblMeta() {
       if (lblMeta == null) {
-         lblMeta=new JLabel("?");
-         lblMeta.setHorizontalAlignment(SwingConstants.CENTER);
+         lblMeta=new Lbl("?");
+       
       }
       return lblMeta;
    }
@@ -296,9 +298,9 @@ public class MaintenancePanel extends JPanel {
       }
       return panel;
    }
-   private JLabel getLblDisabled() {
+   private Lbl getLblDisabled() {
       if (lblDisabled == null) {
-         lblDisabled=new JLabel("deleting of backups is disabled while backups are running");
+         lblDisabled=new Lbl("deleting of backups is disabled while backups are running");
       }
       return lblDisabled;
    }
@@ -311,9 +313,9 @@ public class MaintenancePanel extends JPanel {
       }
       return panel_1;
    }
-   private JLabel getLblDisabled_1() {
+   private Lbl getLblDisabled_1() {
       if (lblDisabled_1 == null) {
-         lblDisabled_1=new JLabel("deleting of backups is disabled while backups are running");
+         lblDisabled_1=new Lbl("deleting of backups is disabled while backups are running");
       }
       return lblDisabled_1;
    }

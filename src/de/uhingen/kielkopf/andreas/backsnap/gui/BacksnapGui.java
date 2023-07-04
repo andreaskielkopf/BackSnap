@@ -3,8 +3,6 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.gui;
 
-import static de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotPanel.FONT_INFO;
-import static de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotPanel.FONT_INFO_B;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
@@ -26,6 +24,9 @@ import java.nio.file.Path;
 import java.time.Instant;
 
 import javax.swing.border.TitledBorder;
+
+import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
+import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
 import de.uhingen.kielkopf.andreas.backsnap.gui.part.MaintenancePanel;
 
 /**
@@ -44,7 +45,7 @@ public class BacksnapGui implements MouseListener {
    private JPanel                                      panelProgress;
    private JPanel                                      panelEnde;
    private JProgressBar                                progressBar;
-   private JLabel                                      lblPv;
+   private TxtFeld                                     textPv;
    public final static String                          BLUE        ="<font size=+1 color=\"3333ff\">";
    public final static String                          NORMAL      ="</font>";
    public final static String                          IGEL1       ="<=>";
@@ -52,8 +53,8 @@ public class BacksnapGui implements MouseListener {
    private MaintenancePanel                            panelMaintenance;
    private JSplitPane                                  splitPaneMaintenance;
    private JPanel                                      panelParameter;
-   private JLabel                                      labelParameterInfo;
-   private JTextField                                  lblArgs;
+   private Lbl                                         labelParameterInfo;
+   private TxtFeld                                     lblArgs;
    private JToggleButton                               tglPause;
    /**
     * @param args
@@ -69,6 +70,7 @@ public class BacksnapGui implements MouseListener {
          EventQueue.invokeLater(() -> {
             try {
                backSnapGui.frame.setVisible(true);
+               backSnapGui.getSplitPaneSnapshots().setDividerLocation(1d / 3d);
             } catch (final Exception e) {
                e.printStackTrace();
             }
@@ -112,13 +114,17 @@ public class BacksnapGui implements MouseListener {
     */
    private void initialize() throws IOException {
       frame=new JFrame(Backsnap.BACK_SNAP_VERSION);
+      // if (Beans.isDesignTime()) {
       frame.getContentPane().add(getPanelOben(), BorderLayout.CENTER);
       frame.getContentPane().add(getPanelUnten(), BorderLayout.SOUTH);
       Dimension screenSize=Toolkit.getDefaultToolkit().getScreenSize();
-      int       width     =Math.min(screenSize.width, 3840 / 2);
-      int       height    =Math.min(screenSize.height, 2160 / 2);
-      int       x         =(screenSize.width <= (3840 / 2)) ? 0 : screenSize.width - (3840 / 2);
+      final int START_W   =(3840 * 40) / 100;
+      final int START_H   =(2160 * 40) / 100;
+      int       width     =Math.min(screenSize.width, START_W);
+      int       height    =Math.min(screenSize.height, START_H);
+      int       x         =(screenSize.width <= START_W) ? 0 : screenSize.width - START_W;
       frame.setBounds(x, 0, width, height);
+      // }
       frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
    }
    /**
@@ -446,6 +452,7 @@ public class BacksnapGui implements MouseListener {
          progressBar.setMaximum(1000);
          progressBar.setValue(1);
          progressBar.setStringPainted(true);
+         progressBar.setFont(SnapshotPanel.FONT_INFO);
       }
       return progressBar;
    }
@@ -481,17 +488,16 @@ public class BacksnapGui implements MouseListener {
             System.out.println("s1=" + s1.length);
             System.out.println(s1);
          }
-         getLblPv().setText(""); // System.out.println(s2);
-         getLblPv().repaint(50);
+         getTextPv().setText(""); // System.out.println(s2);
+         getTextPv().repaint(50);
       });
    }
-   private JLabel getLblPv() {
-      if (lblPv == null) {
-         lblPv=new JLabel("Info");
-         lblPv.setHorizontalAlignment(SwingConstants.CENTER);
-         lblPv.setPreferredSize(new Dimension(200, 30));
+   private TxtFeld getTextPv() {
+      if (textPv == null) {
+         textPv=new TxtFeld("Info");
+         // textPv.setPreferredSize(new Dimension(200, 30));
       }
-      return lblPv;
+      return textPv;
    }
    /**
     * @param s
@@ -537,17 +543,15 @@ public class BacksnapGui implements MouseListener {
       }
       return panelParameter;
    }
-   private JLabel getLabelParameterInfo() {
+   private Lbl getLabelParameterInfo() {
       if (labelParameterInfo == null) {
-         labelParameterInfo=new JLabel("Args : ");
+         labelParameterInfo=new Lbl("Args : ");
       }
       return labelParameterInfo;
    }
-   private JTextField getLblArgs() {
+   private TxtFeld getLblArgs() {
       if (lblArgs == null) {
-         lblArgs=new JTextField("?");
-         lblArgs.setEditable(false);
-         lblArgs.setFont(FONT_INFO);
+         lblArgs=new TxtFeld("?");
       }
       return lblArgs;
    }
@@ -559,7 +563,7 @@ public class BacksnapGui implements MouseListener {
    }
    public JToggleButton getTglPause() {
       if (tglPause == null) {
-         tglPause=new JToggleButton("pause for maintenance");
+         tglPause=new JToggleButton("pause for maintenance work");
          tglPause.addActionListener(e -> showMaintenance());
          tglPause.setPreferredSize(new Dimension(200, 30));
       }
@@ -607,19 +611,19 @@ public class BacksnapGui implements MouseListener {
    private final Dimension PANEL_UNTEN_DIM =new Dimension(10, 80);
    private final Dimension PANEL_UNTEN_DIM2=new Dimension(10, 180);
    private JPanel          panelWork;
-   private JLabel          lblParent;
-   private JTextField      txtSnapshot;
-   private JLabel          lblSnapshot;
-   private JTextField      txtParent;
+   private Lbl             lblParent;
+   private TxtFeld         txtSnapshot;
+   private Lbl             lblSnapshot;
+   private TxtFeld         txtParent;
    private JPanel          panelLive;
-   private JTextField      txtSpeed;
-   private JTextField      txtWork;
-   private JLabel          lblSpeed;
-   private JLabel          lblWork;
-   private JLabel          lblTime;
-   private JTextField      txtTime;
-   private JLabel          lblSize;
-   private JTextField      txtSize;
+   private TxtFeld         txtSpeed;
+   private TxtFeld         txtWork;
+   private Lbl             lblSpeed;
+   private Lbl             lblWork;
+   private Lbl             lblTime;
+   private TxtFeld         txtTime;
+   private Lbl             lblSize;
+   private TxtFeld         txtSize;
    private JPanel getPanelUnten() {
       if (panelUnten == null) {
          panelUnten=new JPanel();
@@ -650,33 +654,29 @@ public class BacksnapGui implements MouseListener {
       }
       return panelWork;
    }
-   public JLabel getLblParent() {
+   public Lbl getLblParent() {
       if (lblParent == null) {
-         lblParent=new JLabel(":");
+         lblParent=new Lbl(":");
          lblParent.setVerticalAlignment(SwingConstants.BOTTOM);
       }
       return lblParent;
    }
-   public JTextField getTxtSnapshot() {
+   public TxtFeld getTxtSnapshot() {
       if (txtSnapshot == null) {
-         txtSnapshot=new JTextField("-");
-         txtSnapshot.setEditable(false);
-         txtSnapshot.setFont(FONT_INFO);
+         txtSnapshot=new TxtFeld("-");
       }
       return txtSnapshot;
    }
-   public JLabel getLblSnapshot() {
+   public Lbl getLblSnapshot() {
       if (lblSnapshot == null) {
-         lblSnapshot=new JLabel(":");
+         lblSnapshot=new Lbl(":");
          lblSnapshot.setVerticalAlignment(SwingConstants.BOTTOM);
       }
       return lblSnapshot;
    }
-   public JTextField getTxtParent() {
+   public TxtFeld getTxtParent() {
       if (txtParent == null) {
-         txtParent=new JTextField("-");
-         txtParent.setEditable(false);
-         txtParent.setFont(FONT_INFO);
+         txtParent=new TxtFeld("-");
       }
       return txtParent;
    }
@@ -684,67 +684,60 @@ public class BacksnapGui implements MouseListener {
       if (panelLive == null) {
          panelLive=new JPanel();
          panelLive.setLayout(new BorderLayout(0, 0));
-         panelLive.add(getLblPv());
+         panelLive.add(getTextPv());
       }
       return panelLive;
    }
-   private JTextField getTxtSpeed() {
+   private TxtFeld getTxtSpeed() {
       if (txtSpeed == null) {
-         txtSpeed=new JTextField("-");
-         txtSpeed.setFont(FONT_INFO);
-         txtSpeed.setEditable(false);
+         txtSpeed=new TxtFeld("-");
       }
       return txtSpeed;
    }
-   private JTextField getTxtWork() {
+   private TxtFeld getTxtWork() {
       if (txtWork == null) {
-         txtWork=new JTextField("-");
+         txtWork=new TxtFeld("-");
+         txtWork.setFont(SnapshotPanel.FONT_INFO_B);
          txtWork.setOpaque(true);
          txtWork.setBackground(SnapshotLabel.markInProgressColor);
-         txtWork.setFont(FONT_INFO_B);
-         txtWork.setEditable(false);
       }
       return txtWork;
    }
-   private JLabel getLblSpeed() {
+   private Lbl getLblSpeed() {
       if (lblSpeed == null) {
-         lblSpeed=new JLabel("speed:");
+         lblSpeed=new Lbl("speed:");
          lblSpeed.setVerticalAlignment(SwingConstants.BOTTOM);
       }
       return lblSpeed;
    }
-   private JLabel getLblWork() {
+   private Lbl getLblWork() {
       if (lblWork == null) {
-         lblWork=new JLabel("");
+         lblWork=new Lbl("");
          lblWork.setVerticalAlignment(SwingConstants.BOTTOM);
       }
       return lblWork;
    }
-   private JLabel getLblTime() {
+   private Lbl getLblTime() {
       if (lblTime == null) {
-         lblTime=new JLabel("time:");
+         lblTime=new Lbl("time:");
       }
       return lblTime;
    }
-   private JTextField getTxtTime() {
+   private TxtFeld getTxtTime() {
       if (txtTime == null) {
-         txtTime=new JTextField("-");
-         txtTime.setFont(FONT_INFO);
-         txtTime.setEditable(false);
+         txtTime=new TxtFeld("-");
       }
       return txtTime;
    }
-   private JLabel getLblSize() {
+   private Lbl getLblSize() {
       if (lblSize == null) {
-         lblSize=new JLabel("size:");
+         lblSize=new Lbl("size:");
       }
       return lblSize;
    }
-   private JTextField getTxtSize() {
+   private TxtFeld getTxtSize() {
       if (txtSize == null) {
-         txtSize=new JTextField("-");
-         txtSize.setFont(FONT_INFO);
-         txtSize.setEditable(false);
+         txtSize=new TxtFeld("-");
       }
       return txtSize;
    }
