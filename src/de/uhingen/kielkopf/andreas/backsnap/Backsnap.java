@@ -64,7 +64,7 @@ public class Backsnap {
    public final static Flag          KEEP_MINIMUM       =new Flag('m', "keepminimum");    // mark all but minimum
                                                                                           // snapshots
    public static final String        BACK_SNAP_VERSION  =                                 // version
-            "BackSnap for Snapper and Timeshift(beta) Version 0.6.1.7 (2023/07/04)";
+            "BackSnap for Snapper and Timeshift(beta) Version 0.6.1.8 (2023/07/04)";
    public static final ReentrantLock BTRFS_LOCK         =new ReentrantLock();
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");

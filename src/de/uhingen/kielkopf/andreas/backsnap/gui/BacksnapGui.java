@@ -15,8 +15,6 @@ import javax.swing.*;
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
-import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotLabel;
-import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotPanel;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -27,7 +25,7 @@ import javax.swing.border.TitledBorder;
 
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
-import de.uhingen.kielkopf.andreas.backsnap.gui.part.MaintenancePanel;
+import de.uhingen.kielkopf.andreas.backsnap.gui.part.*;
 
 /**
  * @author Andreas Kielkopf
@@ -87,14 +85,14 @@ public class BacksnapGui implements MouseListener {
       UIManager.put("ProgressBar.selectionForeground", Color.black);
       UIManager.put("ProgressBar.selectionBackground", Color.black);
       initialize();
-      getPanelMaintenance().getSliderMeta()
-               .setValue(parseIntOrDefault(Backsnap.KEEP_MINIMUM.getParameter(), MaintenancePanel.DEFAULT_META));
+      getPanelMaintenance().getPanelMeta().getSliderMeta()
+               .setValue(parseIntOrDefault(Backsnap.KEEP_MINIMUM.getParameter(), PanelMeta.DEFAULT_META));
       if (Backsnap.KEEP_MINIMUM.get())
-         getPanelMaintenance().flagMeta();
-      getPanelMaintenance().getSliderSpace()
-               .setValue(parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), MaintenancePanel.DEFAULT_SPACE));
+         getPanelMaintenance().getPanelMeta().flagMeta();
+      getPanelMaintenance().getPanelSpace().getSliderSpace()
+               .setValue(parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), PanelSpace.DEFAULT_SPACE));
       if (Backsnap.DELETEOLD.get())
-         getPanelMaintenance().flagSpace();
+         getPanelMaintenance().getPanelSpace().flagSpace();
    }
    /**
     * @param snapConfigs
@@ -146,7 +144,12 @@ public class BacksnapGui implements MouseListener {
    public void setSrc(SnapConfig srcConfig) throws IOException {
       int                                     linefeeds=0;
       StringBuilder                           sb       =new StringBuilder("Src:");
-      ConcurrentSkipListMap<String, Snapshot> neuList  =getPanelSrc().setVolume(srcConfig.volumeMount(),
+      ConcurrentSkipListMap<String, Snapshot> neuList  =getPanelSrc().setVolume(                            /*
+                                                                                                             * srcConfig
+                                                                                                             * .
+                                                                                                             * volumeMount
+                                                                                                             * (),
+                                                                                                             */
                srcConfig.volumeMount().otimeKeyMap().values());
       for (Snapshot snap:neuList.values()) {
          sb.append(" ").append(snap.dirName());
@@ -173,7 +176,7 @@ public class BacksnapGui implements MouseListener {
       // for DELETEOLD get all old snapshots that are "o=999" older than the newest one
       ConcurrentNavigableMap<String, SnapshotLabel> toDeleteOld         =new ConcurrentSkipListMap<>();
       if (Backsnap.DELETEOLD.get()) {
-         int deleteOld=parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), MaintenancePanel.DEFAULT_SPACE);
+         int deleteOld=parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), PanelSpace.DEFAULT_SPACE);
          if (getPanelSrc().labelTree_DirName.lastEntry() instanceof Entry<String, SnapshotLabel> lastEntry) {
             Backsnap.logln(8, "delOld: " + deleteOld);
             SnapshotLabel last=lastEntry.getValue();
@@ -220,9 +223,9 @@ public class BacksnapGui implements MouseListener {
          }
       }
       // KEEP_MINIMUM
-      int minimum=MaintenancePanel.DEFAULT_META;
+      int minimum=PanelMeta.DEFAULT_META;
       if (Backsnap.KEEP_MINIMUM.get())
-         minimum=parseIntOrDefault(Backsnap.KEEP_MINIMUM.getParameter(), MaintenancePanel.DEFAULT_META);
+         minimum=parseIntOrDefault(Backsnap.KEEP_MINIMUM.getParameter(), PanelMeta.DEFAULT_META);
       ArrayList<SnapshotLabel> mixedList2;
       synchronized (getPanelBackup().mixedList) {
          mixedList2=new ArrayList<>(getPanelBackup().mixedList);
@@ -304,11 +307,11 @@ public class BacksnapGui implements MouseListener {
                   public void run() {
                      jButton.setEnabled(false);
                      for (Snapshot snapshot:toRemove) {
-                        if (jButton == getPanelMaintenance().getBtnMeta())
-                           if (!getPanelMaintenance().getChckMeta().isSelected())
+                        if (jButton == getPanelMaintenance().getPanelMeta().getBtnMeta())
+                           if (!getPanelMaintenance().getPanelMeta().getChckMeta().isSelected())
                               continue;
-                        if (jButton == getPanelMaintenance().getBtnSpace())
-                           if (!getPanelMaintenance().getChckSpace().isSelected())
+                        if (jButton == getPanelMaintenance().getPanelSpace().getBtnSpace())
+                           if (!getPanelMaintenance().getPanelSpace().getChckSpace().isSelected())
                               continue;
                         try {
                            Backsnap.removeSnapshot(snapshot);
@@ -373,7 +376,7 @@ public class BacksnapGui implements MouseListener {
          if (pfad.startsWith(rest))
             passendBackups.put(snapshot.keyO(), snapshot);
       }
-      ConcurrentSkipListMap<String, Snapshot> neuList=getPanelBackup().setVolume(backupTree.mount(),
+      ConcurrentSkipListMap<String, Snapshot> neuList=getPanelBackup().setVolume(/* backupTree.mount(), */
                passendBackups.values());
       for (SnapshotLabel label:getPanelBackup().getLabels().values())
          label.addMouseListener(this);

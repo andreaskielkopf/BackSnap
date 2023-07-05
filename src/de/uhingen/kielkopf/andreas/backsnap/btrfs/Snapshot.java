@@ -96,6 +96,10 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       return new StringBuilder((mount == null) ? "null:" : mount().keyM()).append(otime()).append(idN())
                .append(btrfsPath().getFileName()).toString();
    }
+   public String keyB() {
+      return new StringBuilder((mount == null) ? "null:" : mount().keyM()).append(dirName())
+               .append(btrfsPath().getFileName()).append(idN()).toString();
+   }
    static DecimalFormat df=new DecimalFormat("0000000000");
    /**
     * @return sortable Integer

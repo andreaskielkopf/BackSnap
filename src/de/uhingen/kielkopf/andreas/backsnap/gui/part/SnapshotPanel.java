@@ -123,12 +123,12 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
     * @return
     * @throws IOException
     */
-   public ConcurrentSkipListMap<String, Snapshot> setVolume(Mount subVolume, Collection<Snapshot> list)
+   public ConcurrentSkipListMap<String, Snapshot> setVolume(/*Mount subVolume,*/ Collection<Snapshot> list)
             throws IOException {
       ConcurrentSkipListMap<String, Snapshot> neuList=new ConcurrentSkipListMap<>();
       for (Snapshot snap:list)
          if (!labelTree_UUID.containsKey(snap.uuid()))
-            neuList.put(snap.keyO(), snap);
+            neuList.put(snap.keyB(), snap);
       labelTree_UUID.clear();
       labelTree_ParentUuid.clear();
       labelTree_KeyO.clear();
