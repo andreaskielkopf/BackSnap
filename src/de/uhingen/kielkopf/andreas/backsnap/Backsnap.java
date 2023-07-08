@@ -55,6 +55,7 @@ public class Backsnap {
    final static Flag                 AUTO               =new Flag('a', "auto");           // auto-close gui when ready
    final public static Flag          VERBOSE            =new Flag('v', "verbose");
    final public static Flag          TIMESHIFT          =new Flag('t', "timeshift");
+   final public static Flag          COMPRESSED         =new Flag('c', "compressed");
    final public static String        SNAPSHOT           ="snapshot";
    final public static String        DOT_SNAPSHOTS      =".snapshots";
    final public static String        AT_SNAPSHOTS       ="@snapshots";
@@ -64,7 +65,7 @@ public class Backsnap {
    public final static Flag          KEEP_MINIMUM       =new Flag('m', "keepminimum");    // mark all but minimum
                                                                                           // snapshots
    public static final String        BACK_SNAP_VERSION  =                                 // version
-            "BackSnap for Snapper and Timeshift(beta) Version 0.6.1.9 (2023/07/05)";
+            "BackSnap for Snapper and Timeshift(beta) Version 0.6.2.0 (2023/07/08)";
    public static final ReentrantLock BTRFS_LOCK         =new ReentrantLock();
    public static void main(String[] args) {
       Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " sudo:/mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro18");
@@ -95,9 +96,8 @@ public class Backsnap {
          if (TIMESHIFT.get())
             mountBtrfsRoot(srcPc, srcDir, true);
          // Start collecting information
-         SubVolumeList    srcSubVolumes=new SubVolumeList(srcPc);
-         List<SnapConfig> snapConfigs  =SnapConfig.getList(srcSubVolumes);
-         SnapConfig       srcConfig    =SnapConfig.getConfig(snapConfigs, srcDir);
+         List<SnapConfig> snapConfigs=SnapConfig.getList(srcPc.getSubVolumeList());
+         SnapConfig       srcConfig  =SnapConfig.getConfig(snapConfigs, srcDir);
          if (srcConfig == null)
             throw new RuntimeException("Could not find snapshots for srcDir: " + srcDir);
          if (srcConfig.volumeMount().btrfsMap().isEmpty())
@@ -117,7 +117,7 @@ public class Backsnap {
          boolean samePC  =(backupSsh.equals(srcSsh));
          Pc      backupPc=samePC ? srcPc : new Pc(backupSsh);
          backupPc.updateMounts();
-         SubVolumeList backupSubVolumes=samePC ? srcSubVolumes : new SubVolumeList(backupPc);
+         SubVolumeList backupSubVolumes=samePC ? srcPc.getSubVolumeList() : backupPc.getSubVolumeList();
          String        backupKey       =backupSsh + ":" + backupDir;
          Mount         backupVolume    =backupSubVolumes.getBackupVolume(backupKey);
          if (backupVolume == null)
@@ -337,11 +337,13 @@ public class Backsnap {
       rsyncFiles(srcSsh1, backupSsh, sDir, bDir);
       if (GUI.get())
          bsGui.mark(srcSnapshot);
-      if (sendBtrfs(srcSsh1, backupSsh, srcSnapshot, bDir))
+      Pc backupPc=backupMap.mount().pc();
+      if (sendBtrfs(srcSsh1, backupSsh, srcSnapshot, bDir, backupPc))
          parentSnapshot=srcSnapshot;
       return true;
    }
-   private static boolean sendBtrfs(String srcSsh1, String backupSsh, Snapshot s, Path bDir) throws IOException {
+   private static boolean sendBtrfs(String srcSsh1, String backupSsh, Snapshot s, Path bDir, Pc backupPc)
+            throws IOException {
       boolean       sameSsh    =(srcSsh1.contains("@") && srcSsh1.equals(backupSsh));
       StringBuilder btrfsSendSB=new StringBuilder("/bin/btrfs send ");
       if (bsGui != null) {
@@ -351,6 +353,19 @@ public class Backsnap {
          bsGui.getTxtParent().setText((parentSnapshot == null) ? " " : parentSnapshot.dirName());
          bsGui.getPanelWork().repaint(50);
       }
+      if (COMPRESSED.get()) {
+         if (s.mount().pc().getBtrfsVersion() instanceof Version v)
+            if (v.getMayor() < 6)
+               COMPRESSED.set(false);
+         if (s.mount().pc().getKernelVersion() instanceof Version v)
+            if (v.getMayor() < 6)
+               COMPRESSED.set(false);
+         if (backupPc.getBtrfsVersion() instanceof Version v)
+            if (v.getMayor() < 6)
+               COMPRESSED.set(false);
+      }
+      if (COMPRESSED.get())
+         btrfsSendSB.append("--proto 2 --compressed-data ");
       if (parentSnapshot != null) // @todo genauer prüfen
          btrfsSendSB.append("-p ").append(parentSnapshot.getSnapshotMountPath()).append(" ");
       if (s.btrfsPath().toString().contains("timeshift-btrfs"))

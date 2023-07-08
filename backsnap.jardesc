@@ -22,6 +22,7 @@
         <file path="/backsnap/backsnap.jardesc"/>
         <javaElement handleIdentifier="=Beans/src&lt;de.uhingen.kielkopf.andreas.beans.cli{Flag.java"/>
         <file path="/backsnap/readme.md"/>
+        <javaElement handleIdentifier="=Beans/src&lt;de.uhingen.kielkopf.andreas.beans.data{Link.java"/>
         <file path="/backsnap/gallery/backup_de.md"/>
         <file path="/backsnap/gallery/clitest_de.md"/>
         <file path="/backsnap/SECURITY.md"/>
