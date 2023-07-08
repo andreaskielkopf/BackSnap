@@ -4,7 +4,7 @@
 * In the **[master](../master/gallery/gallery.md)** branch is a version for use with "snapper"
 * In the **[timeshift](../timeshift/gallery/gallery.md)** branch is a beta version for use with "timeshift"
 
-![BackSnap in action](./gallery/gui.png  "BackSnap gui")
+![BackSnap in action](./gallery/timeshift.png  "BackSnap gui")
 With BackSnap, regular backups for btrfs are no longer a burden, but an easy task.
 
 ## Prologue
