@@ -17,7 +17,7 @@ import javax.swing.border.TitledBorder;
  *
  */
 public class CommandButton extends JPanel {
-   private static final long serialVersionUID=-917266146931312618L;
+   static private final long serialVersionUID=-917266146931312618L;
    private JPanel            panel;
    private JLabel            lblOk;
    private JTextArea         textArea;

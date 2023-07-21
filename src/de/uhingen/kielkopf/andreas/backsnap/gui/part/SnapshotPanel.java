@@ -21,9 +21,9 @@ import javax.swing.border.TitledBorder;
  * @author Andreas Kielkopf
  */
 public class SnapshotPanel extends JPanel implements ComponentListener, MouseListener {
-   private static final long                           serialVersionUID    =-3405881652038164771L;
-   public static final Font                            FONT_INFO           =new Font("Noto Sans", Font.PLAIN, 16);
-   public static final Font                            FONT_INFO_B         =new Font("Noto Sans", Font.BOLD, 16);
+   static private final long                           serialVersionUID    =-3405881652038164771L;
+   static public final Font                            FONT_INFO           =new Font("Noto Sans", Font.PLAIN, 16);
+   static public final Font                            FONT_INFO_B         =new Font("Noto Sans", Font.BOLD, 16);
    private JPanel                                      panelView;
    private SnapshotDetail                              panelDetail;
    private JPanel                                      panelSnapshots;
@@ -60,7 +60,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
          panelView=new JPanel() {
             BasicStroke               stroke          =new BasicStroke(1.5f, BasicStroke.CAP_ROUND,
                      BasicStroke.JOIN_ROUND);
-            private static final long serialVersionUID=-8623737829256524456L;
+            static private final long serialVersionUID=-8623737829256524456L;
             @Override
             public void paint(Graphics g) {
                final int bolla2=6;

@@ -10,10 +10,10 @@ import java.util.regex.Pattern;
  *
  */
 public record PvInfo(String size, String time, String speed, String progress) {
-   final static Pattern SIZE=Pattern.compile("([0-9,KMGTi]+ ?B)");
-   final static Pattern TIME=Pattern.compile(" ([0-9]+:[0-9:]+) ");
-   final static Pattern SPEED=Pattern.compile("([ 0-9,KMGTiB]+/s)");
-   final static Pattern PROGRESS=Pattern.compile(" (\\[[ <=>]+\\])");
+   static final Pattern SIZE=Pattern.compile("([0-9,KMGTi]+ ?B)");
+   static final Pattern TIME=Pattern.compile(" ([0-9]+:[0-9:]+) ");
+   static final Pattern SPEED=Pattern.compile("([ 0-9,KMGTiB]+/s)");
+   static final Pattern PROGRESS=Pattern.compile(" (\\[[ <=>]+\\])");
    public PvInfo(String pv) {
       this(Snapshot.getString(SIZE.matcher(pv)), Snapshot.getString(TIME.matcher(pv)),
                Snapshot.getString(SPEED.matcher(pv)), Snapshot.getString(PROGRESS.matcher(pv)));

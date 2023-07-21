@@ -18,7 +18,7 @@ import javax.swing.border.TitledBorder;
  *
  */
 public class SnapshotDetail extends JPanel {
-   private static final long serialVersionUID=-7659329578660282348L;
+   static private final long serialVersionUID=-7659329578660282348L;
    private JPanel            panel_1;
    private JPanel            panelLbl;
    private TitledBorder      tBorder;

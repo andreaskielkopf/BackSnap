@@ -32,19 +32,19 @@ import de.uhingen.kielkopf.andreas.beans.data.Link;
  */
 public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integer parent, Integer top_level, //
          String otime, String parent_uuid, String received_uuid, String uuid, Path btrfsPath, Link<Boolean> readonlyL) {
-   final static Pattern ID=createPatternFor("ID");
-   final static Pattern GEN=createPatternFor("gen");
-   final static Pattern CGEN=createPatternFor("cgen");
-   final static Pattern PARENT=createPatternFor("parent");
-   final static Pattern TOP_LEVEL=createPatternFor("top level");
-   final static Pattern OTIME=Pattern.compile("[ \\[]" + "otime" + "[ =]([^ ]+ [^ ,\\]]+)");// [ =\\[]([^ ,\\]]+)
-   final static Pattern PARENT_UUID=createPatternFor("parent_uuid");
-   final static Pattern RECEIVED_UUID=createPatternFor("received_uuid");
-   final static Pattern UUID=createPatternFor("uuid");
-   final static Pattern BTRFS_PATH=Pattern.compile("^(?:.*? )path (?:<[^>]+>)?([^ ]+).*?$");
-   final static Pattern NUMERIC_DIRNAME=Pattern.compile("([0-9]+)/snapshot$");
-   final static Pattern DIRNAME=Pattern.compile("([^/]+)/snapshot$");
-   final static Pattern SUBVOLUME=Pattern.compile("^(@[0-9a-zA-Z.]+)/.*[0-9]+/snapshot$");
+   static final Pattern ID=createPatternFor("ID");
+   static final Pattern GEN=createPatternFor("gen");
+   static final Pattern CGEN=createPatternFor("cgen");
+   static final Pattern PARENT=createPatternFor("parent");
+   static final Pattern TOP_LEVEL=createPatternFor("top level");
+   static final Pattern OTIME=Pattern.compile("[ \\[]" + "otime" + "[ =]([^ ]+ [^ ,\\]]+)");// [ =\\[]([^ ,\\]]+)
+   static final Pattern PARENT_UUID=createPatternFor("parent_uuid");
+   static final Pattern RECEIVED_UUID=createPatternFor("received_uuid");
+   static final Pattern UUID=createPatternFor("uuid");
+   static final Pattern BTRFS_PATH=Pattern.compile("^(?:.*? )path (?:<[^>]+>)?([^ ]+).*?$");
+   static final Pattern NUMERIC_DIRNAME=Pattern.compile("([0-9]+)/snapshot$");
+   static final Pattern DIRNAME=Pattern.compile("([^/]+)/snapshot$");
+   static final Pattern SUBVOLUME=Pattern.compile("^(@[0-9a-zA-Z.]+)/.*[0-9]+/snapshot$");
    public Snapshot(Mount mount, String from_btrfs) throws IOException {
       this(getMount(mount, getPath(BTRFS_PATH.matcher(from_btrfs))), getInt(ID.matcher(from_btrfs)),
                getInt(GEN.matcher(from_btrfs)), getInt(CGEN.matcher(from_btrfs)), getInt(PARENT.matcher(from_btrfs)),
@@ -62,7 +62,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
     * @param Matcher
     * @return String
     */
-   public static String getString(Matcher m) {
+   static public String getString(Matcher m) {
       return (m.find()) ? m.group(1) : null;
    }
    /**
@@ -70,22 +70,22 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
     * @return Integer
     */
    @SuppressWarnings("boxing")
-   final public static Integer getInt(Matcher m) {
+   static public final Integer getInt(Matcher m) {
       return (m.find()) ? Integer.parseUnsignedInt(m.group(1)) : null;
    }
    /**
     * @param Matcher
     * @return Path (ansolut)
     */
-   final public static Path getPath(Matcher m) {
+   static public final Path getPath(Matcher m) {
       if (m.find())
          return Path.of("/", m.group(1)); // absolut Path
       return null;
    }
-   private static Pattern createPatternFor(String s) {
+   static private Pattern createPatternFor(String s) {
       return Pattern.compile("^(?:.*[ \\[])?" + s + "[ =]([^ ,\\]]+)");
    }
-   public static final int SORT_LEN=10; // reichen 100 Jahre ???
+   static public final int SORT_LEN=10; // reichen 100 Jahre ???
    /**
     * @return Key um snapshot zu sortieren sofern im Pfad ein numerischer WERT steht
     */
@@ -112,7 +112,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       String t="0".repeat(11 - s.length()) + s;
       return t;
    }
-   final public static String dir2key(String dir) { // ??? numerisch sortieren ;-)
+   static public final String dir2key(String dir) { // ??? numerisch sortieren ;-)
       return (dir.length() >= SORT_LEN) ? dir : ".".repeat(SORT_LEN - dir.length()).concat(dir);
    }
    public String dirName() {
@@ -129,7 +129,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
     * 
     * @return Instant
     */
-   final public Instant stunden() {
+   public final Instant stunden() {
       try {
          String[] t=dirName().split("_");
          return Instant.parse(t[0] + "T" + t[1].replace('-', ':') + "Z");
@@ -304,7 +304,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
     * @param b
     * @throws IOException
     */
-   public static void setReadonly(Snapshot parent, Snapshot snapshot, boolean readonly) throws IOException {
+   static public void setReadonly(Snapshot parent, Snapshot snapshot, boolean readonly) throws IOException {
       if (!snapshot.btrfsPath().toString().contains("timeshift"))
          return;
       Backsnap.BTRFS_LOCK.lock();
@@ -366,7 +366,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          readonlyL().clear(); // nicht weiter im cache
       }
    }
-   public static void mkain(String[] args) {
+   static public void mkain(String[] args) {
       try {
          Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " /mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro");// Par. sammeln
          String backupDir=Flag.getParameterOrDefault(1, "@BackSnap");

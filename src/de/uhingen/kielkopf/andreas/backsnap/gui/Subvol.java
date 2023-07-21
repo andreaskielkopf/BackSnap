@@ -19,7 +19,7 @@ import javax.swing.JLabel;
  *
  */
 public class Subvol extends JPanel {
-   private static final long serialVersionUID=-4206237186411548874L;
+   static private final long serialVersionUID=-4206237186411548874L;
    private JPanel            panel;
    private JTextField        svName;
    private JPanel            panel_1;

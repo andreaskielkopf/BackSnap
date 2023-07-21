@@ -15,9 +15,9 @@ import java.util.regex.Pattern;
  *
  */
 public record Volume(Pc pc, Path device, String label, String uuid) {
-   final static Pattern VOLUMELABEL=Pattern.compile("^Label: ('.+'|none)");
-   final static Pattern UUID=Pattern.compile("uuid: ([-0-9a-f]{36})");
-   final static Pattern DEVICE=Pattern.compile("devid .+ path (/dev/.+)");
+   static final Pattern VOLUMELABEL=Pattern.compile("^Label: ('.+'|none)");
+   static final Pattern UUID=Pattern.compile("uuid: ([-0-9a-f]{36})");
+   static final Pattern DEVICE=Pattern.compile("devid .+ path (/dev/.+)");
    /**
     * @param line
     *           Eine Zeile die filesystem show geliefert hat
@@ -50,7 +50,7 @@ public record Volume(Pc pc, Path device, String label, String uuid) {
                .append(" ").append(label()).append("]");
       return sb.toString();
    }
-//   public static ConcurrentSkipListMap<String, Volume> getList(String extern, boolean onlyMounted) {
+//   static public ConcurrentSkipListMap<String, Volume> getList(String extern, boolean onlyMounted) {
 //      // @todo cache einbauen
 //      ConcurrentSkipListMap<String, Volume> list             =new ConcurrentSkipListMap<>();
 //      StringBuilder                         filesystemShowCmd=new StringBuilder("btrfs filesystem show -")
@@ -86,7 +86,7 @@ public record Volume(Pc pc, Path device, String label, String uuid) {
     * @deprecated
     */
 //   @Deprecated
-//   public static void injectSsh(StringBuilder cmd, String extern) {
+//   static public void injectSsh(StringBuilder cmd, String extern) {
 //      if ((extern instanceof String x) && (!x.isBlank()))
 //         if (x.startsWith("sudo "))
 //            cmd.insert(0, x);

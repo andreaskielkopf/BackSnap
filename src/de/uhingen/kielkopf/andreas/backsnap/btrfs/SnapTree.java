@@ -21,7 +21,7 @@ import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
  */
 public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<String, Snapshot> rUuidMap,
          TreeMap<Path, Snapshot> btrfsPathMap, TreeMap<String, Snapshot> dateMap) {
-   final static ConcurrentSkipListMap<String, SnapTree> snapTreeCache=new ConcurrentSkipListMap<>();
+   static final ConcurrentSkipListMap<String, SnapTree> snapTreeCache=new ConcurrentSkipListMap<>();
    /**
     * create record and populate all Maps
     * 
@@ -69,7 +69,7 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
     * @return a SnapTree
     * @throws IOException
     */
-   public static SnapTree getSnapTree(Mount mount2) throws IOException {
+   static public SnapTree getSnapTree(Mount mount2) throws IOException {
       String deviceKey=mount2.keyD();
       if (!snapTreeCache.containsKey(deviceKey)) {
          snapTreeCache.put(deviceKey, new SnapTree(mount2));

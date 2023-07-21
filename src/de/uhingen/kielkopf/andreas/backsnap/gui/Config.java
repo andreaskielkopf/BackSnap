@@ -24,7 +24,7 @@ public class Config {
    /**
     * Launch the application.
     */
-   public static void main(String[] args) {
+   static public void main(String[] args) {
       EventQueue.invokeLater(new Runnable() {
          @Override
          public void run() {

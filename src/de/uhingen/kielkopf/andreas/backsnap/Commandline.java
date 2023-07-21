@@ -10,21 +10,21 @@ import java.util.stream.Stream;
  * @author Andreas Kielkopf
  */
 public class Commandline {
-   final static ProcessBuilder                                  processBuilder=new ProcessBuilder();
-   public final static String                                   UTF_8         ="UTF-8";
-   public final static ConcurrentSkipListMap<String, CmdStream> cache         =new ConcurrentSkipListMap<>();
+   static final ProcessBuilder                                  processBuilder=new ProcessBuilder();
+   static public final String                                   UTF_8         ="UTF-8";
+   static public final ConcurrentSkipListMap<String, CmdStream> cache         =new ConcurrentSkipListMap<>();
    /** ExecutorService um den Errorstream im Hintergrund zu lesen */
-   final public static ExecutorService                          background    =Executors.newCachedThreadPool();
+   static public final ExecutorService                          background    =Executors.newCachedThreadPool();
    /**
     * @param cmd
     * @return
     * @throws IOException
     */
    
-   public static CmdStream executeCached(StringBuilder cmd, String key) throws IOException {
+   static public CmdStream executeCached(StringBuilder cmd, String key) throws IOException {
       return executeCached(cmd.toString(), key);
    }
-   public static CmdStream executeCached(StringBuilder cmd1) throws IOException {
+   static public CmdStream executeCached(StringBuilder cmd1) throws IOException {
       String cmd=cmd1.toString();
       return executeCached(cmd, cmd);
    }
@@ -40,7 +40,7 @@ public class Commandline {
     * @throws IOException
     */
    @SuppressWarnings("resource")
-   public static CmdStream executeCached(String cmd, String key) throws IOException {
+   static public CmdStream executeCached(String cmd, String key) throws IOException {
       if ((key != null) && cache.containsKey(key)) // aus dem cache antworten, wenn es im cache ist
          return cache.get(key); // ansonsten den Befehl neu ausführen und im cache ablegen
       Process process=processBuilder.command(List.of("/bin/bash", "-c", cmd)).start();
@@ -135,11 +135,11 @@ public class Commandline {
    /**
     * Wenn die Errorstreams nicht mehr gebraucht werden, aufräumen
     */
-   public static void cleanup() {
+   static public void cleanup() {
       background.shutdownNow();
    }
    @SuppressWarnings("resource")
-   public static void removeFromCache(String cacheKey) {
+   static public void removeFromCache(String cacheKey) {
       if (!cache.containsKey(cacheKey))
          return;
       try {

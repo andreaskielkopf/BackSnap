@@ -34,7 +34,7 @@ import de.uhingen.kielkopf.andreas.backsnap.gui.part.*;
  *
  */
 public class BacksnapGui implements MouseListener {
-   private static BacksnapGui                          backSnapGui;
+   static private BacksnapGui                          backSnapGui;
    public JFrame                                       frame;
    private SnapshotPanel                               panelSrc;
    private SnapshotPanel                               panelBackup;
@@ -44,10 +44,10 @@ public class BacksnapGui implements MouseListener {
    private JPanel                                      panelEnde;
    private JProgressBar                                progressBar;
    private TxtFeld                                     textPv;
-   public final static String                          BLUE        ="<font size=+1 color=\"3333ff\">";
-   public final static String                          NORMAL      ="</font>";
-   public final static String                          IGEL1       ="<=>";
-   public final static String                          IGEL2       =BLUE + "=O=" + NORMAL;
+   static public final String                          BLUE        ="<font size=+1 color=\"3333ff\">";
+   static public final String                          NORMAL      ="</font>";
+   static public final String                          IGEL1       ="<=>";
+   static public final String                          IGEL2       =BLUE + "=O=" + NORMAL;
    private MaintenancePanel                            panelMaintenance;
    private JSplitPane                                  splitPaneMaintenance;
    private JPanel                                      panelParameter;
@@ -57,7 +57,7 @@ public class BacksnapGui implements MouseListener {
    /**
     * @param args
     */
-   public static void main2(String[] args) {
+   static public void main2(String[] args) {
       if (backSnapGui == null)
          try {
             backSnapGui=new BacksnapGui();
@@ -128,7 +128,7 @@ public class BacksnapGui implements MouseListener {
    /**
     * @param bsGui
     */
-   public static void setGui(BacksnapGui bsGui) {
+   static public void setGui(BacksnapGui bsGui) {
       backSnapGui=bsGui;
    }
    private SnapshotPanel getPanelSrc() throws IOException {
@@ -338,7 +338,7 @@ public class BacksnapGui implements MouseListener {
             }
       } catch (InterruptedException ignore) { /* */ }
    }
-   final static public int parseIntOrDefault(String s, int def) {
+   static public final int parseIntOrDefault(String s, int def) {
       if (s != null)
          try {
             return Integer.parseInt(s);

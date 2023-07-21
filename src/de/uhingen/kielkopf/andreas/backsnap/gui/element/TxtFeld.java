@@ -13,7 +13,7 @@ import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotPanel;
  *
  */
 public class TxtFeld extends JTextField {
-   private static final long serialVersionUID=7311777720376081379L;
+   static private final long serialVersionUID=7311777720376081379L;
    public TxtFeld() {
       super();
       setFont(SnapshotPanel.FONT_INFO);

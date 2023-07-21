@@ -19,7 +19,7 @@ public record SnapConfig(Mount volumeMount, Mount snapshotMount) {
     * @param srcSubVolumes
     * @return
     */
-//   public static List<SnapConfig> getList(SubVolumeList srcSubVolumes) {
+//   static public List<SnapConfig> getList(SubVolumeList srcSubVolumes) {
 //      ArrayList<SnapConfig> l=new ArrayList<>();
 //      for (Mount volumeMount:srcSubVolumes.mountTree().values()) { // über alle Subvolumes laufen
 ////         if (volumeMount.otimeKeyMap().isEmpty())
@@ -51,7 +51,7 @@ public record SnapConfig(Mount volumeMount, Mount snapshotMount) {
 //      }
 //      return l;
 //   }
-   public static SnapConfig getConfig(List<SnapConfig> list, Path srcDir) {
+   static public SnapConfig getConfig(List<SnapConfig> list, Path srcDir) {
       for (SnapConfig snapConfig:list) {
          Backsnap.logln(9, snapConfig.toString());
          if (snapConfig.volumeMount.mountPath().equals(srcDir))

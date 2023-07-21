@@ -22,13 +22,13 @@ import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 public record Mount(Pc pc, /* SubVolumeList svList, */ Path devicePath, Path mountPath, Path btrfsPath, String options,
          ConcurrentSkipListMap<Path, Snapshot> btrfsMap, ConcurrentSkipListMap<String, Snapshot> otimeKeyMap,
          ConcurrentSkipListSet<String> name) {
-   final static Pattern DEVICE=Pattern.compile("^(?:.*[ \\[]device=)?([^ ,]+)");
-   final static Pattern MOUNTPOINT=Pattern.compile("(?: on |[ \\[]mountPoint=)([^ ,]+)");
-   final static Pattern SUBVOLUME=Pattern.compile("(?:, ?subvol=)([^ ,)\\]]+)");
-   final static Pattern OPTIONS=Pattern.compile("(?:[\\[]options=| )(\\(.+\\))");
-   final static Pattern SNAPSHOT=Pattern.compile("^\t\t+([^ \t]+)");
-   final static Pattern NAME=Pattern.compile("Name:[ \\t]+([^< \\t]+)");
-   final static Pattern COMMON=Pattern.compile("^(/@[^/]*/)");
+   static final Pattern DEVICE=Pattern.compile("^(?:.*[ \\[]device=)?([^ ,]+)");
+   static final Pattern MOUNTPOINT=Pattern.compile("(?: on |[ \\[]mountPoint=)([^ ,]+)");
+   static final Pattern SUBVOLUME=Pattern.compile("(?:, ?subvol=)([^ ,)\\]]+)");
+   static final Pattern OPTIONS=Pattern.compile("(?:[\\[]options=| )(\\(.+\\))");
+   static final Pattern SNAPSHOT=Pattern.compile("^\t\t+([^ \t]+)");
+   static final Pattern NAME=Pattern.compile("Name:[ \\t]+([^< \\t]+)");
+   static final Pattern COMMON=Pattern.compile("^(/@[^/]*/)");
    /**
     * @param line
     *           Eine Zeile die mount geliefert hat

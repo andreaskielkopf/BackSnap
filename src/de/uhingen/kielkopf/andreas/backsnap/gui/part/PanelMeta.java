@@ -22,10 +22,10 @@ import java.awt.BorderLayout;
  *
  */
 public class PanelMeta extends JPanel {
-   private static final long serialVersionUID=-8829953253542936677L;
+   static private final long serialVersionUID=-8829953253542936677L;
    private JCheckBox   chckMeta;
    private JButton     btnMeta;
-   public static int   DEFAULT_META=499;
+   static public int   DEFAULT_META=499;
    private JSlider     sliderMeta;
    private Lbl         lblMeta;
    private JPanel      panel;

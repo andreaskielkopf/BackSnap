@@ -25,7 +25,7 @@ import java.awt.BorderLayout;
  *
  */
 public class PanelSpace extends JPanel {
-   private static final long serialVersionUID=-8473404478127990644L;
+   static private final long serialVersionUID=-8473404478127990644L;
    private JPanel            panel;
    private JPanel            panel_c;
    private Lbl               lblSpace;
@@ -33,7 +33,7 @@ public class PanelSpace extends JPanel {
    private JSlider           sliderSpace;
    private JCheckBox         chckSpace;
    private JButton           btnSpace;
-   public static int         DEFAULT_SPACE   =1999;
+   static public int         DEFAULT_SPACE   =1999;
    final private BacksnapGui bsGui;
    /**
     * Create the panel.

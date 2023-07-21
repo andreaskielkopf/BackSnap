@@ -21,9 +21,9 @@ public record Pc(String extern, // Marker für diesen PC
          Link<SubVolumeList> cachedSubVolumeList, // Liste der Subvolumes
          Link<Version> cachedBtrfsVersion, // BTRFS-Version
          Link<Version> cachedKernelVersion) {// Kernel-Version
-   final static ConcurrentSkipListMap<String, Pc> pcCache=new ConcurrentSkipListMap<String, Pc>();
+   static final ConcurrentSkipListMap<String, Pc> pcCache=new ConcurrentSkipListMap<String, Pc>();
    /* In /tmp werden bei Timeshift Pcs die Snapshots vorübergehnd eingehängt */
-   final public static String TMP_BTRFS_ROOT="/tmp/BtrfsRoot";
+   static public final String TMP_BTRFS_ROOT="/tmp/BtrfsRoot";
    /**
     * Sicherstellen, dass jeder Pc nur einmal erstellt wird
     * 
@@ -151,7 +151,7 @@ public record Pc(String extern, // Marker für diesen PC
     * @return
     * @throws IOException
     */
-   final public Version getBtrfsVersion() throws IOException {
+   public final Version getBtrfsVersion() throws IOException {
       if (cachedBtrfsVersion.get() == null) {
          String versionCmd=getCmd(new StringBuilder("btrfs version"));
          Backsnap.logln(6, versionCmd);
@@ -174,7 +174,7 @@ public record Pc(String extern, // Marker für diesen PC
     * @return
     * @throws IOException
     */
-   final public Version getKernelVersion() throws IOException {
+   public final Version getKernelVersion() throws IOException {
       if (cachedKernelVersion.get() == null) {
          String versionCmd=getCmd(new StringBuilder("uname -rs"));
          Backsnap.logln(6, versionCmd);

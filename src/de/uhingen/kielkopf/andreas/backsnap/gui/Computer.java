@@ -26,7 +26,7 @@ import javax.swing.event.ListSelectionEvent;
  *
  */
 public class Computer extends JPanel {
-   private static final long       serialVersionUID=-1777560551058489693L;
+   static private final long       serialVersionUID=-1777560551058489693L;
    private JPanel                  panel;
    private JPanel                  connection;
    private JPanel                  subvolumes;

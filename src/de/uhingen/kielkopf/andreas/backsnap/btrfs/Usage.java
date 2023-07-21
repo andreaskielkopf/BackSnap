@@ -17,24 +17,24 @@ import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 public record Usage(String size, String allocated, String unallcoated, String missing, String slack, //
          String used, String ratioD, String ratioM, String free, String reserve, String data, String metadata,
          String system) {
-   final static String A="[\\t ]+([0-9.KMGTiB]+)";
-   final static Pattern SIZE=Pattern.compile("Device size:" + A);
-   final static Pattern ALLOCATED=Pattern.compile(" allocated:" + A);
-   final static Pattern UNALLOCATED=Pattern.compile("nallocated:" + A);
-   final static Pattern MISSING=Pattern.compile("Device missing:" + A);
-   final static Pattern SLACK=Pattern.compile("Device slack:" + A);
-   final static Pattern USED=Pattern.compile("Used:" + A);
-   final static Pattern RATIO_D=Pattern.compile("Data ratio:" + A);
-   final static Pattern RATIO_M=Pattern.compile("Metadata ratio:" + A);
-   final static Pattern FREE=Pattern.compile("Free [a-z,() ]+:" + A);
-   final static Pattern RESERVE=Pattern.compile("Global reserve:" + A);
-   final static Pattern DATA=Pattern.compile("Data,single:" + A);
-   final static Pattern METADATA=Pattern.compile("Metadata,DUP:" + A);
-   final static Pattern SYSTEM=Pattern.compile("System,DUP:" + A);
-   private static final long KiB=1024;
-   private static final long MiB=KiB * KiB;
-   private static final long GiB=KiB * MiB;
-   private static final long TiB=MiB * MiB;
+   static final String A="[\\t ]+([0-9.KMGTiB]+)";
+   static final Pattern SIZE=Pattern.compile("Device size:" + A);
+   static final Pattern ALLOCATED=Pattern.compile(" allocated:" + A);
+   static final Pattern UNALLOCATED=Pattern.compile("nallocated:" + A);
+   static final Pattern MISSING=Pattern.compile("Device missing:" + A);
+   static final Pattern SLACK=Pattern.compile("Device slack:" + A);
+   static final Pattern USED=Pattern.compile("Used:" + A);
+   static final Pattern RATIO_D=Pattern.compile("Data ratio:" + A);
+   static final Pattern RATIO_M=Pattern.compile("Metadata ratio:" + A);
+   static final Pattern FREE=Pattern.compile("Free [a-z,() ]+:" + A);
+   static final Pattern RESERVE=Pattern.compile("Global reserve:" + A);
+   static final Pattern DATA=Pattern.compile("Data,single:" + A);
+   static final Pattern METADATA=Pattern.compile("Metadata,DUP:" + A);
+   static final Pattern SYSTEM=Pattern.compile("System,DUP:" + A);
+   static private final long KiB=1024;
+   static private final long MiB=KiB * KiB;
+   static private final long GiB=KiB * MiB;
+   static private final long TiB=MiB * MiB;
    public Usage(String u) {
       this(Snapshot.getString(SIZE.matcher(u)), Snapshot.getString(ALLOCATED.matcher(u)),
                Snapshot.getString(UNALLOCATED.matcher(u)), Snapshot.getString(MISSING.matcher(u)),
@@ -53,7 +53,7 @@ public record Usage(String size, String allocated, String unallcoated, String mi
     * @return
     * @throws IOException
     */
-   private static String getString(Mount m, boolean b) throws IOException {
+   static private String getString(Mount m, boolean b) throws IOException {
       String dir="/mnt/BackSnap";
       if (b)
          dir="-b " + dir;
@@ -76,7 +76,7 @@ public record Usage(String size, String allocated, String unallcoated, String mi
          return usageLine.toString();
       }
    }
-   private static double getZahl(String s) {
+   static private double getZahl(String s) {
       long f=switch (s.replaceAll("[0-9.]", "")) {
       case "TiB" -> TiB;
       case "GiB" -> GiB;

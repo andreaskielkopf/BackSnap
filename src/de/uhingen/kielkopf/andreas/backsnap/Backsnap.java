@@ -31,44 +31,44 @@ import de.uhingen.kielkopf.andreas.beans.cli.Flag;
  * 
  */
 public class Backsnap {
-   private static final String       DEFAULT_SRC        ="sudo:/";
-   private static final String       DEFAULT_BACKUP     ="sudo:/mnt/BackSnap/manjaro23";
+   static private final String       DEFAULT_SRC        ="sudo:/";
+   static private final String       DEFAULT_BACKUP     ="sudo:/mnt/BackSnap/manjaro23";
    static String                     parentKey          =null;
-   private static Snapshot           parentSnapshot     =null;
-   private static boolean            usePv              =false;
+   static private Snapshot           parentSnapshot     =null;
+   static private boolean            usePv              =false;
    static int                        lastLine           =0;
    static String                     canNotFindParent   =null;
-   public static int                 connectionLost     =0;
+   static public int                 connectionLost     =0;
    static Future<?>                  task               =null;
-   public static BacksnapGui         bsGui              =null;
-   private static String             refreshGUIcKey     =null;
-   private static Mount              refreshBackupVolume=null;
-   private static String             refreshBackupDir   =null;
-   private static int                textVorhanden      =0;
-   private static String             srcSsh             =null;
-   private static Path               srcDir             =null;
-   private static Pc                 srcPc              =null;
-   final static Flag                 HELP               =new Flag('h', "help");           // show usage
-   final static Flag                 VERSION            =new Flag('x', "version");        // show date and version
-   final static Flag                 DRYRUN             =new Flag('d', "dryrun");         // do not do anythimg ;-)
-   final static Flag                 GUI                =new Flag('g', "gui");            // enable gui (works only with
+   static public BacksnapGui         bsGui              =null;
+   static private String             refreshGUIcKey     =null;
+   static private Mount              refreshBackupVolume=null;
+   static private String             refreshBackupDir   =null;
+   static private int                textVorhanden      =0;
+   static private String             srcSsh             =null;
+   static private Path               srcDir             =null;
+   static private Pc                 srcPc              =null;
+   static final Flag                 HELP               =new Flag('h', "help");           // show usage
+   static final Flag                 VERSION            =new Flag('x', "version");        // show date and version
+   static final Flag                 DRYRUN             =new Flag('d', "dryrun");         // do not do anythimg ;-)
+   static public final Flag          VERBOSE            =new Flag('v', "verbose");
+   static public final Flag          SINGLESNAPSHOT     =new Flag('s', "singlesnapshot"); // backup exactly one snapshot
+   static public final Flag          TIMESHIFT          =new Flag('t', "timeshift");
+   static final Flag                 GUI                =new Flag('g', "gui");            // enable gui (works only with
                                                                                           // sudo)
-   final static Flag                 AUTO               =new Flag('a', "auto");           // auto-close gui when ready
-   final public static Flag          VERBOSE            =new Flag('v', "verbose");
-   final public static Flag          TIMESHIFT          =new Flag('t', "timeshift");
-   final public static Flag          COMPRESSED         =new Flag('c', "compressed");
-   final public static String        SNAPSHOT           ="snapshot";
-   final public static String        DOT_SNAPSHOTS      =".snapshots";
-   final public static String        AT_SNAPSHOTS       ="@snapshots";
-   public final static Flag          SINGLESNAPSHOT     =new Flag('s', "singlesnapshot"); // backup exactly one snapshot
-   public final static Flag          DELETEOLD          =new Flag('o', "deleteold");      // mark old snapshots for
+   static final Flag                 AUTO               =new Flag('a', "auto");           // auto-close gui when ready
+   static public final Flag          COMPRESSED         =new Flag('c', "compressed");
+   static public final String        SNAPSHOT           ="snapshot";
+   static public final String        DOT_SNAPSHOTS      =".snapshots";
+   static public final String        AT_SNAPSHOTS       ="@snapshots";
+   static public final Flag          DELETEOLD          =new Flag('o', "deleteold");      // mark old snapshots for
                                                                                           // deletion
-   public final static Flag          KEEP_MINIMUM       =new Flag('m', "keepminimum");    // mark all but minimum
+   static public final Flag          KEEP_MINIMUM       =new Flag('m', "keepminimum");    // mark all but minimum
                                                                                           // snapshots
-   public static final String        BACK_SNAP_VERSION  =                                 // version
-            "BackSnap for Snapper and Timeshift(beta) Version 0.6.2.4 (2023/07/21)";
-   public static final ReentrantLock BTRFS_LOCK         =new ReentrantLock();
-   public static void main(String[] args) {
+   static public final String        BACK_SNAP_VERSION  =                                 // version
+            "BackSnap for Snapper and Timeshift(beta) Version 0.6.2.5 (2023/07/21)";
+   static public final ReentrantLock BTRFS_LOCK         =new ReentrantLock();
+   static public void main(String[] args) {
       Flag.setArgs(args, DEFAULT_SRC + " " + DEFAULT_BACKUP);
       logln(1, "args > " + Flag.getArgs());
       if (VERSION.get()) {
@@ -215,7 +215,7 @@ public class Backsnap {
     * @throws IOException
     * 
     */
-   private static void refreshGUI(Mount backupVolume, String backupDir, Pc backupPc) throws IOException {
+   static private void refreshGUI(Mount backupVolume, String backupDir, Pc backupPc) throws IOException {
       SwingUtilities.invokeLater(() -> {
          String extern    =backupVolume.pc().extern();
          Path   devicePath=backupVolume.devicePath();
@@ -235,7 +235,7 @@ public class Backsnap {
          refreshBackupDir=backupDir;
       });
    }
-   public static void refreshGUI() throws IOException {
+   static public void refreshGUI() throws IOException {
       if (refreshGUIcKey == null)
          return;
       Commandline.removeFromCache(refreshGUIcKey);
@@ -252,7 +252,7 @@ public class Backsnap {
     * @param dMap
     * @throws IOException
     */
-   private static boolean backup(Snapshot srcSnapshot, Mount srcVolume, SnapTree backupMap, String backupDir, Pc srcPc1,
+   static private boolean backup(Snapshot srcSnapshot, Mount srcVolume, SnapTree backupMap, String backupDir, Pc srcPc1,
             Pc backupPc1, List<SnapConfig> snapConfigs) throws IOException {
       if (bsGui != null) {
          String text="<html>" + srcSnapshot.getSnapshotMountPath().toString();
@@ -309,8 +309,7 @@ public class Backsnap {
          parentSnapshot=srcSnapshot;
       return true;
    }
-   private static boolean sendBtrfs(Pc srcPc4, Pc backupPc4, Snapshot s, Path bDir, Pc backupPc)
-            throws IOException {
+   static private boolean sendBtrfs(Pc srcPc4, Pc backupPc4, Snapshot s, Path bDir, Pc backupPc) throws IOException {
       boolean       sameSsh    =(srcPc4.isExtern() && srcPc4.equals(backupPc4));
       StringBuilder btrfsSendSB=new StringBuilder("/bin/btrfs send ");
       if (bsGui != null) {
@@ -417,14 +416,14 @@ public class Backsnap {
    /**
     * @param line
     */
-   private final static void show(String line) {
+   static private final void show(String line) {
       if (bsGui == null)
          return;
       if (line.equals("\n") || line.equals("\r"))
          return;
       bsGui.lblPvSetText(line);
    }
-   private static void rsyncFiles(Pc srcPc3, Pc backupPc3, Path sDir, Path bDir) throws IOException {
+   static private void rsyncFiles(Pc srcPc3, Pc backupPc3, Path sDir, Path bDir) throws IOException {
       StringBuilder rsyncSB=new StringBuilder("/bin/rsync -vdcptgo --exclude \"@*\" --exclude \"" + SNAPSHOT + "\" ");
       if (DRYRUN.get())
          rsyncSB.append("--dry-run ");
@@ -460,7 +459,7 @@ public class Backsnap {
     * @param s
     * @throws IOException
     */
-   public static void removeSnapshot(Snapshot s) throws IOException {
+   static public void removeSnapshot(Snapshot s) throws IOException {
       Path bmp=s.getBackupMountPath();
       if (!bmp.toString().startsWith("/mnt/BackSnap/") || bmp.toString().contains("../"))
          throw new SecurityException("I am not allowed to delete " + bmp.toString());
@@ -505,7 +504,7 @@ public class Backsnap {
     * @return
     * @throws IOException
     */
-   private static void mkDirs(Path d, Pc backupPc2) throws IOException {
+   static private void mkDirs(Path d, Pc backupPc2) throws IOException {
       if (d.isAbsolute()) {
          StringBuilder mkdirSB =new StringBuilder("mkdir -pv ").append(d);
          String        mkdirCmd=backupPc2.getCmd(mkdirSB);
@@ -530,7 +529,7 @@ public class Backsnap {
     * 
     * @param t
     */
-   private final static void ende(String t) {
+   static private final void ende(String t) {
       log(4, "ende:");
       if (task != null)
          try {
@@ -590,12 +589,12 @@ public class Backsnap {
       }
       logln(4, "");
    }
-   public static void log(int level, String text) {
+   static public void log(int level, String text) {
       if (Backsnap.VERBOSE.getParameterOrDefault(1) instanceof Integer v)
          if (v >= level)
             System.out.print(text);
    }
-   public static void logln(int level, String text) {
+   static public void logln(int level, String text) {
       if (Backsnap.VERBOSE.getParameterOrDefault(1) instanceof Integer v)
          if (v >= level)
             System.out.println(text);

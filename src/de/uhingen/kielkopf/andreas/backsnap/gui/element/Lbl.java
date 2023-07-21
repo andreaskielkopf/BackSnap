@@ -11,7 +11,7 @@ import javax.swing.SwingConstants;
  *
  */
 public class Lbl extends JLabel {
-   private static final long serialVersionUID=3776667855115291806L;
+   static private final long serialVersionUID=3776667855115291806L;
 
    /**
     * @param string

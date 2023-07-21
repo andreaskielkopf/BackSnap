@@ -18,7 +18,7 @@ import java.beans.Beans;
  *
  */
 public class MaintenancePanel extends JPanel {
-   private static final long serialVersionUID=-6113424454048132514L;
+   static private final long serialVersionUID=-6113424454048132514L;
    private JPanel            panelWartung;
    private JTabbedPane       tabbedPane;
    private PanelSpace        panelSpace;

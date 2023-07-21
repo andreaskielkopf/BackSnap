@@ -10,7 +10,7 @@ import java.awt.*;
  * @author Andreas Kielkopf
  */
 public class PanelInfo extends JPanel {
-   private static final long serialVersionUID=-6513777293474216762L;
+   static private final long serialVersionUID=-6513777293474216762L;
    private JPanel            panel;
    private Lbl               lblSize;
    private JPanel            panel_1;
