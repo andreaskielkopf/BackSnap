@@ -19,7 +19,7 @@ import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 /**
  * @author Andreas Kielkopf results of mount | grep -E 'btrfs' as records
  */
-public record Mount(SubVolumeList mountList, Pc pc, Path devicePath, Path mountPath, Path btrfsPath, String options,
+public record Mount(Pc pc, /* SubVolumeList svList, */ Path devicePath, Path mountPath, Path btrfsPath, String options,
          ConcurrentSkipListMap<Path, Snapshot> btrfsMap, ConcurrentSkipListMap<String, Snapshot> otimeKeyMap,
          ConcurrentSkipListSet<String> name) {
    final static Pattern DEVICE=Pattern.compile("^(?:.*[ \\[]device=)?([^ ,]+)");
@@ -29,6 +29,19 @@ public record Mount(SubVolumeList mountList, Pc pc, Path devicePath, Path mountP
    final static Pattern SNAPSHOT=Pattern.compile("^\t\t+([^ \t]+)");
    final static Pattern NAME=Pattern.compile("Name:[ \\t]+([^< \\t]+)");
    final static Pattern COMMON=Pattern.compile("^(/@[^/]*/)");
+   /**
+    * @param line
+    *           Eine Zeile die mount geliefert hat
+    * @param extern
+    *           um den Zugriff über ssh zu ermöglichen
+    * @throws IOException
+    */
+   protected Mount(Pc pc, String line) throws IOException {
+      this(pc, /* svList, */ getPath(DEVICE.matcher(line)), getPath(MOUNTPOINT.matcher(line)),
+               getPath(SUBVOLUME.matcher(line)), getString(OPTIONS.matcher(line)), new ConcurrentSkipListMap<>(),
+               new ConcurrentSkipListMap<>(), new ConcurrentSkipListSet<>());
+      // populate(); erstmal unvollständig erzeugen
+   }
    /**
     * @return gemeinsamen Start des Pfads
     */
@@ -57,25 +70,12 @@ public record Mount(SubVolumeList mountList, Pc pc, Path devicePath, Path mountP
       return pc.extern() + ":" + devicePath;
    }
    /**
-    * @param line
-    *           Eine Zeile die mount geliefert hat
-    * @param extern
-    *           um den Zugriff über ssh zu ermöglichen
-    * @throws IOException
-    */
-   public Mount(SubVolumeList mountList, Pc pc, String line) throws IOException {
-      this(mountList, pc, getPath(DEVICE.matcher(line)), getPath(MOUNTPOINT.matcher(line)),
-               getPath(SUBVOLUME.matcher(line)), getString(OPTIONS.matcher(line)), new ConcurrentSkipListMap<>(),
-               new ConcurrentSkipListMap<>(), new ConcurrentSkipListSet<>());
-      // populate(); erstmal unvollständig erzeugen
-   }
-   /**
     * Nachschauen, ob dieser Mount/Subvolume snapshots hat
     * 
     * @param snapTree
     * @throws IOException
     */
-   public void populate() throws IOException {
+   void populate() throws IOException {
       SnapTree      snapTree         =SnapTree.getSnapTree(this);
       boolean       snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.dateMap().isEmpty() : false;
       StringBuilder subvolumeShowSB  =new StringBuilder("btrfs subvolume show ").append(mountPath);
@@ -157,35 +157,6 @@ public record Mount(SubVolumeList mountList, Pc pc, Path devicePath, Path mountP
                throw new IOException(line);
       }
    }
-   /**
-    * Ermittle alle Mounts eines Rechners
-    * 
-    * @param snapTree
-    * @throws IOException
-    */
-   public static ConcurrentSkipListMap<Path, Mount> getMountList(Pc pc, SubVolumeList svl) throws IOException {
-      StringBuilder mountSB =new StringBuilder("mount -t btrfs");
-      String        mountCmd=pc.getCmd(mountSB);
-      Backsnap.logln(3, mountCmd);
-      ConcurrentSkipListMap<Path, Mount> mountList2=new ConcurrentSkipListMap<>();
-      String                             key       =mountCmd;
-      if (svl == null)
-         key=null;
-      try (CmdStream mountStream=Commandline.executeCached(mountCmd, key)) {
-         mountStream.backgroundErr();
-         for (String line:mountStream.erg().toList()) {
-            Mount mount=new Mount(svl, pc, line);
-            mountList2.put(mount.mountPath, mount);
-         }
-         mountStream.waitFor();
-         for (String line:mountStream.errList())
-            if (line.contains("No route to host") || line.contains("Connection closed")
-                     || line.contains("connection unexpectedly closed"))
-               throw new IOException(line);
-         Backsnap.logln(3, "");
-      }
-      return mountList2;
-   }
    @Override
    public String toString() {
       StringBuilder sb=new StringBuilder("Mount [").append(pc.extern()).append(":").append(devicePath).append(" -> ")
@@ -194,5 +165,13 @@ public record Mount(SubVolumeList mountList, Pc pc, Path devicePath, Path mountP
          sb.append(name.first());
       sb.append(":").append(btrfsMap.size()).append(")").append("]");
       return sb.toString();
+   }
+   /**
+    * @return
+    * @throws IOException
+    * 
+    */
+   public SnapTree getSnapTree() throws IOException {
+      return new SnapTree(this);
    }
 }

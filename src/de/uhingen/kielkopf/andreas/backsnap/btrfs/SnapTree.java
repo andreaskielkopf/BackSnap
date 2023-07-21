@@ -3,7 +3,6 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.TreeMap;
@@ -50,9 +49,9 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
                dateMap.put(snapshot.keyO(), snapshot);
                if (snapshot.isBackup())
                   rUuidMap.put(snapshot.received_uuid(), snapshot);
-            } catch (FileNotFoundException e) {
+            } catch (IOException e) {
                e.printStackTrace();
-            }
+            } 
          });
          for (String line:snapshotStream.errList())
             if (line.contains("No route to host") || line.contains("Connection closed")

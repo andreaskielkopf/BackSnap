@@ -144,13 +144,8 @@ public class BacksnapGui implements MouseListener {
    public void setSrc(SnapConfig srcConfig) throws IOException {
       int                                     linefeeds=0;
       StringBuilder                           sb       =new StringBuilder("Src:");
-      ConcurrentSkipListMap<String, Snapshot> neuList  =getPanelSrc().setVolume(                            /*
-                                                                                                             * srcConfig
-                                                                                                             * .
-                                                                                                             * volumeMount
-                                                                                                             * (),
-                                                                                                             */
-               srcConfig.volumeMount().otimeKeyMap().values());
+      ConcurrentSkipListMap<String, Snapshot> neuList  =getPanelSrc()
+               .setVolume(srcConfig.volumeMount().otimeKeyMap().values());
       for (Snapshot snap:neuList.values()) {
          sb.append(" ").append(snap.dirName());
          if ((sb.length() / 120) > linefeeds) {
@@ -374,10 +369,9 @@ public class BacksnapGui implements MouseListener {
          if (pfad == null)
             continue;
          if (pfad.startsWith(rest))
-            passendBackups.put(snapshot.keyO(), snapshot);
+            passendBackups.put(snapshot.keyB(), snapshot);
       }
-      ConcurrentSkipListMap<String, Snapshot> neuList=getPanelBackup().setVolume(/* backupTree.mount(), */
-               passendBackups.values());
+      ConcurrentSkipListMap<String, Snapshot> neuList=getPanelBackup().setVolume(passendBackups.values());
       for (SnapshotLabel label:getPanelBackup().getLabels().values())
          label.addMouseListener(this);
       int           linefeeds=0;

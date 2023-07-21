@@ -17,10 +17,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import javax.swing.SwingUtilities;
+
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 import de.uhingen.kielkopf.andreas.beans.cli.Flag;
+import de.uhingen.kielkopf.andreas.beans.data.Link;
 
 /**
  * @author Andreas Kielkopf
@@ -28,7 +31,7 @@ import de.uhingen.kielkopf.andreas.beans.cli.Flag;
  *         Snapshot (readony) oder Subvolume (writable)
  */
 public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integer parent, Integer top_level, //
-         String otime, String parent_uuid, String received_uuid, String uuid, Path btrfsPath) {
+         String otime, String parent_uuid, String received_uuid, String uuid, Path btrfsPath, Link<Boolean> readonlyL) {
    final static Pattern ID=createPatternFor("ID");
    final static Pattern GEN=createPatternFor("gen");
    final static Pattern CGEN=createPatternFor("cgen");
@@ -42,13 +45,13 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    final static Pattern NUMERIC_DIRNAME=Pattern.compile("([0-9]+)/snapshot$");
    final static Pattern DIRNAME=Pattern.compile("([^/]+)/snapshot$");
    final static Pattern SUBVOLUME=Pattern.compile("^(@[0-9a-zA-Z.]+)/.*[0-9]+/snapshot$");
-   public Snapshot(Mount mount, String from_btrfs) throws FileNotFoundException {
+   public Snapshot(Mount mount, String from_btrfs) throws IOException {
       this(getMount(mount, getPath(BTRFS_PATH.matcher(from_btrfs))), getInt(ID.matcher(from_btrfs)),
                getInt(GEN.matcher(from_btrfs)), getInt(CGEN.matcher(from_btrfs)), getInt(PARENT.matcher(from_btrfs)),
                getInt(TOP_LEVEL.matcher(from_btrfs)), //
                getString(OTIME.matcher(from_btrfs)), getString(PARENT_UUID.matcher(from_btrfs)),
                getString(RECEIVED_UUID.matcher(from_btrfs)), getString(UUID.matcher(from_btrfs)),
-               getPath(BTRFS_PATH.matcher(from_btrfs)));
+               getPath(BTRFS_PATH.matcher(from_btrfs)), new Link<Boolean>());
       if ((btrfsPath == null) || (mount == null))
          throw new FileNotFoundException("btrfs-path is missing for snapshot: " + mount + from_btrfs);
    }
@@ -140,8 +143,88 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       Matcher m=SUBVOLUME.matcher(btrfsPath.toString());
       return (m.find()) ? m.group(1) : "";
    }
+   public boolean isSubvolume() throws IOException {
+      // if(isPlaisSnapshot()) return false;
+      if (isReadonly())// Alles was readonly ist, ist ganz sicher kein Subvolume
+         return false;
+      if (isSnapper()) {
+         if (isDirectMount()) // wenn er direkt gemountet ist wird er jetzt als Subvolume genutzt
+            return true;
+         if (!hasParent()) // Wenn keine ParentUID da ist, ist es wahrscheinlich ein Subvolume
+            return true;
+         return false;
+      }
+      if (isTimeshift()) { // Wenn es ein Timeshift-Name ist
+         if (isDirectMount()) // wenn er direkt gemountet ist wird er jetzt als Subvolume genutzt
+            return true;
+         if (!hasParent()) // Wenn keine ParentUID da ist, ist es sicher jetzt ein Subvolume
+            return true;
+         return false; // ansonsten ist es ein Snapshot
+      }
+      if (isPlaisSnapshot())
+         return false;
+      
+      return true;
+   }
+   /**
+    * The subvolume flag currently implemented is the ro property. Read-write subvolumes have that set to false,
+    * snapshots as true. In addition to that, a plain snapshot will also have last change generation and creation
+    * generation equal.
+    * 
+    * @return
+    */
+   private boolean isPlaisSnapshot() {
+      return cgen == gen;
+   }
+   /**
+    * @return Ist dieser Snapshot ReadOnly ?
+    * @throws IOException
+    */
+   private boolean isReadonly() throws IOException {
+      if (readonlyL().get() == null)
+         try {
+            Backsnap.BTRFS_LOCK.lock();
+            String getReadonlyCmd=mount().pc()
+                     .getCmd(new StringBuilder("btrfs property get ").append(getSnapshotMountPath()).append(" ro"));
+            Backsnap.logln(4, getReadonlyCmd);// if (!DRYRUN.get())
+            try (CmdStream getReadonlyStream=Commandline.executeCached(getReadonlyCmd, null)) { // not cached
+               getReadonlyStream.backgroundErr();
+               Optional<String> erg=getReadonlyStream.erg().peek(t -> Backsnap.logln(4, t))
+                        .filter(t -> t.startsWith("ro=")).findAny();
+               for (String line:getReadonlyStream.errList())
+                  if (line.contains("No route to host") || line.contains("Connection closed")
+                           || line.contains("connection unexpectedly closed")) {
+                     Backsnap.connectionLost=10;
+                     break;
+                  } // ende("");// R
+               if (erg.isPresent()) {
+                  String  u=erg.get().split("=")[1];
+                  boolean b=Boolean.parseBoolean(u);
+                  return readonlyL().set(b);
+               }
+            }
+         } finally {
+            Backsnap.BTRFS_LOCK.unlock();
+         }
+      return readonlyL().get();
+   }
    public boolean isBackup() {
       return received_uuid().length() > 8;
+   }
+   private boolean isDirectMount() {
+      return false;
+   }
+   private boolean hasParent() {
+      return parent_uuid().length() <= 8;
+   }
+   /**
+    * @return ist das ein Timeshift-Snapshot mit standardpfad ?
+    */
+   private boolean isTimeshift() {
+      return btrfsPath().toString().startsWith("/timeshift-btrfs/snapshots/");
+   }
+   private boolean isSnapper() {
+      return false;
    }
    /**
     * gibt es einen mount der für diesen snapshot passt ?
@@ -179,20 +262,21 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
     * @param btrfsPath1
     *           needed path
     * @return
+    * @throws IOException
     */
-   static private Mount getMount(Mount mount0, Path btrfsPath1) {
+   static private Mount getMount(Mount mount0, Path btrfsPath1) throws IOException {
       if (btrfsPath1 == null)
          return null;
       Path  b2 =btrfsPath1;
       Mount erg=null;      // default ?
       if (!b2.toString().contains("timeshift-btrfs")) {
-         for (Mount mount1:mount0.pc().mounts().values())
+         for (Mount mount1:mount0.pc().getMountList(false).values())
             if (mount0.devicePath().equals(mount1.devicePath())) // only from same device
                if (b2.startsWith(mount1.btrfsPath())) // only if same path or starts with the same path
                   if ((erg == null) || (erg.btrfsPath().getNameCount() < mount1.btrfsPath().getNameCount()))
                      erg=mount1;
       } else {
-         for (Mount mount1:mount0.pc().mounts().values())
+         for (Mount mount1:mount0.pc().getMountList(false).values())
             if (mount0.devicePath().equals(mount1.devicePath())) // only from same device
                if (b2.getFileName().equals(mount1.btrfsPath().getFileName())) // only if ends with the same path
                   if ((erg == null) || (erg.btrfsPath().getNameCount() < mount1.btrfsPath().getNameCount()))
@@ -214,6 +298,74 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       infoMap.put("id : ", id.toString());
       return infoMap.entrySet().stream();
    }
+   /**
+    * @param parentSnapshot2
+    * @param s
+    * @param b
+    * @throws IOException
+    */
+   public static void setReadonly(Snapshot parent, Snapshot snapshot, boolean readonly) throws IOException {
+      if (!snapshot.btrfsPath().toString().contains("timeshift"))
+         return;
+      Backsnap.BTRFS_LOCK.lock();
+      try {
+         if (Backsnap.bsGui != null)
+            SwingUtilities.invokeLater(() -> Backsnap.bsGui.getPanelMaintenance().updateButtons());
+         StringBuilder readonlySB=new StringBuilder();
+         if (parent != null)
+            readonlySB.append("btrfs property set ").append(parent.getSnapshotMountPath()).append(" ro ")
+                     .append(readonly).append(";");
+         readonlySB.append("btrfs property set ").append(snapshot.getSnapshotMountPath()).append(" ro ")
+                  .append(readonly);
+         String readonlyCmd=snapshot.mount().pc().getCmd(readonlySB);
+         Backsnap.logln(4, readonlyCmd);// if (!DRYRUN.get())
+         try (CmdStream readonlyStream=Commandline.executeCached(readonlyCmd, null)) { // not cached
+            readonlyStream.backgroundErr();
+            readonlyStream.erg().forEach(t -> Backsnap.logln(4, t));
+            for (String line:readonlyStream.errList())
+               if (line.contains("No route to host") || line.contains("Connection closed")
+                        || line.contains("connection unexpectedly closed")) {
+                  Backsnap.connectionLost=10;
+                  break;
+               } // ende("");// R
+         }
+      } finally {
+         Backsnap.BTRFS_LOCK.unlock();
+         if (Backsnap.bsGui != null)
+            SwingUtilities.invokeLater(() -> Backsnap.bsGui.getPanelMaintenance().updateButtons());
+      }
+   }
+   /**
+    * Setze das Readonly-Attribut dieses Snapshots
+    * 
+    * @param readonly
+    * @throws IOException
+    */
+   public void setReadonly(boolean readonly) throws IOException {
+      if (!isTimeshift())
+         return;
+      if (isReadonly() == readonly)
+         return;
+      Backsnap.BTRFS_LOCK.lock();
+      try {
+         String setReadonlyCmd=mount().pc().getCmd(new StringBuilder("btrfs property set ")
+                  .append(getSnapshotMountPath()).append(" ro ").append(readonly));
+         Backsnap.logln(4, setReadonlyCmd);// if (!DRYRUN.get())
+         try (CmdStream setReadonlyStream=Commandline.executeCached(setReadonlyCmd, null)) { // not cached
+            setReadonlyStream.backgroundErr();
+            setReadonlyStream.erg().forEach(t -> Backsnap.logln(4, t));
+            for (String line:setReadonlyStream.errList())
+               if (line.contains("No route to host") || line.contains("Connection closed")
+                        || line.contains("connection unexpectedly closed")) {
+                  Backsnap.connectionLost=10;
+                  break;
+               } // ende("");// R
+         }
+      } finally {
+         Backsnap.BTRFS_LOCK.unlock();
+         readonlyL().clear(); // nicht weiter im cache
+      }
+   }
    public static void mkain(String[] args) {
       try {
          Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " /mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro");// Par. sammeln
@@ -230,7 +382,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          if (sourceDir.endsWith("//"))
             sourceDir=sourceDir.substring(0, sourceDir.length() - 2);
          // SrcVolume ermitteln
-         SubVolumeList subVolumes=new SubVolumeList(new Pc(externSsh));
+         SubVolumeList subVolumes=new SubVolumeList(Pc.getPc(externSsh));
          Mount         srcVolume =subVolumes.mountTree().get(sourceDir);
          if (srcVolume == null)
             throw new RuntimeException("Could not find srcDir: " + sourceDir);

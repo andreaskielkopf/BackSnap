@@ -123,7 +123,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
     * @return
     * @throws IOException
     */
-   public ConcurrentSkipListMap<String, Snapshot> setVolume(/*Mount subVolume,*/ Collection<Snapshot> list)
+   public ConcurrentSkipListMap<String, Snapshot> setVolume(Collection<Snapshot> list)
             throws IOException {
       ConcurrentSkipListMap<String, Snapshot> neuList=new ConcurrentSkipListMap<>();
       for (Snapshot snap:list)
