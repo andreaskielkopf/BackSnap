@@ -53,6 +53,7 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
                e.printStackTrace();
             } 
          });
+         snapshotStream.waitFor();
          for (String line:snapshotStream.errList())
             if (line.contains("No route to host") || line.contains("Connection closed")
                      || line.contains("connection unexpectedly closed"))

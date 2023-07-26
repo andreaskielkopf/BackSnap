@@ -255,19 +255,19 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    }
    private Lbl getLblVolume() {
       if (lblVolume == null) {
-         lblVolume=new Lbl("Volume:");
+         lblVolume=new Lbl("Vol:");
       }
       return lblVolume;
    }
    private Lbl getLblSubvolume() {
       if (lblSubvolume == null) {
-         lblSubvolume=new Lbl("Subvolume:");
+         lblSubvolume=new Lbl("Subvol:");
       }
       return lblSubvolume;
    }
    private Lbl getLblMountPoint() {
       if (lblMountPoint == null) {
-         lblMountPoint=new Lbl("mounted as: ");
+         lblMountPoint=new Lbl("at:");
       }
       return lblMountPoint;
    }

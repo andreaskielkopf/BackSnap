@@ -54,13 +54,9 @@ public record Usage(String size, String allocated, String unallcoated, String mi
     * @throws IOException
     */
    static private String getString(Mount m, boolean b) throws IOException {
-      String dir="/mnt/BackSnap";
-      if (b)
-         dir="-b " + dir;
-      StringBuilder usageSB =new StringBuilder()                            //
-               .append("btrfs filesystem usage ").append(dir).append(";")   //
-               .append("btrfs device usage ").append(dir);
-      String        usageCmd=m.pc().getCmd(usageSB);
+      String dir=b ? "-b " + Backsnap.MNT_BACKSNAP : Backsnap.MNT_BACKSNAP;
+      String usageCmd=m.pc().getCmd(new StringBuilder("btrfs filesystem usage ").append(dir).append(";")
+               .append("btrfs device usage ").append(dir));
       Backsnap.logln(3, usageCmd);
       try (CmdStream usageStream=Commandline.executeCached(usageCmd, null)) {
          usageStream.backgroundErr();
@@ -78,11 +74,11 @@ public record Usage(String size, String allocated, String unallcoated, String mi
    }
    static private double getZahl(String s) {
       long f=switch (s.replaceAll("[0-9.]", "")) {
-      case "TiB" -> TiB;
-      case "GiB" -> GiB;
-      case "MiB" -> MiB;
-      case "KiB" -> KiB;
-      default -> 1L;
+         case "TiB" -> TiB;
+         case "GiB" -> GiB;
+         case "MiB" -> MiB;
+         case "KiB" -> KiB;
+         default -> 1L;
       };
       return Double.parseDouble(s.replaceAll("[KMGTiB]", "")) * f;
    }

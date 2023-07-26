@@ -18,9 +18,9 @@ import de.uhingen.kielkopf.andreas.beans.data.Link;
  */
 public record Pc(String extern, // Marker für diesen PC
          ConcurrentSkipListMap<String, Mount> mountCache, // cache der Mounts
-         Link<SubVolumeList> cachedSubVolumeList, // Liste der Subvolumes
-         Link<Version> cachedBtrfsVersion, // BTRFS-Version
-         Link<Version> cachedKernelVersion) {// Kernel-Version
+         Link<SubVolumeList> subVolumeList, // Liste der Subvolumes
+         Link<Version> btrfsVersion, // BTRFS-Version
+         Link<Version> kernelVersion) {// Kernel-Version
    static final ConcurrentSkipListMap<String, Pc> pcCache=new ConcurrentSkipListMap<String, Pc>();
    /* In /tmp werden bei Timeshift Pcs die Snapshots vorübergehnd eingehängt */
    static public final String TMP_BTRFS_ROOT="/tmp/BtrfsRoot";
@@ -87,9 +87,9 @@ public record Pc(String extern, // Marker für diesen PC
     * @throws IOException
     */
    public SubVolumeList getSubVolumeList() throws IOException {
-      if (cachedSubVolumeList.get() == null)
-         cachedSubVolumeList.set(new SubVolumeList(this));
-      return cachedSubVolumeList.get();
+      if (subVolumeList.get() == null)
+         subVolumeList.set(new SubVolumeList(this));
+      return subVolumeList.get();
    }
    /**
     * Ermittle alle Mounts eines Rechners
@@ -123,18 +123,19 @@ public record Pc(String extern, // Marker für diesen PC
    }
    @SuppressWarnings("unused")
    private ConcurrentSkipListMap<String, Volume> getVolumeList() {
-      ConcurrentSkipListMap<String, Volume> list         =new ConcurrentSkipListMap<>();
+      ConcurrentSkipListMap<String, Volume> list=new ConcurrentSkipListMap<>();
       // .append(onlyMounted ? "m" : "d");
-      String                                volumeListCmd=getCmd(new StringBuilder("btrfs filesystem show"));
+      String volumeListCmd=getCmd(new StringBuilder("btrfs filesystem show"));
       Backsnap.logln(7, volumeListCmd);
       String cacheKey=volumeListCmd;
       try (CmdStream volumeListStream=Commandline.executeCached(volumeListCmd, cacheKey)) {
          volumeListStream.backgroundErr();
          List<String> lines=volumeListStream.erg().toList();
+         volumeListStream.waitFor();
          for (int i=0; i < lines.size() - 3; i++)
             if (lines.get(i).startsWith("Label:"))
                try {
-                  Volume v  =new Volume(this, lines.get(i), lines.get(i + 2));
+                  Volume v=new Volume(this, lines.get(i), lines.get(i + 2));
                   String key=v.uuid() + v.device();
                   list.put(key, v);
                } catch (IOException e) {
@@ -152,21 +153,22 @@ public record Pc(String extern, // Marker für diesen PC
     * @throws IOException
     */
    public final Version getBtrfsVersion() throws IOException {
-      if (cachedBtrfsVersion.get() == null) {
+      if (btrfsVersion.get() == null) {
          String versionCmd=getCmd(new StringBuilder("btrfs version"));
          Backsnap.logln(6, versionCmd);
          try (CmdStream versionStream=Commandline.executeCached(versionCmd, versionCmd)) {
             versionStream.backgroundErr();
             for (String line:versionStream.erg().toList())
-               cachedBtrfsVersion.set(new Version(line));
+               btrfsVersion.set(new Version(line));
             versionStream.waitFor();
             for (String line:versionStream.errList())
                if (line.contains("No route to host") || line.contains("Connection closed")
                         || line.contains("connection unexpectedly closed"))
                   throw new IOException(line);
          }
+         Backsnap.logln(1, this + " btrfs: " + btrfsVersion.get());
       }
-      return cachedBtrfsVersion.get();
+      return btrfsVersion.get();
    }
    /**
     * Ermittle die KernelVersion des PC
@@ -175,21 +177,22 @@ public record Pc(String extern, // Marker für diesen PC
     * @throws IOException
     */
    public final Version getKernelVersion() throws IOException {
-      if (cachedKernelVersion.get() == null) {
+      if (kernelVersion.get() == null) {
          String versionCmd=getCmd(new StringBuilder("uname -rs"));
          Backsnap.logln(6, versionCmd);
          try (CmdStream versionStream=Commandline.executeCached(versionCmd, versionCmd)) {
             versionStream.backgroundErr();
             for (String line:versionStream.erg().toList())
-               cachedKernelVersion.set(new Version(line));
+               kernelVersion.set(new Version(line));
             versionStream.waitFor();
             for (String line:versionStream.errList())
                if (line.contains("No route to host") || line.contains("Connection closed")
                         || line.contains("connection unexpectedly closed"))
                   throw new IOException(line);
          }
+         Backsnap.logln(0, this + " kernel: " + kernelVersion.get());
       }
-      return cachedKernelVersion.get();
+      return kernelVersion.get();
    }
    // @Override public int compareTo(Pc o) { if (o instanceof Pc pc) return extern.compareTo(o.extern); return 1; }
    // @Override public boolean equals(Object o) { if (o instanceof Pc pc) return Objects.equals(extern, pc.extern);
@@ -200,8 +203,8 @@ public record Pc(String extern, // Marker für diesen PC
     * @return
     * @throws IOException
     */
-   public Mount getBackupVolume(String backupKey) throws IOException {
-      return getSubVolumeList().getBackupVolume(backupKey);
+   public Mount getBackupVolume(/* String backupDir */) throws IOException {
+      return getSubVolumeList().getBackupVolume(/* backupDir */);
    }
    @Override
    public String toString() {
@@ -236,10 +239,11 @@ public record Pc(String extern, // Marker für diesen PC
       try (CmdStream mountStream=Commandline.executeCached(mountCmd, null)) { // not cached
          mountStream.backgroundErr();
          mountStream.erg().forEach(t -> Backsnap.logln(4, t));
+         mountStream.waitFor();
          for (String line:mountStream.errList())
             if (line.contains("No route to host") || line.contains("Connection closed")
                      || line.contains("connection unexpectedly closed")) {
-               Backsnap.connectionLost=10;
+               Backsnap.disconnectCount=10;
                break;
             } // ende("");// R
       }
@@ -250,68 +254,24 @@ public record Pc(String extern, // Marker für diesen PC
     * @throws IOException
     */
    public List<SnapConfig> getSnapConfigs() throws IOException {
-      ArrayList<SnapConfig>                l =new ArrayList<>();
+      ArrayList<SnapConfig> l=new ArrayList<>();
       ConcurrentSkipListMap<String, Mount> ml=getMountList(true);
       for (Mount m:ml.values()) {
          SnapTree st=m.getSnapTree();
-         String   mp=m.btrfsPath().toString();
-//         String   dp=m.devicePath().toString();
-         System.out.print("mp=" + mp + " > ");
-         Optional<Snapshot> first=st.btrfsPathMap().values().stream().
-         // filter(s -> s.d)
-                  filter(s -> s.btrfsPath().toString().equals(mp)).findFirst();
+         Optional<Snapshot> first=st.btrfsPathMap().values().stream()
+                  .filter(s -> s.btrfsPath().toString().equals(m.btrfsPath().toString())).findFirst();
          if (first.isPresent()) { // ein subVolume
             Snapshot subVolume=first.get();
-            String   uuid     =subVolume.uuid();
-            System.out.print(uuid);
-            if (!subVolume.isSubvolume())
+            if (subVolume.isPlainSnapshot())
                continue;
-            Optional<Snapshot> any=st.btrfsPathMap().values().stream().filter(s -> s.parent_uuid().equals(uuid))
-                     .findAny();
-            if (any.isPresent()) {
-               Snapshot snapshot=any.get();
-               System.out.print(" child is: ");
-               System.out.print(snapshot.uuid());
-               String          sp  =snapshot.btrfsPath().toString();
-               // suche den passenden Mount
-               Optional<Mount> ziel=ml.values().stream().filter(n -> sp.startsWith(n.btrfsPath().toString())).findAny();
-               if (ziel.isPresent()) {
-                  SnapConfig sc=new SnapConfig(m, ziel.get());
-                  l.add(sc);
-               }
-            }
-         }
-         System.out.println();
-      }
-      for (Mount volumeMount:getSubVolumeList().mountTree().values()) { // über alle Subvolumes laufen
-         // if (volumeMount.otimeKeyMap().isEmpty())
-         // continue;
-         o: for (Snapshot snap_o:volumeMount.otimeKeyMap().values()) { // über die einzelnen Snapshots
-            Path btrfsPath=snap_o.btrfsPath();
-            for (Mount snapshotMount:getSubVolumeList().mountTree().values()) { // über alle subvolumes laufen
-               if (!volumeMount.devicePath().equals(snapshotMount.devicePath())) // nur auf diesem device möglich
-                  continue;
-               Path sdir=snapshotMount.btrfsPath();
-               int  le2 =snapshotMount.btrfsMap().size();
-               if (le2 > 1) {// von diesem subolume darf es keine eigenen Snapshot geben
-                  // sdir+="/";
-                  if (!btrfsPath.startsWith(sdir + "/"))
-                     continue;
-                  l.add(new SnapConfig(volumeMount, snapshotMount));
-                  break o;
-               }
-               if (sdir.equals(volumeMount.btrfsPath())) // das darf nicht das selbe sein
-                  continue;
-               if (!btrfsPath.startsWith(sdir))
-                  continue;
-               l.add(new SnapConfig(volumeMount, snapshotMount));
-               break o;
-            }
-            System.out.println("nix gefunden");
-            break;
+            // gibt es einen Snapshot von diesem SubVolume ?
+            Optional<Snapshot> any=st.btrfsPathMap().values().stream()
+                     .filter(s -> s.parent_uuid().equals(subVolume.uuid())).findAny();
+            if (any.isPresent())
+               if (any.get().mount() instanceof Mount mount)
+                  l.add(new SnapConfig(m, mount));
          }
       }
       return l;
-      // return SnapConfig.getList(getSubVolumeList());
    }
 }

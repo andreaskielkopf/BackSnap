@@ -26,6 +26,7 @@ import javax.swing.border.TitledBorder;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
 import de.uhingen.kielkopf.andreas.backsnap.gui.part.*;
+import de.uhingen.kielkopf.andreas.beans.cli.Flag;
 
 /**
  * @author Andreas Kielkopf
@@ -116,22 +117,47 @@ public class BacksnapGui implements MouseListener {
       frame.getContentPane().add(getPanelOben(), BorderLayout.CENTER);
       frame.getContentPane().add(getPanelUnten(), BorderLayout.SOUTH);
       Dimension screenSize=Toolkit.getDefaultToolkit().getScreenSize();
-      final int START_W   =(3840 * 40) / 100;
-      final int START_H   =(2160 * 40) / 100;
-      int       width     =Math.min(screenSize.width, START_W);
-      int       height    =Math.min(screenSize.height, START_H);
-      int       x         =(screenSize.width <= START_W) ? 0 : screenSize.width - START_W;
+      final int START_W=(3840 * 40) / 100;
+      final int START_H=(2160 * 40) / 100;
+      int width=Math.min(screenSize.width, START_W);
+      int height=Math.min(screenSize.height, START_H);
+      int x=(screenSize.width <= START_W) ? 0 : screenSize.width - START_W;
       frame.setBounds(x, 0, width, height);
       // }
       frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
    }
    /**
+    * @param usage 
+    * @param backupDir 
+    * @param backupTree 
+    * @param srcConfig 
     * @param bsGui
+    * @throws IOException 
     */
-   static public void setGui(BacksnapGui bsGui) {
-      backSnapGui=bsGui;
+//   static public void setGui(BacksnapGui bsGui) {
+//      backSnapGui=bsGui;
+//   }
+   static public BacksnapGui getGui(SnapConfig srcConfig, SnapTree backupTree, String backupLabel, Usage usage) throws IOException {
+      if (backSnapGui==null)
+      {
+         backSnapGui=new BacksnapGui();
+//         BacksnapGui.setGui(bsGui);
+         main2(null); // zeigt die GUI an
+         backSnapGui.setArgs(Flag.getArgs());
+         backSnapGui.setSrc(srcConfig);
+         backSnapGui.setBackup(backupTree, backupLabel);
+         backSnapGui.setUsage(usage);
+         SwingUtilities.invokeLater(() -> {
+            try {
+               backSnapGui.getSplitPaneSnapshots().setDividerLocation(1d / 3d);
+            } catch (IOException ignore) { /* ignore */ }
+         });
+         SwingUtilities.invokeLater(() -> backSnapGui.getPanelMaintenance().updateButtons());
+      }
+      backSnapGui.getProgressBar().setMaximum(srcConfig.volumeMount().otimeKeyMap().size());
+      return backSnapGui;
    }
-   private SnapshotPanel getPanelSrc() throws IOException {
+private SnapshotPanel getPanelSrc() throws IOException {
       if (panelSrc == null) {
          panelSrc=new SnapshotPanel();
       }
@@ -142,9 +168,9 @@ public class BacksnapGui implements MouseListener {
     * @throws IOException
     */
    public void setSrc(SnapConfig srcConfig) throws IOException {
-      int                                     linefeeds=0;
-      StringBuilder                           sb       =new StringBuilder("Src:");
-      ConcurrentSkipListMap<String, Snapshot> neuList  =getPanelSrc()
+      int linefeeds=0;
+      StringBuilder sb=new StringBuilder("Src:");
+      ConcurrentSkipListMap<String, Snapshot> neuList=getPanelSrc()
                .setVolume(srcConfig.volumeMount().otimeKeyMap().values());
       for (Snapshot snap:neuList.values()) {
          sb.append(" ").append(snap.dirName());
@@ -163,20 +189,20 @@ public class BacksnapGui implements MouseListener {
     * @throws IOException
     */
    public void abgleich() throws IOException {
-      ConcurrentSkipListMap<String, SnapshotLabel>  snapshotLabels_Uuid =getPanelSrc().labelTree_UUID;
-      ConcurrentSkipListMap<String, SnapshotLabel>  backupLabels_Uuid   =getPanelBackup().labelTree_UUID;
-      ConcurrentSkipListMap<String, SnapshotLabel>  backupLabels_KeyO   =getPanelBackup().labelTree_KeyO;
-      ConcurrentSkipListMap<String, SnapshotLabel>  backupLabels_DirName=getPanelBackup().labelTree_DirName;
+      ConcurrentSkipListMap<String, SnapshotLabel> snapshotLabels_Uuid=getPanelSrc().labelTree_UUID;
+      ConcurrentSkipListMap<String, SnapshotLabel> backupLabels_Uuid=getPanelBackup().labelTree_UUID;
+      ConcurrentSkipListMap<String, SnapshotLabel> backupLabels_KeyO=getPanelBackup().labelTree_KeyO;
+      ConcurrentSkipListMap<String, SnapshotLabel> backupLabels_DirName=getPanelBackup().labelTree_DirName;
       // SINGLESNAPSHOT make or delete only one(1) snapshot per call
       // for DELETEOLD get all old snapshots that are "o=999" older than the newest one
-      ConcurrentNavigableMap<String, SnapshotLabel> toDeleteOld         =new ConcurrentSkipListMap<>();
+      ConcurrentNavigableMap<String, SnapshotLabel> toDeleteOld=new ConcurrentSkipListMap<>();
       if (Backsnap.DELETEOLD.get()) {
          int deleteOld=parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), PanelSpace.DEFAULT_SPACE);
          if (getPanelSrc().labelTree_DirName.lastEntry() instanceof Entry<String, SnapshotLabel> lastEntry) {
             Backsnap.logln(8, "delOld: " + deleteOld);
             SnapshotLabel last=lastEntry.getValue();
-            Snapshot      ls  =last.snapshot;
-            Instant       q   =ls.stunden();
+            Snapshot ls=last.snapshot;
+            Instant q=ls.stunden();
             if (q != null) {
                Instant grenze=q.minusSeconds(deleteOld * 3600l);// 1 Snapshot pro Stunde rechnen wie bei snapper üblich
                for (Entry<String, SnapshotLabel> entry:backupLabels_DirName.descendingMap().entrySet()) {
@@ -187,8 +213,8 @@ public class BacksnapGui implements MouseListener {
             } else
                if (ls.btrfsPath().toString().startsWith("/timeshift-btrfs")) {
                   if (backupLabels_DirName.lastEntry() instanceof Entry<String, SnapshotLabel> lastBackupLabel) {
-                     SnapshotLabel lastB  =lastBackupLabel.getValue();
-                     int           firstId=lastB.snapshot.id() - deleteOld;
+                     SnapshotLabel lastB=lastBackupLabel.getValue();
+                     int firstId=lastB.snapshot.id() - deleteOld;
                      for (Entry<String, SnapshotLabel> entry:backupLabels_DirName.descendingMap().entrySet()) {
                         int id=entry.getValue().snapshot.id();
                         if (id <= firstId)
@@ -212,8 +238,8 @@ public class BacksnapGui implements MouseListener {
                break; // Bloß keine Endlosschleife !
             Snapshot s=child.snapshot;
             keineSackgasse.put(s.keyO(), child);
-            String        parent_uuid=s.parent_uuid();
-            SnapshotLabel parent     =backupLabels_Uuid.get(parent_uuid);
+            String parent_uuid=s.parent_uuid();
+            SnapshotLabel parent=backupLabels_Uuid.get(parent_uuid);
             child=parent;
          }
       }
@@ -286,8 +312,8 @@ public class BacksnapGui implements MouseListener {
       }
    }
    public void delete(final JButton jButton, Color deleteColor) throws IOException {
-      ConcurrentSkipListMap<String, SnapshotLabel> alle    =getPanelBackup().labelTree_KeyO;
-      final ArrayList<Snapshot>                    toRemove=new ArrayList<>();
+      ConcurrentSkipListMap<String, SnapshotLabel> alle=getPanelBackup().labelTree_KeyO;
+      final ArrayList<Snapshot> toRemove=new ArrayList<>();
       for (Entry<String, SnapshotLabel> entry:alle.entrySet())
          if (entry.getValue() instanceof SnapshotLabel label)
             if (label.getBackground() == deleteColor) {
@@ -361,9 +387,9 @@ public class BacksnapGui implements MouseListener {
     * @throws IOException
     * 
     */
-   public void setBackup(SnapTree backupTree, String backupDir) throws IOException {
+   public void setBackup(SnapTree backupTree, String backupLabel) throws IOException {
       ConcurrentSkipListMap<String, Snapshot> passendBackups=new ConcurrentSkipListMap<>();
-      Path                                    rest          =Path.of("/", backupDir);
+      Path rest=Path.of(Backsnap.MNT_BACKSNAP, backupLabel);
       for (Snapshot snapshot:backupTree.dateMap().values()) { // sortiert nach otime
          Path pfad=snapshot.getBackupMountPath();
          if (pfad == null)
@@ -374,8 +400,8 @@ public class BacksnapGui implements MouseListener {
       ConcurrentSkipListMap<String, Snapshot> neuList=getPanelBackup().setVolume(passendBackups.values());
       for (SnapshotLabel label:getPanelBackup().getLabels().values())
          label.addMouseListener(this);
-      int           linefeeds=0;
-      StringBuilder sb       =new StringBuilder("Backup:");
+      int linefeeds=0;
+      StringBuilder sb=new StringBuilder("Backup:");
       for (Snapshot snap:neuList.values()) {
          sb.append(" ").append(snap.dirName());
          if ((sb.length() / 120) > linefeeds) {
@@ -385,7 +411,7 @@ public class BacksnapGui implements MouseListener {
       }
       Backsnap.logln(2, sb.toString());
       abgleich();
-      getPanelBackup().setTitle("Backup to Label " + rest.getFileName());
+      getPanelBackup().setTitle("Backup to Label " + backupLabel);
       getPanelBackup().setInfo(backupTree.mount());
    }
    public JSplitPane getSplitPaneSnapshots() throws IOException {
@@ -747,5 +773,17 @@ public class BacksnapGui implements MouseListener {
          getTglPause().doClick();
       }
       getPanelMaintenance().setUsage(usage);
+   }
+   /**
+    * @param srcSnapshot
+    * @param parentSnapshot
+    */
+   public void setBackupInfo(Snapshot srcSnapshot, Snapshot parentSnapshot) {
+      Backsnap.logln(7, "<html>" + srcSnapshot.getSnapshotMountPath().toString());
+      getLblSnapshot().setText("backup of : ");
+      getTxtSnapshot().setText(srcSnapshot.dirName());
+      getLblParent().setText((parentSnapshot == null) ? " " : "based on:");
+      getTxtParent().setText((parentSnapshot == null) ? " " : parentSnapshot.dirName());
+      getPanelWork().repaint(50);
    }
 }

@@ -3,6 +3,7 @@
 
 # your mountpoint for backsnap
 BS_MOUNT=/mnt/BackSnap
+
 # start of the uuid of your backup partition
 BS_ID=03417033
 # activate ssh-askpass for gui usage
@@ -23,6 +24,7 @@ WAS_MOUNTED=$(mount | grep -E " $BS_MOUNT ")
 mount | grep -E " $BS_MOUNT " ||
     { echo "error: could not mount $BS_UUID to $BS_MOUNT" && exit }
 
+
 function backup {
 # This script has to be run in a terminal with sudo to get the grapical version !
     backsnap -gtc -v=1 -a=12 $1 $BS_MOUNT/$2 || exit
@@ -31,9 +33,12 @@ function backup {
     echo  "OK"
 }
 
+
 # lokal sichern
 backup /     manjaro18
 backup /home manjaro18.home
+
+
 
 # server sichern
 backup root@server:/ server

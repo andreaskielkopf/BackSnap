@@ -161,7 +161,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
             return true;
          return false; // ansonsten ist es ein Snapshot
       }
-      if (isPlaisSnapshot())
+      if (isPlainSnapshot())
          return false;
       
       return true;
@@ -173,7 +173,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
     * 
     * @return
     */
-   private boolean isPlaisSnapshot() {
+   boolean isPlainSnapshot() {
       return cgen == gen;
    }
    /**
@@ -191,10 +191,11 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
                getReadonlyStream.backgroundErr();
                Optional<String> erg=getReadonlyStream.erg().peek(t -> Backsnap.logln(4, t))
                         .filter(t -> t.startsWith("ro=")).findAny();
+               getReadonlyStream.waitFor();
                for (String line:getReadonlyStream.errList())
                   if (line.contains("No route to host") || line.contains("Connection closed")
                            || line.contains("connection unexpectedly closed")) {
-                     Backsnap.connectionLost=10;
+                     Backsnap.disconnectCount=10;
                      break;
                   } // ende("");// R
                if (erg.isPresent()) {
@@ -322,10 +323,11 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          try (CmdStream readonlyStream=Commandline.executeCached(readonlyCmd, null)) { // not cached
             readonlyStream.backgroundErr();
             readonlyStream.erg().forEach(t -> Backsnap.logln(4, t));
+            readonlyStream.waitFor();
             for (String line:readonlyStream.errList())
                if (line.contains("No route to host") || line.contains("Connection closed")
                         || line.contains("connection unexpectedly closed")) {
-                  Backsnap.connectionLost=10;
+                  Backsnap.disconnectCount=10;
                   break;
                } // ende("");// R
          }
@@ -354,10 +356,11 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          try (CmdStream setReadonlyStream=Commandline.executeCached(setReadonlyCmd, null)) { // not cached
             setReadonlyStream.backgroundErr();
             setReadonlyStream.erg().forEach(t -> Backsnap.logln(4, t));
+            setReadonlyStream.waitFor();
             for (String line:setReadonlyStream.errList())
                if (line.contains("No route to host") || line.contains("Connection closed")
                         || line.contains("connection unexpectedly closed")) {
-                  Backsnap.connectionLost=10;
+                  Backsnap.disconnectCount=10;
                   break;
                } // ende("");// R
          }
@@ -390,7 +393,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
             throw new RuntimeException("Ingnoring, because there are no snapshots in: " + sourceDir);
          Backsnap.logln(1, "backup snapshots from: " + srcVolume.keyM());
          // BackupVolume ermitteln
-         Mount backupVolume=subVolumes.getBackupVolume(backupDir);
+         Mount backupVolume=subVolumes.getBackupVolume(/*backupDir*/);
          if (backupVolume == null)
             throw new RuntimeException("Could not find backupDir: " + backupDir);
          Backsnap.logln(1, "Will try to use backupDir: " + backupVolume.keyM());
@@ -410,7 +413,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
                } else
                   System.out.println("NO snapshots of: " + e.getKey());
             }
-         Mount backupVolumeMount=subVolumes.getBackupVolume(null);
+         Mount backupVolumeMount=subVolumes.getBackupVolume();
          System.out.println(backupVolumeMount);
          System.exit(-9);
          List<Snapshot> snapshots       =new ArrayList<>();
@@ -430,6 +433,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
                   System.err.println(e);
                }
             });
+            std.waitFor();
          } catch (IOException e) {
             throw e;
          } catch (Exception e) {

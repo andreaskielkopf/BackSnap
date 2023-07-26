@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.stream.Stream;
 
+import de.uhingen.kielkopf.andreas.backsnap.btrfs.Version;
+
 /**
  * @author Andreas Kielkopf
  */
@@ -14,13 +16,12 @@ public class Commandline {
    static public final String                                   UTF_8         ="UTF-8";
    static public final ConcurrentSkipListMap<String, CmdStream> cache         =new ConcurrentSkipListMap<>();
    /** ExecutorService um den Errorstream im Hintergrund zu lesen */
-   static public final ExecutorService                          background    =Executors.newCachedThreadPool();
+   static public final ExecutorService                          background    =Version.getExecutor();
    /**
     * @param cmd
     * @return
     * @throws IOException
     */
-   
    static public CmdStream executeCached(StringBuilder cmd, String key) throws IOException {
       return executeCached(cmd.toString(), key);
    }
@@ -28,7 +29,6 @@ public class Commandline {
       String cmd=cmd1.toString();
       return executeCached(cmd, cmd);
    }
-   
    /**
     * Einen Befehl ausführen, Fehlermeldungen direkt ausgeben, stdout als stream zurückgeben
     * 
@@ -84,7 +84,7 @@ public class Commandline {
          brErg.close(); // erg wurde gelesen
          process.destroy();
          if ((key != null) && (!cache.containsKey(key))) {
-//            System.out.println("enable " + key + " in cache");
+            // System.out.println("enable " + key + " in cache");
             cache.put(key, this);
          }
       }

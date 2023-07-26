@@ -19,7 +19,7 @@ import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 /**
  * @author Andreas Kielkopf results of mount | grep -E 'btrfs' as records
  */
-public record Mount(Pc pc, /* SubVolumeList svList, */ Path devicePath, Path mountPath, Path btrfsPath, String options,
+public record Mount(Pc pc,  Path devicePath, Path mountPath, Path btrfsPath, String options,
          ConcurrentSkipListMap<Path, Snapshot> btrfsMap, ConcurrentSkipListMap<String, Snapshot> otimeKeyMap,
          ConcurrentSkipListSet<String> name) {
    static final Pattern DEVICE=Pattern.compile("^(?:.*[ \\[]device=)?([^ ,]+)");
@@ -75,7 +75,7 @@ public record Mount(Pc pc, /* SubVolumeList svList, */ Path devicePath, Path mou
     * @param snapTree
     * @throws IOException
     */
-   void populate() throws IOException {
+   public void populate() throws IOException {
       SnapTree      snapTree         =SnapTree.getSnapTree(this);
       boolean       snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.dateMap().isEmpty() : false;
       StringBuilder subvolumeShowSB  =new StringBuilder("btrfs subvolume show ").append(mountPath);
