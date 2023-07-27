@@ -127,25 +127,25 @@ public class BacksnapGui implements MouseListener {
       frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
    }
    /**
-    * @param usage 
-    * @param backupDir 
-    * @param backupTree 
-    * @param srcConfig 
+    * @param usage
+    * @param backupDir
+    * @param backupTree
+    * @param srcConfig
     * @param bsGui
-    * @throws IOException 
+    * @throws IOException
     */
-//   static public void setGui(BacksnapGui bsGui) {
-//      backSnapGui=bsGui;
-//   }
-   static public BacksnapGui getGui(SnapConfig srcConfig, SnapTree backupTree, String backupLabel, Usage usage) throws IOException {
-      if (backSnapGui==null)
-      {
+   // static public void setGui(BacksnapGui bsGui) {
+   // backSnapGui=bsGui;
+   // }
+   static public BacksnapGui getGui(SnapConfig srcConfig, SnapTree backupTree, Pc backupPc1, Usage usage)
+            throws IOException {
+      if (backSnapGui == null) {
          backSnapGui=new BacksnapGui();
-//         BacksnapGui.setGui(bsGui);
+         // BacksnapGui.setGui(bsGui);
          main2(null); // zeigt die GUI an
          backSnapGui.setArgs(Flag.getArgs());
          backSnapGui.setSrc(srcConfig);
-         backSnapGui.setBackup(backupTree, backupLabel);
+         backSnapGui.setBackup(backupTree, backupPc1.getBackupLabel());
          backSnapGui.setUsage(usage);
          SwingUtilities.invokeLater(() -> {
             try {
@@ -157,7 +157,7 @@ public class BacksnapGui implements MouseListener {
       backSnapGui.getProgressBar().setMaximum(srcConfig.volumeMount().otimeKeyMap().size());
       return backSnapGui;
    }
-private SnapshotPanel getPanelSrc() throws IOException {
+   private SnapshotPanel getPanelSrc() throws IOException {
       if (panelSrc == null) {
          panelSrc=new SnapshotPanel();
       }
@@ -199,7 +199,7 @@ private SnapshotPanel getPanelSrc() throws IOException {
       if (Backsnap.DELETEOLD.get()) {
          int deleteOld=parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), PanelSpace.DEFAULT_SPACE);
          if (getPanelSrc().labelTree_DirName.lastEntry() instanceof Entry<String, SnapshotLabel> lastEntry) {
-            Backsnap.logln(8, "delOld: " + deleteOld);
+//            Backsnap.logln(8, "delOld: " + deleteOld);
             SnapshotLabel last=lastEntry.getValue();
             Snapshot ls=last.snapshot;
             Instant q=ls.stunden();
@@ -340,9 +340,9 @@ private SnapshotPanel getPanelSrc() throws IOException {
                         try {
                            EventQueue.invokeAndWait(() -> {
                               try {
-                                 Backsnap.refreshGUI();
-                                 abgleich();
-                                 getPanelBackup().repaint(50);
+                                 refreshGUI(refreshBackupPc);
+                                 // abgleich();
+                                 // getPanelBackup().repaint(50);
                               } catch (final Exception e2) {
                                  e2.printStackTrace();
                               }
@@ -373,7 +373,7 @@ private SnapshotPanel getPanelSrc() throws IOException {
          }
       return def;
    }
-   private SnapshotPanel getPanelBackup() throws IOException {
+   public SnapshotPanel getPanelBackup() throws IOException {
       if (panelBackup == null) {
          panelBackup=new SnapshotPanel();
       }
@@ -389,7 +389,7 @@ private SnapshotPanel getPanelSrc() throws IOException {
     */
    public void setBackup(SnapTree backupTree, String backupLabel) throws IOException {
       ConcurrentSkipListMap<String, Snapshot> passendBackups=new ConcurrentSkipListMap<>();
-      Path rest=Path.of(Backsnap.MNT_BACKSNAP, backupLabel);
+      Path rest=Path.of(Pc.MNT_BACKSNAP, backupLabel);
       for (Snapshot snapshot:backupTree.dateMap().values()) { // sortiert nach otime
          Path pfad=snapshot.getBackupMountPath();
          if (pfad == null)
@@ -647,6 +647,9 @@ private SnapshotPanel getPanelSrc() throws IOException {
    private TxtFeld         txtTime;
    private Lbl             lblSize;
    private TxtFeld         txtSize;
+   public Pc               refreshBackupPc =null;
+   public String           refreshGUIcKey  =null;
+   public Instant          refreshUsage    =Instant.now();
    private JPanel getPanelUnten() {
       if (panelUnten == null) {
          panelUnten=new JPanel();
@@ -785,5 +788,32 @@ private SnapshotPanel getPanelSrc() throws IOException {
       getLblParent().setText((parentSnapshot == null) ? " " : "based on:");
       getTxtParent().setText((parentSnapshot == null) ? " " : parentSnapshot.dirName());
       getPanelWork().repaint(50);
+   }
+   /**
+    * @param backupVolume
+    * @param backupDir
+    * @param backupSsh
+    * @throws IOException
+    * 
+    */
+   public void refreshGUI(Pc backupPc) {
+      SwingUtilities.invokeLater(() -> {
+         try {
+            if (refreshGUIcKey == null) {
+               refreshBackupPc=backupPc;
+               refreshGUIcKey=backupPc.extern() + ":" + backupPc.getBackupVolume().devicePath();
+            }
+            Commandline.removeFromCache(refreshGUIcKey); // umgeht den cache
+            setBackup(new SnapTree(refreshBackupPc.getBackupVolume()), refreshBackupPc.getBackupLabel());
+            if (Instant.now().isAfter(refreshUsage)) {
+               getPanelMaintenance().setUsage(new Usage(refreshBackupPc.getBackupVolume(), false));
+               refreshUsage=Instant.now().plusSeconds(60);
+            }
+            abgleich();
+            getPanelBackup().repaint(50);
+         } catch (IOException e) {
+            e.printStackTrace();
+         }
+      });
    }
 }

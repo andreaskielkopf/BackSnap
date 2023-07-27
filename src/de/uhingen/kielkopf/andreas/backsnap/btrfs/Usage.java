@@ -54,7 +54,7 @@ public record Usage(String size, String allocated, String unallcoated, String mi
     * @throws IOException
     */
    static private String getString(Mount m, boolean b) throws IOException {
-      String dir=b ? "-b " + Backsnap.MNT_BACKSNAP : Backsnap.MNT_BACKSNAP;
+      String dir=b ? "-b " + Pc.MNT_BACKSNAP : Pc.MNT_BACKSNAP;
       String usageCmd=m.pc().getCmd(new StringBuilder("btrfs filesystem usage ").append(dir).append(";")
                .append("btrfs device usage ").append(dir));
       Backsnap.logln(3, usageCmd);

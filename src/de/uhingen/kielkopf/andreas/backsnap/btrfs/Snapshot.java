@@ -51,7 +51,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
                getInt(TOP_LEVEL.matcher(from_btrfs)), //
                getString(OTIME.matcher(from_btrfs)), getString(PARENT_UUID.matcher(from_btrfs)),
                getString(RECEIVED_UUID.matcher(from_btrfs)), getString(UUID.matcher(from_btrfs)),
-               getPath(BTRFS_PATH.matcher(from_btrfs)), new Link<Boolean>());
+               getPath(BTRFS_PATH.matcher(from_btrfs)), new Link<Boolean>("readonly"));
       if ((btrfsPath == null) || (mount == null))
          throw new FileNotFoundException("btrfs-path is missing for snapshot: " + mount + from_btrfs);
    }
@@ -393,7 +393,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
             throw new RuntimeException("Ingnoring, because there are no snapshots in: " + sourceDir);
          Backsnap.logln(1, "backup snapshots from: " + srcVolume.keyM());
          // BackupVolume ermitteln
-         Mount backupVolume=subVolumes.getBackupVolume(/*backupDir*/);
+         Mount backupVolume=subVolumes.pc(). getBackupVolume();
          if (backupVolume == null)
             throw new RuntimeException("Could not find backupDir: " + backupDir);
          Backsnap.logln(1, "Will try to use backupDir: " + backupVolume.keyM());
@@ -413,7 +413,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
                } else
                   System.out.println("NO snapshots of: " + e.getKey());
             }
-         Mount backupVolumeMount=subVolumes.getBackupVolume();
+         Mount backupVolumeMount=subVolumes.pc().getBackupVolume();
          System.out.println(backupVolumeMount);
          System.exit(-9);
          List<Snapshot> snapshots       =new ArrayList<>();

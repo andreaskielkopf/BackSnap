@@ -20,7 +20,7 @@ public record Version(String version, String major, String minor, String patch) 
    final static public Version getJava() {
       if (java == null)
          java=new Version(System.getProperty("java.version"));
-      System.out.println("java:" + java);
+      System.out.println("java: " + java);
       return java;
    }
    final static public ExecutorService getExecutor() {

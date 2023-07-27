@@ -20,10 +20,12 @@ public record Pc(String extern, // Marker für diesen PC
          ConcurrentSkipListMap<String, Mount> mountCache, // cache der Mounts
          Link<SubVolumeList> subVolumeList, // Liste der Subvolumes
          Link<Version> btrfsVersion, // BTRFS-Version
-         Link<Version> kernelVersion) {// Kernel-Version
+         Link<Version> kernelVersion, // Kernel-Version
+         Link<String> backupLabel) {// BackupLabel am BackupPC
    static final ConcurrentSkipListMap<String, Pc> pcCache=new ConcurrentSkipListMap<String, Pc>();
    /* In /tmp werden bei Timeshift Pcs die Snapshots vorübergehnd eingehängt */
    static public final String TMP_BTRFS_ROOT="/tmp/BtrfsRoot";
+   static public final String MNT_BACKSNAP="/mnt/BackSnap";
    /**
     * Sicherstellen, dass jeder Pc nur einmal erstellt wird
     * 
@@ -39,7 +41,8 @@ public record Pc(String extern, // Marker für diesen PC
       return pcCache.get(x);
    }
    private Pc(String extern)/* throws IOException */ {
-      this(extern, new ConcurrentSkipListMap<>(), new Link<SubVolumeList>(), new Link<Version>(), new Link<Version>());
+      this(extern, new ConcurrentSkipListMap<>(), new Link<SubVolumeList>("subVolumeList"), new Link<Version>("BTRFS"),
+               new Link<Version>("Kernel"), new Link<String>("backupLabel"));
    }
    public boolean isExtern() {
       return extern.contains("@");
@@ -198,13 +201,23 @@ public record Pc(String extern, // Marker für diesen PC
    // @Override public boolean equals(Object o) { if (o instanceof Pc pc) return Objects.equals(extern, pc.extern);
    // return false; }
    // @Override public int hashCode() { return Objects.hash(extern); }
+   public final String getBackupLabel() {
+      return backupLabel.get();
+   }
+   public final void setBackupLabel(String bl) {
+      backupLabel.set(bl);
+   }
    /**
     * @param backupKey
     * @return
     * @throws IOException
     */
-   public Mount getBackupVolume(/* String backupDir */) throws IOException {
-      return getSubVolumeList().getBackupVolume(/* backupDir */);
+   public Mount getBackupVolume() throws IOException {
+      ConcurrentSkipListMap<String, Mount> mt=getSubVolumeList().mountTree();
+      String vorschlag=extern() + ":" + MNT_BACKSNAP;
+      if (mt.containsKey(vorschlag))
+         return mt.get(vorschlag);
+      return null;
    }
    @Override
    public String toString() {
