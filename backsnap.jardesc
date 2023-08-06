@@ -15,19 +15,21 @@
         <file path="/backsnap/backup"/>
         <file path="/backsnap/gallery/device_de.md"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap"/>
+        <javaElement handleIdentifier="=Beans/src&lt;de.uhingen.kielkopf.andreas.beans{Version.java"/>
+        <javaElement handleIdentifier="=Beans/src&lt;de.uhingen.kielkopf.andreas.beans.data{Link.java"/>
+        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui{BacksnapGui.java"/>
         <file path="/backsnap/gallery/guitest_de.md"/>
+        <javaElement handleIdentifier="=Beans/src&lt;de.uhingen.kielkopf.andreas.beans{RecordParser.java"/>
         <file path="/backsnap/gallery/restore_de.md"/>
-        <javaElement handleIdentifier="=Beans/src&lt;de.uhingen.kielkopf.andreas.beans.cli{Flag.java"/>
         <file path="/backsnap/backsnap.jardesc"/>
+        <javaElement handleIdentifier="=Beans/src&lt;de.uhingen.kielkopf.andreas.beans.cli{Flag.java"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui{Computer.java"/>
         <file path="/backsnap/gallery/backup_de.md"/>
         <file path="/backsnap/gallery/clitest_de.md"/>
-        <javaElement handleIdentifier="=Beans/src&lt;de.uhingen.kielkopf.andreas.beans.data{Link.java"/>
         <file path="/backsnap/WieEsFunktioniert.md"/>
-        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui{package-info.java"/>
-        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui{BacksnapGui.java"/>
-        <file path="/backsnap/gallery/install_en.md"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui{Subvol.java"/>
+        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui{package-info.java"/>
+        <file path="/backsnap/gallery/install_en.md"/>
         <file path="/backsnap/gallery/install_de.md"/>
         <file path="/backsnap/gallery/clitest_en.md"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.btrfs"/>

@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.stream.Stream;
 
-import de.uhingen.kielkopf.andreas.backsnap.btrfs.Version;
+import de.uhingen.kielkopf.andreas.beans.Version;
 
 /**
  * @author Andreas Kielkopf
@@ -16,7 +16,7 @@ public class Commandline {
    static public final String                                   UTF_8         ="UTF-8";
    static public final ConcurrentSkipListMap<String, CmdStream> cache         =new ConcurrentSkipListMap<>();
    /** ExecutorService um den Errorstream im Hintergrund zu lesen */
-   static public final ExecutorService                          background    =Version.getExecutor();
+   static public final ExecutorService                          background    =Version.getVx();
    /**
     * @param cmd
     * @return

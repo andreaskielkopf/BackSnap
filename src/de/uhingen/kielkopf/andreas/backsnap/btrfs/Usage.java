@@ -2,6 +2,7 @@
  * 
  */
 package de.uhingen.kielkopf.andreas.backsnap.btrfs;
+import static de.uhingen.kielkopf.andreas.beans.RecordParser.getString;
 
 import java.io.IOException;
 import java.util.regex.Pattern;
@@ -36,24 +37,24 @@ public record Usage(String size, String allocated, String unallcoated, String mi
    static private final long GiB=KiB * MiB;
    static private final long TiB=MiB * MiB;
    public Usage(String u) {
-      this(Snapshot.getString(SIZE.matcher(u)), Snapshot.getString(ALLOCATED.matcher(u)),
-               Snapshot.getString(UNALLOCATED.matcher(u)), Snapshot.getString(MISSING.matcher(u)),
-               Snapshot.getString(SLACK.matcher(u)), Snapshot.getString(USED.matcher(u)),
-               Snapshot.getString(RATIO_D.matcher(u)), Snapshot.getString(RATIO_M.matcher(u)),
-               Snapshot.getString(FREE.matcher(u)), Snapshot.getString(RESERVE.matcher(u)),
-               Snapshot.getString(DATA.matcher(u)), Snapshot.getString(METADATA.matcher(u)),
-               Snapshot.getString(SYSTEM.matcher(u)));
+      this(getString(SIZE.matcher(u)), getString(ALLOCATED.matcher(u)),
+               getString(UNALLOCATED.matcher(u)), getString(MISSING.matcher(u)),
+               getString(SLACK.matcher(u)), getString(USED.matcher(u)),
+               getString(RATIO_D.matcher(u)), getString(RATIO_M.matcher(u)),
+               getString(FREE.matcher(u)), getString(RESERVE.matcher(u)),
+               getString(DATA.matcher(u)), getString(METADATA.matcher(u)),
+               getString(SYSTEM.matcher(u)));
       // System.out.println(u);
    }
    public Usage(Mount m, boolean b) throws IOException {
-      this(getString(m, b));
+      this(getMString(m, b));
    }
    /**
     * @param m
     * @return
     * @throws IOException
     */
-   static private String getString(Mount m, boolean b) throws IOException {
+   static private String getMString(Mount m, boolean b) throws IOException {
       String dir=b ? "-b " + Pc.MNT_BACKSNAP : Pc.MNT_BACKSNAP;
       String usageCmd=m.pc().getCmd(new StringBuilder("btrfs filesystem usage ").append(dir).append(";")
                .append("btrfs device usage ").append(dir));

@@ -4,25 +4,25 @@
 package de.uhingen.kielkopf.andreas.backsnap.gui;
 
 import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.concurrent.*;
-
-import javax.swing.*;
-
-import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
-import de.uhingen.kielkopf.andreas.backsnap.Commandline;
-import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
-
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.concurrent.*;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
 
+import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
+import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
+import de.uhingen.kielkopf.andreas.backsnap.Commandline;
+import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
 import de.uhingen.kielkopf.andreas.backsnap.gui.part.*;
@@ -35,6 +35,7 @@ import de.uhingen.kielkopf.andreas.beans.cli.Flag;
  *
  */
 public class BacksnapGui implements MouseListener {
+   private Preferences                                 prefs;
    static private BacksnapGui                          backSnapGui;
    public JFrame                                       frame;
    private SnapshotPanel                               panelSrc;
@@ -72,6 +73,8 @@ public class BacksnapGui implements MouseListener {
                backSnapGui.getSplitPaneSnapshots().setDividerLocation(1d / 3d);
             } catch (final Exception e) {
                e.printStackTrace();
+               // } finally {
+               // backSnapGui.saveFramePos();
             }
          });
    }
@@ -95,6 +98,41 @@ public class BacksnapGui implements MouseListener {
       if (Backsnap.DELETEOLD.get())
          getPanelMaintenance().getPanelSpace().flagSpace();
    }
+   /** Zum Speichern der Fensterkoordinaten */
+   private Preferences getPrefs() {
+      if (prefs == null)
+         prefs=Preferences.userNodeForPackage(this.getClass());
+      return prefs;
+   }
+   final String FRAME_X="frame_X";
+   final String FRAME_Y="frame_Y";
+   final String FRAME_W="frame_W";
+   final String FRAME_H="frame_H";
+   public void saveFramePos() {
+      if (frame instanceof JFrame fr)
+         if (getPrefs() instanceof Preferences p) {
+            Rectangle b=fr.getBounds();
+            p.putInt(FRAME_X, b.x);
+            p.putInt(FRAME_Y, b.y);
+            p.putInt(FRAME_W, b.width);
+            p.putInt(FRAME_H, b.height);
+            try {
+               p.flush();
+            } catch (BackingStoreException e) { /* */ }
+         }
+   }
+   private void restoreFramePos(JFrame f) {
+      if (getPrefs() instanceof Preferences p) {
+         Dimension screenSize=Toolkit.getDefaultToolkit().getScreenSize();
+         int width=Math.clamp(screenSize.width, 0, p.getInt(FRAME_W, (3840 * 40) / 100));
+         int height=Math.clamp(screenSize.height, 0, p.getInt(FRAME_H, (2160 * 40) / 100));
+         int restx=screenSize.width - width;
+         int resty=screenSize.height - height;
+         int x=Math.clamp(p.getInt(FRAME_X, restx / 2), 0, restx);
+         int y=Math.clamp(p.getInt(FRAME_Y, resty / 2), 0, resty);
+         f.setBounds(x, y, width, height);
+      }
+   }
    /**
     * @param snapConfigs
     * @param srcVolume
@@ -113,17 +151,9 @@ public class BacksnapGui implements MouseListener {
     */
    private void initialize() throws IOException {
       frame=new JFrame(Backsnap.BACK_SNAP_VERSION);
-      // if (Beans.isDesignTime()) {
       frame.getContentPane().add(getPanelOben(), BorderLayout.CENTER);
       frame.getContentPane().add(getPanelUnten(), BorderLayout.SOUTH);
-      Dimension screenSize=Toolkit.getDefaultToolkit().getScreenSize();
-      final int START_W=(3840 * 40) / 100;
-      final int START_H=(2160 * 40) / 100;
-      int width=Math.min(screenSize.width, START_W);
-      int height=Math.min(screenSize.height, START_H);
-      int x=(screenSize.width <= START_W) ? 0 : screenSize.width - START_W;
-      frame.setBounds(x, 0, width, height);
-      // }
+      restoreFramePos(frame);
       frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
    }
    /**
@@ -199,7 +229,7 @@ public class BacksnapGui implements MouseListener {
       if (Backsnap.DELETEOLD.get()) {
          int deleteOld=parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), PanelSpace.DEFAULT_SPACE);
          if (getPanelSrc().labelTree_DirName.lastEntry() instanceof Entry<String, SnapshotLabel> lastEntry) {
-//            Backsnap.logln(8, "delOld: " + deleteOld);
+            // Backsnap.logln(8, "delOld: " + deleteOld);
             SnapshotLabel last=lastEntry.getValue();
             Snapshot ls=last.snapshot;
             Instant q=ls.stunden();

@@ -3,6 +3,7 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 
+import static de.uhingen.kielkopf.andreas.beans.RecordParser.*;
 import java.util.regex.Pattern;
 
 /**
@@ -15,8 +16,8 @@ public record PvInfo(String size, String time, String speed, String progress) {
    static final Pattern SPEED=Pattern.compile("([ 0-9,KMGTiB]+/s)");
    static final Pattern PROGRESS=Pattern.compile(" (\\[[ <=>]+\\])");
    public PvInfo(String pv) {
-      this(Snapshot.getString(SIZE.matcher(pv)), Snapshot.getString(TIME.matcher(pv)),
-               Snapshot.getString(SPEED.matcher(pv)), Snapshot.getString(PROGRESS.matcher(pv)));
+      this(getString(SIZE.matcher(pv)), getString(TIME.matcher(pv)), getString(SPEED.matcher(pv)),
+               getString(PROGRESS.matcher(pv)));
    }
    public String size() {
       return size != null ? size : "";

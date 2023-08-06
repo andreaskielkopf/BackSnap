@@ -16,6 +16,7 @@ import javax.swing.*;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
+import de.uhingen.kielkopf.andreas.beans.Version;
 import de.uhingen.kielkopf.andreas.beans.cli.Flag;
 
 /**
@@ -58,8 +59,9 @@ public class Backsnap {
    static public final Flag          KEEP_MINIMUM     =new Flag('m', "keepminimum");    // mark all but minimum
                                                                                         // snapshots
    static public final String        BACK_SNAP_VERSION=                                 // version
-            "BackSnap for Snapper and Timeshift(beta) Version 0.6.2.14 (2023/07/27)";
+            "BackSnap for Snapper and Timeshift(beta) Version 0.6.2.15 (2023/08/06)";
    static public final ReentrantLock BTRFS_LOCK       =new ReentrantLock();
+   static public final String        LF               =System.lineSeparator();
    static public void main(String[] args) {
       Flag.setArgs(args, DEFAULT_SRC + " " + DEFAULT_BACKUP);
       logln(0, BACK_SNAP_VERSION);
@@ -85,10 +87,10 @@ public class Backsnap {
          // Start collecting information
          SnapConfig srcConfig=SnapConfig.getConfig(srcPc, srcDir);
          if (srcConfig == null)
-            throw new RuntimeException("Could not find snapshots for srcDir: " + srcDir);
+            throw new RuntimeException(LF+"Could not find any snapshots for srcDir: " + srcDir);
          srcConfig.volumeMount().populate();
          if (srcConfig.volumeMount().btrfsMap().isEmpty())
-            throw new RuntimeException("Ingnoring, because there are no snapshots in: " + srcDir);
+            throw new RuntimeException(LF+"Ingnoring, because there are no snapshots in: " + srcDir);
          logln(1, "Backup snapshots from " + srcConfig.volumeMount().keyM());
          // BackupVolume ermitteln
          String[] backup=Flag.getParameterOrDefault(1, DEFAULT_BACKUP).split("[:]");
@@ -104,11 +106,11 @@ public class Backsnap {
          backupPc.getMountList(false); // eventuell unnötig
          Mount backupVolume=backupPc.getBackupVolume(/* backupDir */);
          if (backupVolume == null)
-            throw new RuntimeException(
-                     "Could not find Volume for backupDir: " + Pc.MNT_BACKSNAP + backupPc.getBackupLabel());
+            throw new RuntimeException(LF + "Could not find the volume for backupDir: " + Pc.MNT_BACKSNAP + "/"
+                     + backupPc.getBackupLabel() + LF + "Maybe it needs to be mounted first");
          if (backupVolume.devicePath().equals(srcConfig.volumeMount().devicePath()) && (srcPc == backupPc))
-            throw new RuntimeException(
-                     "Backup not possible onto same device: " + backupPc.getBackupLabel() + " <= " + srcDir);
+            throw new RuntimeException(LF + "Backup is not possible onto the same device: " + backupPc.getBackupLabel()
+                     + " <= " + srcDir + LF + "Please select another partition for the backup");
          Usage usage=new Usage(backupVolume, false);
          if (usage.needsBalance())
             System.err.println("It seems urgently advisable to balance the backup volume");
@@ -122,8 +124,8 @@ public class Backsnap {
          if (GUI.get())
             bsGui=BacksnapGui.getGui(srcConfig, backupTree, backupPc, usage);
          if (usage.isFull())
-            throw new RuntimeException(
-                     "Backup volume has less than 10GiB unallocated: " + usage.unallcoated() + " of " + usage.size());
+            throw new RuntimeException(LF + "The backup volume has less than 10GiB unallocated: " + usage.unallcoated()
+                     + " of " + usage.size() + LF + "Please free some space on the backup volume");
          try {
             usePv=Paths.get("/bin/pv").toFile().canExecute();
          } catch (Exception e1) {/* */}
@@ -500,6 +502,7 @@ public class Backsnap {
                         } catch (InterruptedException ignore) {/* ignore */}
                      } while (pauseButton.isSelected());
                   }
+                  bsGui.saveFramePos();
                   frame.setVisible(false);
                   frame.dispose();
                }

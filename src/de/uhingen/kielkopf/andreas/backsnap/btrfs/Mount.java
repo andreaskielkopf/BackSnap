@@ -3,7 +3,7 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 
-import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Snapshot.*;
+import static de.uhingen.kielkopf.andreas.beans.RecordParser.*;
 
 import java.io.IOException;
 import java.nio.file.Path;

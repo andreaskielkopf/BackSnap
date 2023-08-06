@@ -5,6 +5,7 @@ package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 
 import static de.uhingen.kielkopf.andreas.backsnap.Backsnap.AT_SNAPSHOTS;
 import static de.uhingen.kielkopf.andreas.backsnap.Backsnap.DOT_SNAPSHOTS;
+import static de.uhingen.kielkopf.andreas.beans.RecordParser.*;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -58,30 +59,6 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    // public Snapshot(String from_btrfs) throws FileNotFoundException {
    // this(null, from_btrfs);
    // }
-   /**
-    * @param Matcher
-    * @return String
-    */
-   static public String getString(Matcher m) {
-      return (m.find()) ? m.group(1) : null;
-   }
-   /**
-    * @param Matcher
-    * @return Integer
-    */
-   @SuppressWarnings("boxing")
-   static public final Integer getInt(Matcher m) {
-      return (m.find()) ? Integer.parseUnsignedInt(m.group(1)) : null;
-   }
-   /**
-    * @param Matcher
-    * @return Path (ansolut)
-    */
-   static public final Path getPath(Matcher m) {
-      if (m.find())
-         return Path.of("/", m.group(1)); // absolut Path
-      return null;
-   }
    static private Pattern createPatternFor(String s) {
       return Pattern.compile("^(?:.*[ \\[])?" + s + "[ =]([^ ,\\]]+)");
    }
@@ -163,7 +140,6 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       }
       if (isPlainSnapshot())
          return false;
-      
       return true;
    }
    /**
@@ -199,7 +175,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
                      break;
                   } // ende("");// R
                if (erg.isPresent()) {
-                  String  u=erg.get().split("=")[1];
+                  String u=erg.get().split("=")[1];
                   boolean b=Boolean.parseBoolean(u);
                   return readonlyL().set(b);
                }
@@ -268,8 +244,8 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    static private Mount getMount(Mount mount0, Path btrfsPath1) throws IOException {
       if (btrfsPath1 == null)
          return null;
-      Path  b2 =btrfsPath1;
-      Mount erg=null;      // default ?
+      Path b2=btrfsPath1;
+      Mount erg=null; // default ?
       if (!b2.toString().contains("timeshift-btrfs")) {
          for (Mount mount1:mount0.pc().getMountList(false).values())
             if (mount0.devicePath().equals(mount1.devicePath())) // only from same device
@@ -373,7 +349,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       try {
          Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " /mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro");// Par. sammeln
          String backupDir=Flag.getParameterOrDefault(1, "@BackSnap");
-         String source   =Flag.getParameter(0);
+         String source=Flag.getParameter(0);
          String externSsh=source.contains(":") ? source.substring(0, source.indexOf(":")) : "";
          String sourceDir=externSsh.isBlank() ? source : source.substring(externSsh.length() + 1);
          if (externSsh.startsWith("sudo"))
@@ -386,16 +362,16 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
             sourceDir=sourceDir.substring(0, sourceDir.length() - 2);
          // SrcVolume ermitteln
          SubVolumeList subVolumes=new SubVolumeList(Pc.getPc(externSsh));
-         Mount         srcVolume =subVolumes.mountTree().get(sourceDir);
+         Mount srcVolume=subVolumes.mountTree().get(sourceDir);
          if (srcVolume == null)
-            throw new RuntimeException("Could not find srcDir: " + sourceDir);
+            throw new RuntimeException(Backsnap.LF+ "Could not find srcDir: " + sourceDir);
          if (srcVolume.btrfsMap().isEmpty())
-            throw new RuntimeException("Ingnoring, because there are no snapshots in: " + sourceDir);
+            throw new RuntimeException(Backsnap.LF+ "Ingnoring, because there are no snapshots in: " + sourceDir);
          Backsnap.logln(1, "backup snapshots from: " + srcVolume.keyM());
          // BackupVolume ermitteln
-         Mount backupVolume=subVolumes.pc(). getBackupVolume();
+         Mount backupVolume=subVolumes.pc().getBackupVolume();
          if (backupVolume == null)
-            throw new RuntimeException("Could not find backupDir: " + backupDir);
+            throw new RuntimeException(Backsnap.LF+"Could not find backupDir: " + backupDir);
          Backsnap.logln(1, "Will try to use backupDir: " + backupVolume.keyM());
          // Subdir ermitteln
          Path pathBackupDir=backupVolume.mountPath().relativize(Path.of(backupDir));
@@ -416,8 +392,8 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          Mount backupVolumeMount=subVolumes.pc().getBackupVolume();
          System.out.println(backupVolumeMount);
          System.exit(-9);
-         List<Snapshot> snapshots       =new ArrayList<>();
-         StringBuilder  subvolumeListCmd=new StringBuilder("btrfs subvolume list -aspuqR ").append(backupDir);
+         List<Snapshot> snapshots=new ArrayList<>();
+         StringBuilder subvolumeListCmd=new StringBuilder("btrfs subvolume list -aspuqR ").append(backupDir);
          if ((externSsh instanceof String x) && (!x.isBlank()))
             if (x.startsWith("sudo "))
                subvolumeListCmd.insert(0, x);
