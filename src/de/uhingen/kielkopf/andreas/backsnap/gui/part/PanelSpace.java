@@ -3,12 +3,7 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.gui.part;
 
-import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
-import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
-import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
-import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
-
-import java.beans.Beans;
+import java.awt.BorderLayout;
 import java.io.IOException;
 import java.util.Dictionary;
 import java.util.Hashtable;
@@ -18,7 +13,12 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import java.awt.BorderLayout;
+import org.eclipse.jdt.annotation.NonNull;
+
+import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
+import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
+import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
+import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
 
 /**
  * @author Andreas Kielkopf
@@ -34,18 +34,18 @@ public class PanelSpace extends JPanel {
    private JCheckBox         chckSpace;
    private JButton           btnSpace;
    static public int         DEFAULT_SPACE   =1999;
-   final private BacksnapGui bsGui;
+  @NonNull final private BacksnapGui bsGui;
    /**
     * Create the panel.
     */
-   @SuppressWarnings("unused")
-   private PanelSpace() {
-      this(null);
-   }
-   public PanelSpace(BacksnapGui b) {
-      if (!Beans.isDesignTime())
-         if (b == null)
-            throw new NullPointerException("BacksnapGui ist null");
+//   @SuppressWarnings("unused")
+//   private PanelSpace() {
+//      this(null);
+//   }
+   public PanelSpace(@NonNull BacksnapGui b) {
+//      if (!Beans.isDesignTime())
+//         if (b == null)
+//            throw new NullPointerException("BacksnapGui ist null");
       bsGui=b;
       initialize();
    }
@@ -89,7 +89,7 @@ public class PanelSpace extends JPanel {
    public JButton getBtnSpace() {
       if (btnSpace == null) {
          btnSpace=new JButton("Delete some old snapshots");
-         if (bsGui != null)
+//         if (bsGui != null)
             btnSpace.addActionListener(e -> {
                try {
                   bsGui.delete(getBtnSpace(), SnapshotLabel.deleteOldColor);
@@ -116,7 +116,7 @@ public class PanelSpace extends JPanel {
          for (int i=0; i <= 5; i++)
             labelTable.put(Integer.valueOf(i * 1000), new JLabel((i == 0) ? "0" : Integer.toString(i) + "T"));
          sliderSpace.setLabelTable(labelTable);
-         if (bsGui != null)
+//         if (bsGui != null)
             sliderSpace.addChangeListener(new ChangeListener() {
                @Override
                public void stateChanged(final ChangeEvent e) {
@@ -150,7 +150,7 @@ public class PanelSpace extends JPanel {
       Backsnap.DELETEOLD.set(s);
       getSliderSpace().setEnabled(s);
       getBtnSpace().setEnabled(s & !Backsnap.BTRFS_LOCK.isLocked());
-      if (s && bsGui != null && !bsGui.getTglPause().isSelected())
+      if (s && !bsGui.getTglPause().isSelected())
          SwingUtilities.invokeLater(() -> bsGui.getTglPause().doClick());
    }
    public void updateButtons() {

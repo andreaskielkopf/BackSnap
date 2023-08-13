@@ -37,7 +37,7 @@ public class Backsnap {
    static String                     canNotFindParent;
    static public int                 disconnectCount  =0;
    static Future<?>                  task             =null;
-   static public BacksnapGui         bsGui            =null;
+   static public BacksnapGui         bsGui;
    // static private Mount refreshBackupVolume=null;
    // static private String refreshBackupLabel =null;
    static private int                textVorhanden    =0;
@@ -87,10 +87,10 @@ public class Backsnap {
          // Start collecting information
          SnapConfig srcConfig=SnapConfig.getConfig(srcPc, srcDir);
          if (srcConfig == null)
-            throw new RuntimeException(LF+"Could not find any snapshots for srcDir: " + srcDir);
+            throw new RuntimeException(LF + "Could not find any snapshots for srcDir: " + srcDir);
          srcConfig.volumeMount().populate();
          if (srcConfig.volumeMount().btrfsMap().isEmpty())
-            throw new RuntimeException(LF+"Ingnoring, because there are no snapshots in: " + srcDir);
+            throw new RuntimeException(LF + "Ingnoring, because there are no snapshots in: " + srcDir);
          logln(1, "Backup snapshots from " + srcConfig.volumeMount().keyM());
          // BackupVolume ermitteln
          String[] backup=Flag.getParameterOrDefault(1, DEFAULT_BACKUP).split("[:]");
@@ -121,8 +121,7 @@ public class Backsnap {
             ende("X");
             System.exit(0);
          }
-         if (GUI.get())
-            bsGui=BacksnapGui.getGui(srcConfig, backupTree, backupPc, usage);
+         bsGui=GUI.get() ? bsGui=BacksnapGui.getGui(srcConfig, backupTree, backupPc, usage) : null;
          if (usage.isFull())
             throw new RuntimeException(LF + "The backup volume has less than 10GiB unallocated: " + usage.unallcoated()
                      + " of " + usage.size() + LF + "Please free some space on the backup volume");
@@ -145,17 +144,13 @@ public class Backsnap {
                   System.exit(-8);
                }
             try {
-               if (bsGui instanceof BacksnapGui gui && gui.getProgressBar() instanceof JProgressBar progressbar) {
-                  progressbar.setValue(counter);
-                  progressbar.setString(counter + "/" + srcConfig.volumeMount().otimeKeyMap().size());
-                  progressbar.repaint(50);
-               }
-               if (!backup(sourceSnapshot, srcConfig.snapshotMount(), backupTree,
-                        /* backupPc.getBackupLabel(), */ srcPc, backupPc))
+               if (bsGui instanceof BacksnapGui gui)
+                  gui.updateProgressbar(counter, srcConfig.volumeMount().otimeKeyMap().size());
+               if (!backup(sourceSnapshot, srcConfig.snapshotMount(), backupTree, srcPc, backupPc))
                   continue;
                // Anzeige im Progressbar anpassen
-               if (bsGui != null)
-                  bsGui.refreshGUI(backupPc);
+               if (bsGui instanceof BacksnapGui gui)
+                  gui.refreshGUI(backupPc);
                if (SINGLESNAPSHOT.get())// nur einen Snapshot übertragen und dann abbrechen
                   break;
             } catch (NullPointerException n) {
@@ -173,8 +168,8 @@ public class Backsnap {
          System.exit(-1);
       } finally {
          BTRFS_LOCK.unlock();
-         if (bsGui != null)
-            SwingUtilities.invokeLater(() -> bsGui.getPanelMaintenance().updateButtons());
+         if (bsGui instanceof BacksnapGui gui)
+            gui.getPanelMaintenance().updateButtons();
          if (TIMESHIFT.get())
             try {
                srcPc.mountBtrfsRoot(srcDir, false);

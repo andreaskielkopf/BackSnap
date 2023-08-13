@@ -3,16 +3,13 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.gui;
 
-import javax.swing.JPanel;
 import java.awt.BorderLayout;
+import java.awt.Color;
+
+import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.Mount;
-
-import java.awt.Color;
-import javax.swing.JTextField;
-import javax.swing.BoxLayout;
-import javax.swing.JLabel;
 
 /**
  * @author Andreas Kielkopf

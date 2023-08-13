@@ -26,6 +26,7 @@ import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
 import de.uhingen.kielkopf.andreas.backsnap.gui.part.*;
+import de.uhingen.kielkopf.andreas.beans.Version;
 import de.uhingen.kielkopf.andreas.beans.cli.Flag;
 
 /**
@@ -36,6 +37,7 @@ import de.uhingen.kielkopf.andreas.beans.cli.Flag;
  */
 public class BacksnapGui implements MouseListener {
    private Preferences                                 prefs;
+   static private ExecutorService                      virtual     =Version.getVx();
    static private BacksnapGui                          backSnapGui;
    public JFrame                                       frame;
    private SnapshotPanel                               panelSrc;
@@ -164,14 +166,10 @@ public class BacksnapGui implements MouseListener {
     * @param bsGui
     * @throws IOException
     */
-   // static public void setGui(BacksnapGui bsGui) {
-   // backSnapGui=bsGui;
-   // }
    static public BacksnapGui getGui(SnapConfig srcConfig, SnapTree backupTree, Pc backupPc1, Usage usage)
             throws IOException {
       if (backSnapGui == null) {
          backSnapGui=new BacksnapGui();
-         // BacksnapGui.setGui(bsGui);
          main2(null); // zeigt die GUI an
          backSnapGui.setArgs(Flag.getArgs());
          backSnapGui.setSrc(srcConfig);
@@ -214,132 +212,144 @@ public class BacksnapGui implements MouseListener {
       getPanelSrc().setInfo(srcConfig.volumeMount());
    }
    /**
-    * Bereite das einfärben vor
+    * Bereite das einfärben vor. Der größte Teil davon läuft in einem virtuellen Thread !
+    * 
+    * @return
     * 
     * @throws IOException
     */
-   public void abgleich() throws IOException {
+   public Future<?> abgleich() throws IOException {
       ConcurrentSkipListMap<String, SnapshotLabel> snapshotLabels_Uuid=getPanelSrc().labelTree_UUID;
       ConcurrentSkipListMap<String, SnapshotLabel> backupLabels_Uuid=getPanelBackup().labelTree_UUID;
       ConcurrentSkipListMap<String, SnapshotLabel> backupLabels_KeyO=getPanelBackup().labelTree_KeyO;
       ConcurrentSkipListMap<String, SnapshotLabel> backupLabels_DirName=getPanelBackup().labelTree_DirName;
       // SINGLESNAPSHOT make or delete only one(1) snapshot per call
       // for DELETEOLD get all old snapshots that are "o=999" older than the newest one
-      ConcurrentNavigableMap<String, SnapshotLabel> toDeleteOld=new ConcurrentSkipListMap<>();
-      if (Backsnap.DELETEOLD.get()) {
-         int deleteOld=parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), PanelSpace.DEFAULT_SPACE);
-         if (getPanelSrc().labelTree_DirName.lastEntry() instanceof Entry<String, SnapshotLabel> lastEntry) {
-            // Backsnap.logln(8, "delOld: " + deleteOld);
-            SnapshotLabel last=lastEntry.getValue();
-            Snapshot ls=last.snapshot;
-            Instant q=ls.stunden();
-            if (q != null) {
-               Instant grenze=q.minusSeconds(deleteOld * 3600l);// 1 Snapshot pro Stunde rechnen wie bei snapper üblich
-               for (Entry<String, SnapshotLabel> entry:backupLabels_DirName.descendingMap().entrySet()) {
-                  Instant instant=entry.getValue().snapshot.stunden();
-                  if (instant.isBefore(grenze))
-                     toDeleteOld.put(entry.getKey(), entry.getValue());
-               }
-            } else
-               if (ls.btrfsPath().toString().startsWith("/timeshift-btrfs")) {
-                  if (backupLabels_DirName.lastEntry() instanceof Entry<String, SnapshotLabel> lastBackupLabel) {
-                     SnapshotLabel lastB=lastBackupLabel.getValue();
-                     int firstId=lastB.snapshot.id() - deleteOld;
+      Entry<String, SnapshotLabel> srcLast=getPanelSrc().labelTree_DirName.lastEntry();
+      ArrayList<SnapshotLabel> backupMixedList=getPanelBackup().mixedList;
+      return virtual.submit(new Runnable() {
+         @Override
+         public void run() {
+            ConcurrentNavigableMap<String, SnapshotLabel> toDeleteOld=new ConcurrentSkipListMap<>();
+            if (Backsnap.DELETEOLD.get()) {
+               int deleteOld=parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), PanelSpace.DEFAULT_SPACE);
+               if (srcLast instanceof Entry<String, SnapshotLabel> lastEntry) {
+                  // Backsnap.logln(8, "delOld: " + deleteOld);
+                  SnapshotLabel last=lastEntry.getValue();
+                  Snapshot ls=last.snapshot;
+                  Instant q=ls.stunden();
+                  if (q != null) {
+                     Instant grenze=q.minusSeconds(deleteOld * 3600l);// 1 Snapshot pro Stunde rechnen wie bei snapper
+                                                                      // üblich
                      for (Entry<String, SnapshotLabel> entry:backupLabels_DirName.descendingMap().entrySet()) {
-                        int id=entry.getValue().snapshot.id();
-                        if (id <= firstId)
+                        Instant instant=entry.getValue().snapshot.stunden();
+                        if (instant.isBefore(grenze))
                            toDeleteOld.put(entry.getKey(), entry.getValue());
                      }
-                  }
-               } else {
-                  int firstNr=parseIntOrDefault(last.snapshot.dirName(), deleteOld) - deleteOld;
-                  if (firstNr > 0) {
-                     toDeleteOld=backupLabels_DirName.headMap(Integer.toString(firstNr));
-                  }
+                  } else
+                     if (ls.btrfsPath().toString().startsWith("/timeshift-btrfs")) {
+                        if (backupLabels_DirName.lastEntry() instanceof Entry<String, SnapshotLabel> lastBackupLabel) {
+                           SnapshotLabel lastB=lastBackupLabel.getValue();
+                           int firstId=lastB.snapshot.id() - deleteOld;
+                           for (Entry<String, SnapshotLabel> entry:backupLabels_DirName.descendingMap().entrySet()) {
+                              int id=entry.getValue().snapshot.id();
+                              if (id <= firstId)
+                                 toDeleteOld.put(entry.getKey(), entry.getValue());
+                           }
+                        }
+                     } else {
+                        int firstNr=parseIntOrDefault(last.snapshot.dirName(), deleteOld) - deleteOld;
+                        if (firstNr > 0) {
+                           toDeleteOld=backupLabels_DirName.headMap(Integer.toString(firstNr));
+                        }
+                     }
                }
+            }
+            ConcurrentSkipListMap<String, SnapshotLabel> keineSackgasse=new ConcurrentSkipListMap<>();
+            // suche Sackgassen um sie bevorzugt zu löschen
+            if (!backupLabels_KeyO.isEmpty()) {
+               SnapshotLabel child=backupLabels_KeyO.lastEntry().getValue();
+               while (child != null) {
+                  if (keineSackgasse.containsValue(child))
+                     break; // Bloß keine Endlosschleife !
+                  Snapshot s=child.snapshot;
+                  keineSackgasse.put(s.keyO(), child);
+                  String parent_uuid=s.parent_uuid();
+                  SnapshotLabel parent=backupLabels_Uuid.get(parent_uuid);
+                  child=parent;
+               }
+            }
+            // KEEP_MINIMUM
+            int minimum=PanelMeta.DEFAULT_META;
+            if (Backsnap.KEEP_MINIMUM.get())
+               minimum=parseIntOrDefault(Backsnap.KEEP_MINIMUM.getParameter(), PanelMeta.DEFAULT_META);
+            ArrayList<SnapshotLabel> mixedList2;
+            synchronized (backupMixedList) {
+               mixedList2=new ArrayList<>(backupMixedList);
+            }
+            int deletable=mixedList2.size() - minimum;
+            for (SnapshotLabel sl:backupLabels_DirName.values()) { // GrundFarbe setzen
+               if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid())) {
+                  SwingUtilities.invokeLater(() -> {
+                     sl.setBackground(SnapshotLabel.allesOkColor);// Das ist ein aktuelles Backup ! (unlöschbar)
+                     snapshotLabels_Uuid.get(sl.snapshot.received_uuid()).setBackground(SnapshotLabel.allesOkColor);
+                  });
+               } else
+                  SwingUtilities.invokeLater(() -> sl.setBackground(SnapshotLabel.naheColor));
+               // panelBackup.repaint(100);
+            }
+            ArrayList<SnapshotLabel> deleteList=new ArrayList<>();
+            // Schauen was gelöscht werden könnte von den alten Backups
+            for (SnapshotLabel sl:toDeleteOld.values()) {
+               if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid()))
+                  continue;// aktuell, unlöschbar
+               deleteList.add(sl);
+               SwingUtilities.invokeLater(() -> sl.setBackground(SnapshotLabel.deleteOldColor));// rot
+               deletable--;
+               // panelBackup.repaint(100);
+            }
+            for (SnapshotLabel sl:mixedList2) { // manuell gelöschte anbieten
+               if (deletable < 1)
+                  break;
+               if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid()))
+                  continue;// aktuell, unlöschbar
+               if (deleteList.contains(sl))
+                  continue;// wird schon gelöscht
+               if (!manualDelete.containsValue(sl))
+                  continue; // nicht angeklickt
+               deleteList.add(sl);
+               SwingUtilities.invokeLater(() -> sl.setBackground(SnapshotLabel.delete2Color)); // orange
+               deletable--;
+               // panelBackup.repaint(100);
+            }
+            for (SnapshotLabel sl:mixedList2) { // dann Sackgassen anbieten
+               if (deletable < 1)
+                  break;
+               if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid()))
+                  continue;// aktuell, unlöschbar
+               if (deleteList.contains(sl))
+                  continue;
+               if (keineSackgasse.containsValue(sl))
+                  continue;
+               deleteList.add(sl);
+               SwingUtilities.invokeLater(() -> sl.setBackground(SnapshotLabel.delete2Color));
+               deletable--;
+               // panelBackup.repaint(100);
+            }
+            for (SnapshotLabel sl:mixedList2) { // zuletzt reguläre Snapshots anbieten
+               if (deletable < 1)
+                  break;
+               if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid()))
+                  continue;// aktuell, unlöschbar
+               if (deleteList.contains(sl))
+                  continue;
+               deleteList.add(sl);
+               SwingUtilities.invokeLater(() -> sl.setBackground(SnapshotLabel.delete2Color));
+               deletable--;
+               // panelBackup.repaint(100);
+            }
          }
-      }
-      ConcurrentSkipListMap<String, SnapshotLabel> keineSackgasse=new ConcurrentSkipListMap<>();
-      // suche Sackgassen um sie bevorzugt zu löschen
-      if (!backupLabels_KeyO.isEmpty()) {
-         SnapshotLabel child=backupLabels_KeyO.lastEntry().getValue();
-         while (child != null) {
-            if (keineSackgasse.containsValue(child))
-               break; // Bloß keine Endlosschleife !
-            Snapshot s=child.snapshot;
-            keineSackgasse.put(s.keyO(), child);
-            String parent_uuid=s.parent_uuid();
-            SnapshotLabel parent=backupLabels_Uuid.get(parent_uuid);
-            child=parent;
-         }
-      }
-      // KEEP_MINIMUM
-      int minimum=PanelMeta.DEFAULT_META;
-      if (Backsnap.KEEP_MINIMUM.get())
-         minimum=parseIntOrDefault(Backsnap.KEEP_MINIMUM.getParameter(), PanelMeta.DEFAULT_META);
-      ArrayList<SnapshotLabel> mixedList2;
-      synchronized (getPanelBackup().mixedList) {
-         mixedList2=new ArrayList<>(getPanelBackup().mixedList);
-      }
-      int deletable=mixedList2.size() - minimum;
-      for (SnapshotLabel sl:backupLabels_DirName.values()) { // GrundFarbe setzen
-         if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid())) {
-            sl.setBackground(SnapshotLabel.allesOkColor);// Das ist ein aktuelles Backup ! (unlöschbar)
-            snapshotLabels_Uuid.get(sl.snapshot.received_uuid()).setBackground(SnapshotLabel.allesOkColor);
-         } else
-            sl.setBackground(SnapshotLabel.naheColor);
-         panelBackup.repaint(100);
-      }
-      ArrayList<SnapshotLabel> deleteList=new ArrayList<>();
-      // Schauen was gelöscht werden könnte von den alten Backups
-      for (SnapshotLabel sl:toDeleteOld.values()) {
-         if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid()))
-            continue;// aktuell, unlöschbar
-         deleteList.add(sl);
-         sl.setBackground(SnapshotLabel.deleteOldColor);// rot
-         deletable--;
-         panelBackup.repaint(100);
-      }
-      for (SnapshotLabel sl:mixedList2) { // manuell gelöschte anbieten
-         if (deletable < 1)
-            break;
-         if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid()))
-            continue;// aktuell, unlöschbar
-         if (deleteList.contains(sl))
-            continue;// wird schon gelöscht
-         if (!manualDelete.containsValue(sl))
-            continue; // nicht angeklickt
-         deleteList.add(sl);
-         sl.setBackground(SnapshotLabel.delete2Color); // orange
-         deletable--;
-         panelBackup.repaint(100);
-      }
-      for (SnapshotLabel sl:mixedList2) { // dann Sackgassen anbieten
-         if (deletable < 1)
-            break;
-         if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid()))
-            continue;// aktuell, unlöschbar
-         if (deleteList.contains(sl))
-            continue;
-         if (keineSackgasse.containsValue(sl))
-            continue;
-         deleteList.add(sl);
-         sl.setBackground(SnapshotLabel.delete2Color);
-         deletable--;
-         panelBackup.repaint(100);
-      }
-      for (SnapshotLabel sl:mixedList2) { // zuletzt reguläre Snapshots anbieten
-         if (deletable < 1)
-            break;
-         if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid()))
-            continue;// aktuell, unlöschbar
-         if (deleteList.contains(sl))
-            continue;
-         deleteList.add(sl);
-         sl.setBackground(SnapshotLabel.delete2Color);
-         deletable--;
-         panelBackup.repaint(100);
-      }
+      });
    }
    public void delete(final JButton jButton, Color deleteColor) throws IOException {
       ConcurrentSkipListMap<String, SnapshotLabel> alle=getPanelBackup().labelTree_KeyO;
@@ -429,7 +439,7 @@ public class BacksnapGui implements MouseListener {
       }
       ConcurrentSkipListMap<String, Snapshot> neuList=getPanelBackup().setVolume(passendBackups.values());
       for (SnapshotLabel label:getPanelBackup().getLabels().values())
-         label.addMouseListener(this);
+         SwingUtilities.invokeLater(() -> label.addMouseListener(this));
       int linefeeds=0;
       StringBuilder sb=new StringBuilder("Backup:");
       for (Snapshot snap:neuList.values()) {
@@ -440,9 +450,12 @@ public class BacksnapGui implements MouseListener {
          }
       }
       Backsnap.logln(2, sb.toString());
-      abgleich();
-      getPanelBackup().setTitle("Backup to Label " + backupLabel);
-      getPanelBackup().setInfo(backupTree.mount());
+      abgleich(); // läuft virtuell
+      SnapshotPanel pb=getPanelBackup();
+      SwingUtilities.invokeLater(() -> {
+         pb.setTitle("Backup to Label " + backupLabel);
+         pb.setInfo(backupTree.mount());
+      });
    }
    public JSplitPane getSplitPaneSnapshots() throws IOException {
       if (splitPaneSnapshots == null) {
@@ -812,12 +825,14 @@ public class BacksnapGui implements MouseListener {
     * @param parentSnapshot
     */
    public void setBackupInfo(Snapshot srcSnapshot, Snapshot parentSnapshot) {
-      Backsnap.logln(7, "<html>" + srcSnapshot.getSnapshotMountPath().toString());
-      getLblSnapshot().setText("backup of : ");
-      getTxtSnapshot().setText(srcSnapshot.dirName());
-      getLblParent().setText((parentSnapshot == null) ? " " : "based on:");
-      getTxtParent().setText((parentSnapshot == null) ? " " : parentSnapshot.dirName());
-      getPanelWork().repaint(50);
+      Backsnap.logln(7, srcSnapshot.getSnapshotMountPath().toString());
+      SwingUtilities.invokeLater(() -> {
+         getLblSnapshot().setText("backup of : ");
+         getTxtSnapshot().setText(srcSnapshot.dirName());
+         getLblParent().setText((parentSnapshot == null) ? " " : "based on:");
+         getTxtParent().setText((parentSnapshot == null) ? " " : parentSnapshot.dirName());
+         getPanelWork().repaint(50);
+      });
    }
    /**
     * @param backupVolume
@@ -827,6 +842,27 @@ public class BacksnapGui implements MouseListener {
     * 
     */
    public void refreshGUI(Pc backupPc) {
+      virtual.execute(new Runnable() {
+         @Override
+         public void run() {
+            try {
+               if (refreshGUIcKey == null) {
+                  refreshBackupPc=backupPc;
+                  refreshGUIcKey=backupPc.extern() + ":" + backupPc.getBackupVolume().devicePath();
+               }
+               Commandline.removeFromCache(refreshGUIcKey); // umgeht den cache
+               setBackup(new SnapTree(refreshBackupPc.getBackupVolume()), refreshBackupPc.getBackupLabel());
+               if (Instant.now().isAfter(refreshUsage)) {
+                  getPanelMaintenance().setUsage(new Usage(refreshBackupPc.getBackupVolume(), false));
+                  refreshUsage=Instant.now().plusSeconds(60);
+               }
+               abgleich();
+               getPanelBackup().repaint(50);
+            } catch (IOException e) {
+               e.printStackTrace();
+            }
+         }
+      });
       SwingUtilities.invokeLater(() -> {
          try {
             if (refreshGUIcKey == null) {
@@ -844,6 +880,17 @@ public class BacksnapGui implements MouseListener {
          } catch (IOException e) {
             e.printStackTrace();
          }
+      });
+   }
+   /**
+    * @param counter
+    * @param size
+    */
+   public void updateProgressbar(int counter, int size) {
+      SwingUtilities.invokeLater(() -> {
+         getProgressBar().setValue(counter);
+         getProgressBar().setString(counter + "/" + size);
+         getProgressBar().repaint(50);
       });
    }
 }

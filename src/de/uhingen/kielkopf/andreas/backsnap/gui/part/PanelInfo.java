@@ -1,10 +1,12 @@
 package de.uhingen.kielkopf.andreas.backsnap.gui.part;
 
+import java.awt.*;
+
 import javax.swing.JPanel;
+
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.Usage;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
-import java.awt.*;
 
 /**
  * @author Andreas Kielkopf

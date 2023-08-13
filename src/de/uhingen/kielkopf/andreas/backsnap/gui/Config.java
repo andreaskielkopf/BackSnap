@@ -3,13 +3,10 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.gui;
 
-import java.awt.EventQueue;
-import java.awt.BorderLayout;
+import java.awt.*;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
-
-import java.awt.Color;
 
 /**
  * @author Andreas Kielkopf

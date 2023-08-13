@@ -3,23 +3,19 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.gui;
 
-import java.awt.FlowLayout;
-
 import static javax.swing.SwingUtilities.invokeLater;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.Mount;
-
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.ListSelectionEvent;
 
 /**
  * @author Andreas Kielkopf

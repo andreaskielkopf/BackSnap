@@ -3,14 +3,14 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.gui.part;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.GridLayout;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.stream.Stream;
 
 import javax.swing.*;
-
 import javax.swing.border.TitledBorder;
 
 /**

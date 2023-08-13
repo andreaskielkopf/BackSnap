@@ -18,11 +18,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import javax.swing.SwingUtilities;
-
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
+import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
 import de.uhingen.kielkopf.andreas.beans.cli.Flag;
 import de.uhingen.kielkopf.andreas.beans.data.Link;
 
@@ -286,8 +285,8 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          return;
       Backsnap.BTRFS_LOCK.lock();
       try {
-         if (Backsnap.bsGui != null)
-            SwingUtilities.invokeLater(() -> Backsnap.bsGui.getPanelMaintenance().updateButtons());
+         if (Backsnap.bsGui instanceof BacksnapGui gui)
+            gui.getPanelMaintenance().updateButtons();
          StringBuilder readonlySB=new StringBuilder();
          if (parent != null)
             readonlySB.append("btrfs property set ").append(parent.getSnapshotMountPath()).append(" ro ")
@@ -309,8 +308,8 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          }
       } finally {
          Backsnap.BTRFS_LOCK.unlock();
-         if (Backsnap.bsGui != null)
-            SwingUtilities.invokeLater(() -> Backsnap.bsGui.getPanelMaintenance().updateButtons());
+         if (Backsnap.bsGui instanceof BacksnapGui gui)
+            gui.getPanelMaintenance().updateButtons();
       }
    }
    /**
@@ -364,14 +363,14 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          SubVolumeList subVolumes=new SubVolumeList(Pc.getPc(externSsh));
          Mount srcVolume=subVolumes.mountTree().get(sourceDir);
          if (srcVolume == null)
-            throw new RuntimeException(Backsnap.LF+ "Could not find srcDir: " + sourceDir);
+            throw new RuntimeException(Backsnap.LF + "Could not find srcDir: " + sourceDir);
          if (srcVolume.btrfsMap().isEmpty())
-            throw new RuntimeException(Backsnap.LF+ "Ingnoring, because there are no snapshots in: " + sourceDir);
+            throw new RuntimeException(Backsnap.LF + "Ingnoring, because there are no snapshots in: " + sourceDir);
          Backsnap.logln(1, "backup snapshots from: " + srcVolume.keyM());
          // BackupVolume ermitteln
          Mount backupVolume=subVolumes.pc().getBackupVolume();
          if (backupVolume == null)
-            throw new RuntimeException(Backsnap.LF+"Could not find backupDir: " + backupDir);
+            throw new RuntimeException(Backsnap.LF + "Could not find backupDir: " + backupDir);
          Backsnap.logln(1, "Will try to use backupDir: " + backupVolume.keyM());
          // Subdir ermitteln
          Path pathBackupDir=backupVolume.mountPath().relativize(Path.of(backupDir));

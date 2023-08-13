@@ -3,19 +3,20 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.gui.part;
 
+import java.awt.BorderLayout;
+import java.io.IOException;
+
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import org.eclipse.jdt.annotation.NonNull;
+
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
-
-import java.beans.Beans;
-import java.io.IOException;
-import java.awt.BorderLayout;
 
 /**
  * @author Andreas Kielkopf
@@ -31,20 +32,20 @@ public class PanelMeta extends JPanel {
    private JPanel      panel;
    private JPanel      panel_c;
    private TxtFeld     xtxDisabled;
-   private BacksnapGui bsGui;
+ @NonNull  private final BacksnapGui bsGui;
    /**
     * Create the panel.
     */
-   public PanelMeta() {
-      this(null);
-   }
+//   public PanelMeta() {
+//      this(null);
+//   }
    /**
     * @param bsGui
     */
-   public PanelMeta(BacksnapGui b) {
-      if (!Beans.isDesignTime())
-         if (b == null)
-            throw new NullPointerException("BacksnapGui ist null");
+   public PanelMeta(@NonNull BacksnapGui b) {
+//      if (!Beans.isDesignTime())
+//         if (b == null)
+//            throw new NullPointerException("BacksnapGui ist null");
       bsGui=b;
       initialize();
    }
@@ -71,13 +72,13 @@ public class PanelMeta extends JPanel {
       Backsnap.KEEP_MINIMUM.set(s);
       getSliderMeta().setEnabled(s);
       getBtnMeta().setEnabled(s & !Backsnap.BTRFS_LOCK.isLocked());
-      if (s && bsGui != null && !bsGui.getTglPause().isSelected())
+      if (s && !bsGui.getTglPause().isSelected())
          SwingUtilities.invokeLater(() -> bsGui.getTglPause().doClick());
    }
    public JButton getBtnMeta() {
       if (btnMeta == null) {
          btnMeta=new JButton("Delete some unneeded snapshots");
-         if (bsGui != null)
+//         if (bsGui != null)
             btnMeta.addActionListener(e -> {
                try {
                   bsGui.delete(getBtnMeta(), SnapshotLabel.delete2Color);
@@ -109,7 +110,7 @@ public class PanelMeta extends JPanel {
          sliderMeta.setPaintLabels(true);
          sliderMeta.setPaintTicks(true);
          sliderMeta.setValue(DEFAULT_META - 1);
-         if (bsGui != null)
+//         if (bsGui != null)
             sliderMeta.addChangeListener(new ChangeListener() {
                @Override
                public void stateChanged(final ChangeEvent e) {

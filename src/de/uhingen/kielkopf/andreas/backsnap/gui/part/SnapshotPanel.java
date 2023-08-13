@@ -10,12 +10,12 @@ import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 
-import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
+import de.uhingen.kielkopf.andreas.backsnap.btrfs.Mount;
+import de.uhingen.kielkopf.andreas.backsnap.btrfs.Snapshot;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
-
-import javax.swing.border.TitledBorder;
 
 /**
  * @author Andreas Kielkopf
