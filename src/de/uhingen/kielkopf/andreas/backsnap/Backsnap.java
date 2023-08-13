@@ -59,7 +59,7 @@ public class Backsnap {
    static public final Flag          KEEP_MINIMUM     =new Flag('m', "keepminimum");    // mark all but minimum
                                                                                         // snapshots
    static public final String        BACK_SNAP_VERSION=                                 // version
-            "BackSnap for Snapper and Timeshift(beta) Version 0.6.2.15 (2023/08/06)";
+            "BackSnap for Snapper and Timeshift(beta) Version 0.6.3.0 (2023/08/013)";
    static public final ReentrantLock BTRFS_LOCK       =new ReentrantLock();
    static public final String        LF               =System.lineSeparator();
    static public void main(String[] args) {

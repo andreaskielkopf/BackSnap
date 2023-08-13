@@ -1,8 +1,9 @@
-# [HowTo] Backup btrfs snapshots with send/receive
-## How to use BackSnap
+# How to use BackSnap
+##### or [HowTo] Backup btrfs snapshots with send/receive
 
 * In the **[master](../master/gallery/gallery.md)** branch is a version for use with "snapper"
 * In the **[timeshift](../timeshift/gallery/gallery.md)** branch is a beta version for use with "timeshift"
+
 
 ![BackSnap in action](./gallery/timeshift.png  "BackSnap gui")
 With BackSnap, regular backups for btrfs are no longer a burden, but an easy task.
@@ -64,13 +65,14 @@ Btrfs then corresponds to 3-2-1 Backup (Near CDP)
 * The backup is compressed, but at the same time all snapshots in the backup are **always fully read-only accessible**
 
 ## Requirements:
-* **Java 17** or newer on the computer
+* **Java 17** or newer on the computer (better: java 21)<img src="gallery/needsJava21.png" width=7% height=7%>
 * Recommended: **pv** installed
 * BTRFS both on the computer (recommended as **RAID 1** with 2 devices) and on the backup medium (single)
 * **snapper** layout of the snapshots 
 * The snapshots must be **readonly** otherwise btrfs cannot transfer them.
 * Recommended: external backup medium e.g. USB3 hard drive
 * Recommended: your own bash script to start the backup easily
+
 
 # BackSnap:
 The Java program BackSnap backs up ALL snapshots from a specified directory to another directory on a

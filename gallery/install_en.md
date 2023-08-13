@@ -1,7 +1,7 @@
 # Installation
 BackSnap is intentionally easy to install.
 ## 1. Install `JAVA`
-This varies greatly depending on the distribution used. Please refer to your **distribution guide** on how to install **java** so you do it right from the start. I recommend using `java openjdk 17 or 20` but version 17 and any above should work fine.
+This varies greatly depending on the distribution used. Please refer to your **distribution guide** on how to install **java** so you do it right from the start. I recommend using `java openjdk 21`.
 #### For manjaro or arch:
 `pamac install jdk-openjdk`
 
@@ -13,9 +13,9 @@ or
 #### Test as `user` and as `root`:
 `java-version`
 ```
-openjdk version "19.0.2" 2023-01-17
-OpenJDK Runtime Environment (build 19.0.2+7)
-OpenJDK 64-Bit Server VM (build 19.0.2+7, mixed mode)
+openjdk version "xx.0.2" 2023-01-17
+OpenJDK Runtime Environment (build xx.0.2+7)
+OpenJDK 64-Bit Server VM (build xx.0.2+7, mixed mode)
 ```
 See also: [archlinux wiki java](https://wiki.archlinux.org/title/java) , [manjaro pamac](https://wiki.manjaro.org/index.php/Pamac) , [manjaro pacman] (https://wiki.manjaro.org/index.php/Pacman_Overview) , [manjaro trizen](https://wiki.archlinux.de/title/Trizen)
 
