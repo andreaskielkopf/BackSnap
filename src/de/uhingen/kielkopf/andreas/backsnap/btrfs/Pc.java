@@ -22,7 +22,7 @@ public record Pc(String extern, // Marker für diesen PC
          Link<SubVolumeList> subVolumeList, // Liste der Subvolumes
          Link<Version> btrfsVersion, // BTRFS-Version
          Link<Version> kernelVersion, // Kernel-Version
-         Link<String> backupLabel) {// BackupLabel am BackupPC
+         Link<Path> backupLabel) {// BackupLabel am BackupPC
    static final ConcurrentSkipListMap<String, Pc> pcCache=new ConcurrentSkipListMap<String, Pc>();
    /* In /tmp werden bei Timeshift Pcs die Snapshots vorübergehnd eingehängt */
    static public final String TMP_BTRFS_ROOT="/tmp/BtrfsRoot";
@@ -43,7 +43,7 @@ public record Pc(String extern, // Marker für diesen PC
    }
    private Pc(String extern)/* throws IOException */ {
       this(extern, new ConcurrentSkipListMap<>(), new Link<SubVolumeList>("subVolumeList"), new Link<Version>("BTRFS"),
-               new Link<Version>("Kernel"), new Link<String>("backupLabel"));
+               new Link<Version>("Kernel"), new Link<Path>("backupLabel"));
    }
    public boolean isExtern() {
       return extern.contains("@");
@@ -202,10 +202,10 @@ public record Pc(String extern, // Marker für diesen PC
    // @Override public boolean equals(Object o) { if (o instanceof Pc pc) return Objects.equals(extern, pc.extern);
    // return false; }
    // @Override public int hashCode() { return Objects.hash(extern); }
-   public final String getBackupLabel() {
+   public final Path getBackupLabel() {
       return backupLabel.get();
    }
-   public final void setBackupLabel(String bl) {
+   public final void setBackupLabel(Path bl) {
       backupLabel.set(bl);
    }
    /**
@@ -216,9 +216,15 @@ public record Pc(String extern, // Marker für diesen PC
    public Mount getBackupVolume() throws IOException {
       ConcurrentSkipListMap<String, Mount> mt=getSubVolumeList().mountTree();
       String vorschlag=extern() + ":" + MNT_BACKSNAP;
-      if (mt.containsKey(vorschlag))
-         return mt.get(vorschlag);
-      return null;
+      if (mt.get(vorschlag) instanceof Mount m) {
+//         if (!m.btrfsMap().isEmpty())
+            return m;
+//         throw new FileNotFoundException(
+//                  System.lineSeparator() + "Ingnoring, because there are no snapshots in: " + this);
+      }
+      throw new RuntimeException(System.lineSeparator() + "Could not find the volume for backupDir: " + Pc.MNT_BACKSNAP
+               + "/" + OneBackup.backupPc.getBackupLabel() + System.lineSeparator()
+               + "Maybe it needs to be mounted first");
    }
    @Override
    public String toString() {

@@ -53,19 +53,37 @@ public record SnapConfig(Mount volumeMount, Mount snapshotMount) {
    // }
    // return l;
    // }
-   static public SnapConfig getConfig(Pc pc, Path srcDir) throws IOException {
-      List<SnapConfig> l=pc.getSnapConfigs();
+//   @Deprecated
+//   static public SnapConfig getConfig(Pc pc, Path srcDir) throws IOException {
+//      List<SnapConfig> l=pc.getSnapConfigs();
+//      for (SnapConfig snapConfig:l) {
+//         Backsnap.logln(9, snapConfig.toString());
+//         if (snapConfig.volumeMount.mountPath().equals(srcDir)) {
+//            System.err.println("Treffer: volumeMount " + srcDir);
+//            return snapConfig;
+//         }
+//         if (snapConfig.snapshotMount.mountPath().equals(srcDir)) {
+//            System.err.println("Treffer: snapshotMount " + srcDir);
+//            return snapConfig;
+//         }
+//      }
+//      return null;
+//   }
+   static public SnapConfig getConfig(OneBackup oneBackup) throws IOException {
+      List<SnapConfig> l=oneBackup.srcPc().getSnapConfigs();
       for (SnapConfig snapConfig:l) {
          Backsnap.logln(9, snapConfig.toString());
-         if (snapConfig.volumeMount.mountPath().equals(srcDir)) {
-            System.err.println("Treffer: volumeMount "+srcDir);
-            return snapConfig;}
-         if (snapConfig.snapshotMount.mountPath().equals(srcDir)) {
-            System.err.println("Treffer: snapshotMount "+srcDir);return snapConfig;
+         if (snapConfig.volumeMount.mountPath().equals(oneBackup.srcPath())) {
+            System.err.println("Treffer: volumeMount " + oneBackup.srcPath());
+            return snapConfig;
          }
-            
+         if (snapConfig.snapshotMount.mountPath().equals(oneBackup.srcPath())) {
+            System.err.println("Treffer: snapshotMount " + oneBackup.srcPath());
+            return snapConfig;
+         }
       }
-      return null;
+      throw new RuntimeException(
+               System.lineSeparator() + "Could not find any snapshots for srcDir: " + oneBackup.srcPath());
    }
    public Pc pc() {
       return snapshotMount.pc();

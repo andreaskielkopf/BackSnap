@@ -166,14 +166,13 @@ public class BacksnapGui implements MouseListener {
     * @param bsGui
     * @throws IOException
     */
-   static public BacksnapGui getGui(SnapConfig srcConfig, SnapTree backupTree, Pc backupPc1, Usage usage)
-            throws IOException {
+   static public BacksnapGui getGui(SnapConfig srcConfig, SnapTree backupTree, Usage usage) throws IOException {
       if (backSnapGui == null) {
          backSnapGui=new BacksnapGui();
          main2(null); // zeigt die GUI an
          backSnapGui.setArgs(Flag.getArgs());
          backSnapGui.setSrc(srcConfig);
-         backSnapGui.setBackup(backupTree, backupPc1.getBackupLabel());
+         backSnapGui.setBackup(backupTree, OneBackup.backupPc.getBackupLabel());
          backSnapGui.setUsage(usage);
          SwingUtilities.invokeLater(() -> {
             try {
@@ -427,9 +426,9 @@ public class BacksnapGui implements MouseListener {
     * @throws IOException
     * 
     */
-   public void setBackup(SnapTree backupTree, String backupLabel) throws IOException {
+   public void setBackup(SnapTree backupTree, Path backupLabel) throws IOException {
       ConcurrentSkipListMap<String, Snapshot> passendBackups=new ConcurrentSkipListMap<>();
-      Path rest=Path.of(Pc.MNT_BACKSNAP, backupLabel);
+      Path rest=Path.of(Pc.MNT_BACKSNAP).resolve(backupLabel);
       for (Snapshot snapshot:backupTree.dateMap().values()) { // sortiert nach otime
          Path pfad=snapshot.getBackupMountPath();
          if (pfad == null)
@@ -831,7 +830,7 @@ public class BacksnapGui implements MouseListener {
          getTxtSnapshot().setText(srcSnapshot.dirName());
          getLblParent().setText((parentSnapshot == null) ? " " : "based on:");
          getTxtParent().setText((parentSnapshot == null) ? " " : parentSnapshot.dirName());
-         getPanelWork().repaint(50);
+//         getPanelWork().repaint(50);
       });
    }
    /**

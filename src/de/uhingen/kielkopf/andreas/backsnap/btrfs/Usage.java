@@ -2,6 +2,7 @@
  * 
  */
 package de.uhingen.kielkopf.andreas.backsnap.btrfs;
+
 import static de.uhingen.kielkopf.andreas.beans.RecordParser.getString;
 
 import java.io.IOException;
@@ -37,17 +38,17 @@ public record Usage(String size, String allocated, String unallcoated, String mi
    static private final long GiB=KiB * MiB;
    static private final long TiB=MiB * MiB;
    public Usage(String u) {
-      this(getString(SIZE.matcher(u)), getString(ALLOCATED.matcher(u)),
-               getString(UNALLOCATED.matcher(u)), getString(MISSING.matcher(u)),
-               getString(SLACK.matcher(u)), getString(USED.matcher(u)),
-               getString(RATIO_D.matcher(u)), getString(RATIO_M.matcher(u)),
-               getString(FREE.matcher(u)), getString(RESERVE.matcher(u)),
-               getString(DATA.matcher(u)), getString(METADATA.matcher(u)),
+      this(getString(SIZE.matcher(u)), getString(ALLOCATED.matcher(u)), getString(UNALLOCATED.matcher(u)),
+               getString(MISSING.matcher(u)), getString(SLACK.matcher(u)), getString(USED.matcher(u)),
+               getString(RATIO_D.matcher(u)), getString(RATIO_M.matcher(u)), getString(FREE.matcher(u)),
+               getString(RESERVE.matcher(u)), getString(DATA.matcher(u)), getString(METADATA.matcher(u)),
                getString(SYSTEM.matcher(u)));
       // System.out.println(u);
    }
    public Usage(Mount m, boolean b) throws IOException {
       this(getMString(m, b));
+      if (needsBalance())
+         System.err.println("It seems urgently advisable to balance the backup volume");
    }
    /**
     * @param m

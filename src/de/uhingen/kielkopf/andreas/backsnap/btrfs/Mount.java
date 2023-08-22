@@ -116,6 +116,9 @@ public record Mount(Pc pc,  Path devicePath, Path mountPath, Path btrfsPath, Str
                      || line.contains("connection unexpectedly closed"))
                throw new IOException(line);
       }
+//      if (btrfsMap().isEmpty())
+//         throw new FileNotFoundException(System.lineSeparator() + "Ingnoring, because there are no snapshots in: " 
+//      + pc.toString());
    }
    public void updateSnapshots() throws IOException {
       SnapTree      snapTree         =SnapTree.getSnapTree(this);
