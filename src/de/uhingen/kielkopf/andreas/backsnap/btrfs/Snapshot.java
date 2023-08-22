@@ -45,6 +45,10 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    static final Pattern NUMERIC_DIRNAME=Pattern.compile("([0-9]+)/snapshot$");
    static final Pattern DIRNAME=Pattern.compile("([^/]+)/snapshot$");
    static final Pattern SUBVOLUME=Pattern.compile("^(@[0-9a-zA-Z.]+)/.*[0-9]+/snapshot$");
+   /**
+    * 
+    */
+   private static final String PROPERTY_SET="btrfs property set ";
    public Snapshot(Mount mount, String from_btrfs) throws IOException {
       this(getMount(mount, getPath(BTRFS_PATH.matcher(from_btrfs))), getInt(ID.matcher(from_btrfs)),
                getInt(GEN.matcher(from_btrfs)), getInt(CGEN.matcher(from_btrfs)), getInt(PARENT.matcher(from_btrfs)),
@@ -214,9 +218,9 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       Path abs=mount.mountPath().resolve(rel);
       return abs;
    }
-   public Path getSnapshotMountPath() {
+   public Path getSnapshotMountPath() throws FileNotFoundException {
       if (mount == null)
-         return null;
+         throw new FileNotFoundException("Could not find dir: " + btrfsPath);
       if (Backsnap.TIMESHIFT.get()) {
          Optional<Mount> om=mount.pc().getTimeshiftBase();
          if (om.isPresent())
@@ -280,32 +284,31 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
     * @param b
     * @throws IOException
     */
-   static public void setReadonly(Snapshot parent, Snapshot snapshot, boolean readonly) throws IOException {
-      if (!snapshot.btrfsPath().toString().contains("timeshift"))
+   static public void setReadonly(Snapshot parent, Snapshot snapshot, boolean ro) throws IOException {
+      StringBuilder readonlySB=new StringBuilder();
+      if (parent instanceof Snapshot p && p.btrfsPath().toString().contains("timeshift"))
+         readonlySB.append(PROPERTY_SET).append(p.getSnapshotMountPath()).append(" ro ").append(ro).append(";");
+      if (snapshot instanceof Snapshot s && s.btrfsPath().toString().contains("timeshift"))
+         readonlySB.append(PROPERTY_SET).append(s.getSnapshotMountPath()).append(" ro ").append(ro).append(";");
+      if (readonlySB.isEmpty())
          return;
+      if (Backsnap.bsGui instanceof BacksnapGui gui)
+         gui.getPanelMaintenance().updateButtons();
+      String readonlyCmd=snapshot.mount().pc().getCmd(readonlySB);
+      Backsnap.logln(4, readonlyCmd);// if (!DRYRUN.get())
       Backsnap.BTRFS_LOCK.lock();
-      try {
-         if (Backsnap.bsGui instanceof BacksnapGui gui)
-            gui.getPanelMaintenance().updateButtons();
-         StringBuilder readonlySB=new StringBuilder();
-         if (parent != null)
-            readonlySB.append("btrfs property set ").append(parent.getSnapshotMountPath()).append(" ro ")
-                     .append(readonly).append(";");
-         readonlySB.append("btrfs property set ").append(snapshot.getSnapshotMountPath()).append(" ro ")
-                  .append(readonly);
-         String readonlyCmd=snapshot.mount().pc().getCmd(readonlySB);
-         Backsnap.logln(4, readonlyCmd);// if (!DRYRUN.get())
-         try (CmdStream readonlyStream=Commandline.executeCached(readonlyCmd, null)) { // not cached
-            readonlyStream.backgroundErr();
-            readonlyStream.erg().forEach(t -> Backsnap.logln(4, t));
-            readonlyStream.waitFor();
-            for (String line:readonlyStream.errList())
-               if (line.contains("No route to host") || line.contains("Connection closed")
-                        || line.contains("connection unexpectedly closed")) {
-                  Backsnap.disconnectCount=10;
-                  break;
-               } // ende("");// R
-         }
+      // try {
+      try (CmdStream readonlyStream=Commandline.executeCached(readonlyCmd, null)) { // not cached
+         readonlyStream.backgroundErr();
+         readonlyStream.erg().forEach(t -> Backsnap.logln(4, t));
+         readonlyStream.waitFor();
+         for (String line:readonlyStream.errList())
+            if (line.contains("No route to host") || line.contains("Connection closed")
+                     || line.contains("connection unexpectedly closed")) {
+               Backsnap.disconnectCount=10;
+               break;
+            } // ende("");// R
+         // }
       } finally {
          Backsnap.BTRFS_LOCK.unlock();
          if (Backsnap.bsGui instanceof BacksnapGui gui)
@@ -325,8 +328,8 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          return;
       Backsnap.BTRFS_LOCK.lock();
       try {
-         String setReadonlyCmd=mount().pc().getCmd(new StringBuilder("btrfs property set ")
-                  .append(getSnapshotMountPath()).append(" ro ").append(readonly));
+         String setReadonlyCmd=mount().pc().getCmd(
+                  new StringBuilder(PROPERTY_SET).append(getSnapshotMountPath()).append(" ro ").append(readonly));
          Backsnap.logln(4, setReadonlyCmd);// if (!DRYRUN.get())
          try (CmdStream setReadonlyStream=Commandline.executeCached(setReadonlyCmd, null)) { // not cached
             setReadonlyStream.backgroundErr();

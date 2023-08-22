@@ -6,6 +6,7 @@ package de.uhingen.kielkopf.andreas.backsnap.gui;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
@@ -822,8 +823,9 @@ public class BacksnapGui implements MouseListener {
    /**
     * @param srcSnapshot
     * @param parentSnapshot
+    * @throws FileNotFoundException 
     */
-   public void setBackupInfo(Snapshot srcSnapshot, Snapshot parentSnapshot) {
+   public void setBackupInfo(Snapshot srcSnapshot, Snapshot parentSnapshot) throws FileNotFoundException {
       Backsnap.logln(7, srcSnapshot.getSnapshotMountPath().toString());
       SwingUtilities.invokeLater(() -> {
          getLblSnapshot().setText("backup of : ");

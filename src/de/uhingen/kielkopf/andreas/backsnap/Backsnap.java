@@ -38,7 +38,7 @@ public class Backsnap {
    static public int                 disconnectCount  =0;
    static Future<?>                  task             =null;
    static public BacksnapGui         bsGui;
-   static private int                textPos    =0;
+   static private int                textPos          =0;
    static final Flag                 HELP             =new Flag('h', "help");           // show usage
    static final Flag                 VERSION          =new Flag('x', "version");        // show date and version
    static final Flag                 DRYRUN           =new Flag('d', "dryrun");         // do not do anythimg ;-)
@@ -56,7 +56,7 @@ public class Backsnap {
    static public final Flag          KEEP_MINIMUM     =new Flag('m', "keepminimum");    // mark all but minimum
                                                                                         // snapshots
    static public final String        BACK_SNAP_VERSION=                                 // version
-            "BackSnap for Snapper and Timeshift(beta) Version 0.6.3.3 (2023/08/22)";
+            "BackSnap for Snapper and Timeshift(beta) Version 0.6.3.5 (2023/08/22)";
    static public final ReentrantLock BTRFS_LOCK       =new ReentrantLock();
    static public final String        LF               =System.lineSeparator();
    static public void main(String[] args) {
@@ -141,7 +141,7 @@ public class Backsnap {
             try {
                if (bsGui instanceof BacksnapGui gui)
                   gui.updateProgressbar(counter, srcConfig.volumeMount().otimeKeyMap().size());
-               if (!backup(sourceSnapshot, srcConfig.snapshotMount(), backupTree))
+               if (!backup(sourceSnapshot, backupTree))
                   continue;
                // Anzeige im Progressbar anpassen
                if (bsGui instanceof BacksnapGui gui)
@@ -184,7 +184,7 @@ public class Backsnap {
     * @param dMap
     * @throws IOException
     */
-   static private boolean backup(Snapshot srcSnapshot, Mount srcVolume, SnapTree backupMap) throws IOException {
+   static private boolean backup(Snapshot srcSnapshot, SnapTree backupMap) throws IOException {
       if (bsGui instanceof BacksnapGui gui)
          gui.setBackupInfo(srcSnapshot, parentSnapshot);
       if (srcSnapshot.isBackup()) {
@@ -193,8 +193,7 @@ public class Backsnap {
       }
       if (backupMap.rUuidMap().containsKey(srcSnapshot.uuid())) {
          if (textPos == 0) {
-            logln(5, "");
-            log(5, "Überspringe bereits vorhandene Snapshots:");
+            lnlog(5, "Überspringe bereits vorhandene Snapshots:");
             textPos=42;
          } else
             if (textPos >= 120) {
@@ -207,42 +206,30 @@ public class Backsnap {
          return false;
       }
       textPos=0;
-      Path sDir=srcSnapshot.getSnapshotMountPath();
-      if (sDir == null)
-         throw new FileNotFoundException("Could not find dir: " + srcVolume);
       logln(9, "Paths.get(backupDir=" + oneBackup.backupLabel() + " dirName=" + srcSnapshot.dirName() + ")");
       Path bDir=Paths.get(Pc.MNT_BACKSNAP, oneBackup.backupLabel().toString(), srcSnapshot.dirName());
-      Path relMdir=backupMap.mount().mountPath().relativize(bDir);
-      Path bpq=backupMap.mount().btrfsPath().resolve(relMdir);
-      Path bSnapDir=bpq.resolve(SNAPSHOT);
-      logln(3, "");
-      log(3, bSnapDir.toString());
+      Path bSnapDir=backupMap.mount().btrfsPath().resolve(backupMap.mount().mountPath().relativize(bDir))
+               .resolve(SNAPSHOT);
+      lnlog(3, bSnapDir.toString());
       if (backupMap.btrfsPathMap().containsKey(bSnapDir)) {
          logln(5, "Der Snapshot scheint schon da zu sein ????");
          return true;
       }
-      log(3, "Backup of " + srcSnapshot.dirName());
-      if (parentSnapshot != null) // @todo genauer prüfen
-         logln(3, " based on " + parentSnapshot.dirName());
-      mkDirs(bDir, OneBackup.backupPc);
-      rsyncFiles(oneBackup.srcPc(), OneBackup.backupPc, sDir, bDir);
+      log(3, "Backup of " + srcSnapshot.dirName()
+               + (parentSnapshot instanceof Snapshot ps ? " based on " + ps.dirName() : ""));
+      mkDirs(bDir);
+      rsyncFiles(srcSnapshot.getSnapshotMountPath(), bDir);
       if (GUI.get())
-         bsGui.mark(srcSnapshot);
-      Pc backupPc=backupMap.mount().pc();
-      if (sendBtrfs(oneBackup.srcPc(), OneBackup.backupPc, srcSnapshot, bDir, backupPc))
+         bsGui.mark(srcSnapshot); // Pc backupPc=backupMap.mount().pc();
+      if (sendBtrfs(srcSnapshot, bDir))
          parentSnapshot=srcSnapshot;
       return true;
    }
-   static private boolean sendBtrfs(Pc srcPc4, Pc backupPc4, Snapshot s, Path bDir, Pc backupPc) throws IOException {
-      boolean sameSsh=(srcPc4.isExtern() && srcPc4.equals(backupPc4));
+   static private boolean sendBtrfs(Snapshot s, Path bDir) throws IOException {
+      boolean sameSsh=(oneBackup.srcPc().isExtern() && oneBackup.srcPc().equals(OneBackup.backupPc));
       StringBuilder btrfsSendSB=new StringBuilder("/bin/btrfs send ");
-      if (bsGui != null) {
-         bsGui.getLblSnapshot().setText("backup of : ");
-         bsGui.getTxtSnapshot().setText(s.dirName());
-         bsGui.getLblParent().setText((parentSnapshot == null) ? " " : "based on:");
-         bsGui.getTxtParent().setText((parentSnapshot == null) ? " " : parentSnapshot.dirName());
-         bsGui.getPanelWork().repaint(50);
-      }
+      if (bsGui instanceof BacksnapGui gui)
+         gui.setBackupInfo(s, parentSnapshot);
       if (COMPRESSED.get()) {
          if (s.mount().pc().getBtrfsVersion() instanceof Version v)
             if (v.getMayor() < 6)
@@ -250,38 +237,38 @@ public class Backsnap {
          if (s.mount().pc().getKernelVersion() instanceof Version v)
             if (v.getMayor() < 6)
                COMPRESSED.set(false);
-         if (backupPc.getBtrfsVersion() instanceof Version v)
+         if (OneBackup.backupPc.getBtrfsVersion() instanceof Version v)
             if (v.getMayor() < 6)
                COMPRESSED.set(false);
       }
       if (COMPRESSED.get())
          btrfsSendSB.append("--proto 2 --compressed-data ");
-      if (parentSnapshot != null) // @todo genauer prüfen
-         btrfsSendSB.append("-p ").append(parentSnapshot.getSnapshotMountPath()).append(" ");
+      if (parentSnapshot instanceof Snapshot p)
+         btrfsSendSB.append("-p ").append(p.getSnapshotMountPath()).append(" ");
       if (s.btrfsPath().toString().contains("timeshift-btrfs"))
          Snapshot.setReadonly(parentSnapshot, s, true);
       logln(2, "");
       btrfsSendSB.append(s.getSnapshotMountPath());
       if (!sameSsh)
-         if (srcPc4.isExtern())
-            btrfsSendSB.insert(0, "ssh " + srcPc4.extern() + " '").append("'");
+         if (oneBackup.srcPc().isExtern())
+            btrfsSendSB.insert(0, "ssh " + oneBackup.srcPc().extern() + " '").append("'");
          else
-            btrfsSendSB.insert(0, srcPc4.extern());
+            btrfsSendSB.insert(0, oneBackup.srcPc().extern());
       if (usePv)
          btrfsSendSB.append("|/bin/pv -f");
       btrfsSendSB.append("|");
       if (!sameSsh)
-         if (backupPc4.isExtern())
-            btrfsSendSB.append("ssh " + backupPc4.extern() + " '");
+         if (OneBackup.backupPc.isExtern())
+            btrfsSendSB.append("ssh " + OneBackup.backupPc.extern() + " '");
          else
-            btrfsSendSB.append(backupPc4.extern());
+            btrfsSendSB.append(OneBackup.backupPc.extern());
       btrfsSendSB.append("/bin/btrfs receive ").append(bDir).append(";/bin/sync");
       if (sameSsh)
-         if (srcPc4.isExtern())
-            btrfsSendSB.insert(0, "ssh " + srcPc4.extern() + " '");
+         if (oneBackup.srcPc().isExtern())
+            btrfsSendSB.insert(0, "ssh " + oneBackup.srcPc().extern() + " '");
       // else
       // send_cmd.insert(0, srcSsh); // @todo für einzelnes sudo anpassen ?
-      if (backupPc4.isExtern())
+      if (OneBackup.backupPc.isExtern())
          btrfsSendSB.append("'");
       logln(2, btrfsSendSB.toString());
       if (!DRYRUN.get()) {
@@ -350,23 +337,22 @@ public class Backsnap {
          return;
       bsGui.lblPvSetText(line);
    }
-   static private void rsyncFiles(Pc srcPc3, Pc backupPc3, Path sDir, Path bDir) throws IOException {
+   static private void rsyncFiles(Path sDir, Path bDir) throws IOException {
       StringBuilder rsyncSB=new StringBuilder("/bin/rsync -vdcptgo --exclude \"@*\" --exclude \"" + SNAPSHOT + "\" ");
       if (DRYRUN.get())
          rsyncSB.append("--dry-run ");
-      if (!srcPc3.equals(backupPc3))
-         if (srcPc3.isExtern())
-            rsyncSB.append(srcPc3.extern()).append(":");
+      boolean same=oneBackup.srcPc().equals(OneBackup.backupPc);
+      if (!same && (oneBackup.srcPc().isExtern()))
+         rsyncSB.append(oneBackup.srcPc().extern()).append(":");
       rsyncSB.append(sDir.getParent()).append("/ ");
-      if (!srcPc3.equals(backupPc3))
-         if (backupPc3.isExtern())
-            rsyncSB.append(backupPc3.extern()).append(":");
+      if (!same && (OneBackup.backupPc.isExtern()))
+         rsyncSB.append(OneBackup.backupPc.extern()).append(":");
       rsyncSB.append(bDir).append("/");
-      if (srcPc3.equals(backupPc3))
-         if (srcPc3.isExtern())
-            rsyncSB.insert(0, "ssh " + srcPc3.extern() + " '").append("'"); // gesamten Befehl senden ;-)
+      if (same)
+         if (oneBackup.srcPc().isExtern())
+            rsyncSB.insert(0, "ssh " + oneBackup.srcPc().extern() + " '").append("'"); // gesamten Befehl senden ;-)
          else
-            rsyncSB.insert(0, srcPc3.extern()); // nur sudo, kein quoting !
+            rsyncSB.insert(0, oneBackup.srcPc().extern()); // nur sudo, kein quoting !
       String rsyncCmd=rsyncSB.toString();
       logln(4, rsyncCmd);// if (!DRYRUN.get())
       try (CmdStream rsyncStream=Commandline.executeCached(rsyncCmd, null)) { // not cached
@@ -401,7 +387,6 @@ public class Backsnap {
          bsGui.getPanelWork().repaint(50);
       }
       log(4, removeCmd);
-      // if (!DRYRUN.get())
       BTRFS_LOCK.lock();
       try {
          if (bsGui != null) {
@@ -427,20 +412,19 @@ public class Backsnap {
       }
    }
    /**
-    * @param d
+    * @param bdir
     * @param backupSsh
     * @return
     * @throws IOException
     */
-   static private void mkDirs(Path d, Pc backupPc2) throws IOException {
-      if (d.isAbsolute()) {
-         StringBuilder mkdirSB=new StringBuilder("mkdir -pv ").append(d);
-         String mkdirCmd=backupPc2.getCmd(mkdirSB);
+   static private void mkDirs(Path bdir) throws IOException {
+      if (bdir.isAbsolute()) {
+         String mkdirCmd=OneBackup.backupPc.getCmd(new StringBuilder("mkdir -pv ").append(bdir));
          log(6, mkdirCmd);
          if (DRYRUN.get())
             return;
-         if (!backupPc2.isExtern())
-            if (d.toFile().mkdirs())
+         if (!OneBackup.backupPc.isExtern())
+            if (bdir.toFile().mkdirs())
                return; // erst mit sudo, dann noch mal mit localhost probieren
          try (CmdStream mkdirStream=Commandline.executeCached(mkdirCmd, null)) {
             mkdirStream.backgroundErr();
@@ -451,7 +435,7 @@ public class Backsnap {
                return;
          }
       }
-      throw new FileNotFoundException("Could not create dir: " + d);
+      throw new FileNotFoundException("Could not create dir: " + bdir);
    }
    /**
     * prozesse aufräumen
@@ -509,20 +493,22 @@ public class Backsnap {
          Commandline.background.shutdown();
          log(4, " exit");
          Commandline.cleanup();
-         log(4, " java");
+         logln(4, " java");
          if (AUTO.get())
             System.exit(0);
       }
-      logln(4, "");
+      // logln(4, "");
    }
    static public void log(int level, String text) {
-      if (Backsnap.VERBOSE.getParameterOrDefault(1) instanceof Integer v)
-         if (v >= level)
-            System.out.print(text);
+      if ((Backsnap.VERBOSE.getParameterOrDefault(1) instanceof Integer v) && (v >= level))
+         System.out.print(text);
    }
    static public void logln(int level, String text) {
-      if (Backsnap.VERBOSE.getParameterOrDefault(1) instanceof Integer v)
-         if (v >= level)
-            System.out.println(text);
+      if ((Backsnap.VERBOSE.getParameterOrDefault(1) instanceof Integer v) && (v >= level))
+         System.out.print(text + System.lineSeparator());
+   }
+   static public void lnlog(int level, String text) {
+      if ((Backsnap.VERBOSE.getParameterOrDefault(1) instanceof Integer v) && (v >= level))
+         System.out.print(System.lineSeparator() + text);
    }
 }
