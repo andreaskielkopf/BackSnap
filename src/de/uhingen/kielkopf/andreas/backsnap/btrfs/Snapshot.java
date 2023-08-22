@@ -3,8 +3,6 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 
-import static de.uhingen.kielkopf.andreas.backsnap.Backsnap.AT_SNAPSHOTS;
-import static de.uhingen.kielkopf.andreas.backsnap.Backsnap.DOT_SNAPSHOTS;
 import static de.uhingen.kielkopf.andreas.beans.RecordParser.*;
 
 import java.io.FileNotFoundException;
@@ -347,6 +345,8 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          readonlyL().clear(); // nicht weiter im cache
       }
    }
+   static public final String DOT_SNAPSHOTS=".snapshots";
+   static public final String AT_SNAPSHOTS="@snapshots";
    static public void mkain(String[] args) {
       try {
          Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " /mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro");// Par. sammeln

@@ -16,7 +16,6 @@ import javax.swing.*;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
-import de.uhingen.kielkopf.andreas.beans.Version;
 import de.uhingen.kielkopf.andreas.beans.cli.Flag;
 
 /**
@@ -49,14 +48,13 @@ public class Backsnap {
    static final Flag                 AUTO             =new Flag('a', "auto");           // auto-close gui when ready
    static public final Flag          COMPRESSED       =new Flag('c', "compressed");
    static public final String        SNAPSHOT         ="snapshot";
-   static public final String        DOT_SNAPSHOTS    =".snapshots";
-   static public final String        AT_SNAPSHOTS     ="@snapshots";
+
    static public final Flag          DELETEOLD        =new Flag('o', "deleteold");      // mark old snapshots for
                                                                                         // deletion
    static public final Flag          KEEP_MINIMUM     =new Flag('m', "keepminimum");    // mark all but minimum
                                                                                         // snapshots
    static public final String        BACK_SNAP_VERSION=                                 // version
-            "BackSnap for Snapper and Timeshift(beta) Version 0.6.3.5 (2023/08/22)";
+            "BackSnap for Snapper and Timeshift(beta) Version 0.6.3.6 (2023/08/22)";
    static public final ReentrantLock BTRFS_LOCK       =new ReentrantLock();
    static public final String        LF               =System.lineSeparator();
    static public void main(String[] args) {
@@ -76,7 +74,7 @@ public class Backsnap {
             case 2 -> source[0]; // extern
             default -> throw new IllegalArgumentException("Mehr als ein Doppelpunkt ist nicht erlaubt");
          });
-         Path srcPath=Path.of("/", source[source.length - 1].replace(DOT_SNAPSHOTS, ""));
+         Path srcPath=Path.of("/", source[source.length - 1].replace(Snapshot.DOT_SNAPSHOTS, ""));
          BTRFS_LOCK.lock();
          // BackupVolume ermitteln
          String[] backup=Flag.getParameterOrDefault(1, DEFAULT_BACKUP).split("[:]");
@@ -105,8 +103,7 @@ public class Backsnap {
          OneBackup.backupPc.getMountList(false); // eventuell unnötig
          {
             Mount backupVolume=OneBackup.backupPc.getBackupVolume();
-            if (backupVolume.devicePath().equals(srcConfig.volumeMount().devicePath())
-                     && (oneBackup.srcPc() == OneBackup.backupPc))
+            if (backupVolume.devicePath().equals(srcConfig.volumeMount().devicePath()) && oneBackup.isSamePc())
                throw new RuntimeException(LF + "Backup is not possible onto the same device: "
                         + OneBackup.backupPc.getBackupLabel() + " <= " + oneBackup.srcPath() + LF
                         + "Please select another partition for the backup");
@@ -226,21 +223,11 @@ public class Backsnap {
       return true;
    }
    static private boolean sendBtrfs(Snapshot s, Path bDir) throws IOException {
-      boolean sameSsh=(oneBackup.srcPc().isExtern() && oneBackup.srcPc().equals(OneBackup.backupPc));
       StringBuilder btrfsSendSB=new StringBuilder("/bin/btrfs send ");
       if (bsGui instanceof BacksnapGui gui)
          gui.setBackupInfo(s, parentSnapshot);
-      if (COMPRESSED.get()) {
-         if (s.mount().pc().getBtrfsVersion() instanceof Version v)
-            if (v.getMayor() < 6)
-               COMPRESSED.set(false);
-         if (s.mount().pc().getKernelVersion() instanceof Version v)
-            if (v.getMayor() < 6)
-               COMPRESSED.set(false);
-         if (OneBackup.backupPc.getBtrfsVersion() instanceof Version v)
-            if (v.getMayor() < 6)
-               COMPRESSED.set(false);
-      }
+      if (COMPRESSED.get() && !oneBackup.compressionPossible())
+         COMPRESSED.set(false);
       if (COMPRESSED.get())
          btrfsSendSB.append("--proto 2 --compressed-data ");
       if (parentSnapshot instanceof Snapshot p)
@@ -249,26 +236,26 @@ public class Backsnap {
          Snapshot.setReadonly(parentSnapshot, s, true);
       logln(2, "");
       btrfsSendSB.append(s.getSnapshotMountPath());
-      if (!sameSsh)
-         if (oneBackup.srcPc().isExtern())
-            btrfsSendSB.insert(0, "ssh " + oneBackup.srcPc().extern() + " '").append("'");
+      if (!oneBackup.isSameSsh())
+         if (oneBackup.isExtern())
+            btrfsSendSB.insert(0, "ssh " + oneBackup.extern() + " '").append("'");
          else
-            btrfsSendSB.insert(0, oneBackup.srcPc().extern());
+            btrfsSendSB.insert(0, oneBackup.extern());
       if (usePv)
          btrfsSendSB.append("|/bin/pv -f");
       btrfsSendSB.append("|");
-      if (!sameSsh)
-         if (OneBackup.backupPc.isExtern())
+      if (!oneBackup.isSameSsh())
+         if (OneBackup.isBackupExtern())
             btrfsSendSB.append("ssh " + OneBackup.backupPc.extern() + " '");
          else
             btrfsSendSB.append(OneBackup.backupPc.extern());
       btrfsSendSB.append("/bin/btrfs receive ").append(bDir).append(";/bin/sync");
-      if (sameSsh)
-         if (oneBackup.srcPc().isExtern())
-            btrfsSendSB.insert(0, "ssh " + oneBackup.srcPc().extern() + " '");
+      if (oneBackup.isSameSsh())
+         if (oneBackup.isExtern())
+            btrfsSendSB.insert(0, "ssh " + oneBackup.extern() + " '");
       // else
       // send_cmd.insert(0, srcSsh); // @todo für einzelnes sudo anpassen ?
-      if (OneBackup.backupPc.isExtern())
+      if (OneBackup.isBackupExtern())
          btrfsSendSB.append("'");
       logln(2, btrfsSendSB.toString());
       if (!DRYRUN.get()) {
@@ -341,18 +328,17 @@ public class Backsnap {
       StringBuilder rsyncSB=new StringBuilder("/bin/rsync -vdcptgo --exclude \"@*\" --exclude \"" + SNAPSHOT + "\" ");
       if (DRYRUN.get())
          rsyncSB.append("--dry-run ");
-      boolean same=oneBackup.srcPc().equals(OneBackup.backupPc);
-      if (!same && (oneBackup.srcPc().isExtern()))
-         rsyncSB.append(oneBackup.srcPc().extern()).append(":");
+      if (!oneBackup.isSamePc() && (oneBackup.isExtern()))
+         rsyncSB.append(oneBackup.extern()).append(":");
       rsyncSB.append(sDir.getParent()).append("/ ");
-      if (!same && (OneBackup.backupPc.isExtern()))
+      if (!oneBackup.isSamePc() && (OneBackup.isBackupExtern()))
          rsyncSB.append(OneBackup.backupPc.extern()).append(":");
       rsyncSB.append(bDir).append("/");
-      if (same)
-         if (oneBackup.srcPc().isExtern())
-            rsyncSB.insert(0, "ssh " + oneBackup.srcPc().extern() + " '").append("'"); // gesamten Befehl senden ;-)
+      if (oneBackup.isSamePc())
+         if (oneBackup.isExtern())
+            rsyncSB.insert(0, "ssh " + oneBackup.extern() + " '").append("'"); // gesamten Befehl senden ;-)
          else
-            rsyncSB.insert(0, oneBackup.srcPc().extern()); // nur sudo, kein quoting !
+            rsyncSB.insert(0, oneBackup.extern()); // nur sudo, kein quoting !
       String rsyncCmd=rsyncSB.toString();
       logln(4, rsyncCmd);// if (!DRYRUN.get())
       try (CmdStream rsyncStream=Commandline.executeCached(rsyncCmd, null)) { // not cached
@@ -423,7 +409,7 @@ public class Backsnap {
          log(6, mkdirCmd);
          if (DRYRUN.get())
             return;
-         if (!OneBackup.backupPc.isExtern())
+         if (!OneBackup.isBackupExtern())
             if (bdir.toFile().mkdirs())
                return; // erst mit sudo, dann noch mal mit localhost probieren
          try (CmdStream mkdirStream=Commandline.executeCached(mkdirCmd, null)) {
