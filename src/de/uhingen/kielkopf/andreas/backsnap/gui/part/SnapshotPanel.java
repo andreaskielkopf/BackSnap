@@ -29,6 +29,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    private JPanel                                      panelSnapshots;
    private JScrollPane                                 scrollPane;
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_UUID      =new ConcurrentSkipListMap<>();
+   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_R_UUID    =new ConcurrentSkipListMap<>();
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_ParentUuid=new ConcurrentSkipListMap<>();
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_KeyO      =new ConcurrentSkipListMap<>();
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_DirName   =new ConcurrentSkipListMap<>();
@@ -52,7 +53,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    private void initialize() throws IOException {
       setLayout(new BorderLayout(0, 0));
       add(getPanelInfo(), BorderLayout.NORTH);
-      getPanelView().add(new SnapshotLabel(null));
+      getPanelView().add(SnapshotLabel.getSnapshotLabel(null));
       add(getSplitPane(), BorderLayout.CENTER);
    }
    public JPanel getPanelView() {
@@ -73,18 +74,18 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
                   int w=getWidth();
                   for (SnapshotLabel snap:labelTree_UUID.values())
                      if (labelTree_UUID.get(snap.snapshot.parent_uuid()) instanceof SnapshotLabel parent) {
-                        Rectangle s      =snap.getBounds();
-                        Rectangle p      =parent.getBounds();
-                        int       px     =p.x;
-                        int       pw     =p.width;
-                        int       py     =p.y;
-                        int       ph     =p.height;
-                        int       sx     =s.x;
-                        int       sy     =s.y;
-                        int       sh     =s.height;
-                        int       abstand=px + pw - sx;
-                        boolean   t      =(abstand + s.getWidth() * 2 > w);
-                        boolean   m      =(Math.abs(abstand) < s.getWidth());
+                        Rectangle s=snap.getBounds();
+                        Rectangle p=parent.getBounds();
+                        int px=p.x;
+                        int pw=p.width;
+                        int py=p.y;
+                        int ph=p.height;
+                        int sx=s.x;
+                        int sy=s.y;
+                        int sh=s.height;
+                        int abstand=px + pw - sx;
+                        boolean t=(abstand + s.getWidth() * 2 > w);
+                        boolean m=(Math.abs(abstand) < s.getWidth());
                         if (t) {
                            g2d.setColor(Color.BLACK);
                            int y=(int) ((p.getCenterY() + s.getCenterY()) / 2);
@@ -96,9 +97,10 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
                               g2d.drawLine(px + pw, py + ph / 2, sx, sy + sh / 2);
                            } else {
                               g2d.setColor(Color.BLUE);
-                              g2d.fillOval(px + pw - bolla2-2, py + ph - bolla2-2, bolla2, bolla2);
-                              g2d.drawLine(px + pw-bolla1-2, py + ph - bolla1-2, sx+bolla1+2, sy + bolla1+2);
-                              g2d.drawOval(sx+2, sy+2, bolla2, bolla2);
+                              g2d.fillOval(px + pw - bolla2 - 2, py + ph - bolla2 - 2, bolla2, bolla2);
+                              g2d.drawLine(px + pw - bolla1 - 2, py + ph - bolla1 - 2, sx + bolla1 + 2,
+                                       sy + bolla1 + 2);
+                              g2d.drawOval(sx + 2, sy + 2, bolla2, bolla2);
                            }
                      }
                }
@@ -123,8 +125,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
     * @return
     * @throws IOException
     */
-   public ConcurrentSkipListMap<String, Snapshot> setVolume(Collection<Snapshot> list)
-            throws IOException {
+   public ConcurrentSkipListMap<String, Snapshot> setVolume(Collection<Snapshot> list) throws IOException {
       ConcurrentSkipListMap<String, Snapshot> neuList=new ConcurrentSkipListMap<>();
       for (Snapshot snap:list)
          if (!labelTree_UUID.containsKey(snap.uuid()))
@@ -135,7 +136,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
       labelTree_DirName.clear();
       synchronized (mixedList) {
          boolean doShuffle=(mixedList.size() < list.size() / 2);
-         JPanel  pv       =getPanelView();
+         JPanel pv=getPanelView();
          pv.removeAll(); // alle Labels entfernen
          for (Snapshot snapshot:list) {
             SnapshotLabel snapshotLabel=SnapshotLabel.getSnapshotLabel(snapshot);// gespeichertes Label holen
@@ -180,8 +181,8 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
       if (w == 0)
          return;
       final JPanel pv=getPanelView();
-      long         v =pv.getComponentCount() * 2000L;
-      final int    c =(int) (v / w);
+      long v=pv.getComponentCount() * 2000L;
+      final int c=(int) (v / w);
       SwingUtilities.invokeLater(new Runnable() {
          @Override
          public void run() {
@@ -211,9 +212,9 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    @Override
    public void mouseEntered(MouseEvent e) {
       if (e.getSource() instanceof SnapshotLabel sl) {
-         Snapshot       sn=sl.snapshot;
+         Snapshot sn=sl.snapshot;
          SnapshotDetail pd=getPanelDetail();
-         JSplitPane     sp=getSplitPane();
+         JSplitPane sp=getSplitPane();
          pd.setInfo("Snapshot " + sn.dirName() + ":", sn.getInfo());
          if (sp.getBottomComponent() == null) {
             pd.setMinimumSize(new Dimension(300, 160));

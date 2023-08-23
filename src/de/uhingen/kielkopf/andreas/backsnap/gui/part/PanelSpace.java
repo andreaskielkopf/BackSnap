@@ -25,27 +25,27 @@ import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
  *
  */
 public class PanelSpace extends JPanel {
-   static private final long serialVersionUID=-8473404478127990644L;
-   private JPanel            panel;
-   private JPanel            panel_c;
-   private Lbl               lblSpace;
-   private TxtFeld           txtDisabled;
-   private JSlider           sliderSpace;
-   private JCheckBox         chckSpace;
-   private JButton           btnSpace;
-   static public int         DEFAULT_SPACE   =1999;
-  @NonNull final private BacksnapGui bsGui;
+   static private final long          serialVersionUID=-8473404478127990644L;
+   private JPanel                     panel;
+   private JPanel                     panel_c;
+   private Lbl                        lblSpace;
+   private TxtFeld                    txtDisabled;
+   private JSlider                    sliderSpace;
+   private JCheckBox                  chckSpace;
+   private JButton                    btnSpace;
+   static public int                  DEFAULT_SPACE   =1999;
+   @NonNull final private BacksnapGui bsGui;
    /**
     * Create the panel.
     */
-//   @SuppressWarnings("unused")
-//   private PanelSpace() {
-//      this(null);
-//   }
+   // @SuppressWarnings("unused")
+   // private PanelSpace() {
+   // this(null);
+   // }
    public PanelSpace(@NonNull BacksnapGui b) {
-//      if (!Beans.isDesignTime())
-//         if (b == null)
-//            throw new NullPointerException("BacksnapGui ist null");
+      // if (!Beans.isDesignTime())
+      // if (b == null)
+      // throw new NullPointerException("BacksnapGui ist null");
       bsGui=b;
       initialize();
    }
@@ -89,16 +89,16 @@ public class PanelSpace extends JPanel {
    public JButton getBtnSpace() {
       if (btnSpace == null) {
          btnSpace=new JButton("Delete some old snapshots");
-//         if (bsGui != null)
-            btnSpace.addActionListener(e -> {
-               try {
-                  bsGui.delete(getBtnSpace(), SnapshotLabel.deleteOldColor);
-               } catch (IOException e1) {
-                  e1.printStackTrace();
-               }
-            });
+         // if (bsGui != null)
+         btnSpace.addActionListener(e -> {
+            try {
+               bsGui.delete(getBtnSpace(), SnapshotLabel.STATUS.ALT.color);
+            } catch (IOException e1) {
+               e1.printStackTrace();
+            }
+         });
          btnSpace.setEnabled(false);
-         btnSpace.setBackground(SnapshotLabel.deleteOldColor);
+         btnSpace.setBackground(SnapshotLabel.STATUS.ALT.color);
       }
       return btnSpace;
    }
@@ -116,22 +116,22 @@ public class PanelSpace extends JPanel {
          for (int i=0; i <= 5; i++)
             labelTable.put(Integer.valueOf(i * 1000), new JLabel((i == 0) ? "0" : Integer.toString(i) + "T"));
          sliderSpace.setLabelTable(labelTable);
-//         if (bsGui != null)
-            sliderSpace.addChangeListener(new ChangeListener() {
-               @Override
-               public void stateChanged(final ChangeEvent e) {
-                  String text=Integer.toString(getSliderSpace().getValue());
-                  getLblSpace().setText(text);
-                  if (!getSliderSpace().getValueIsAdjusting()) {
-                     Backsnap.DELETEOLD.setParameter(text);
-                     try {
-                        bsGui.abgleich();
-                     } catch (IOException e1) {
-                        e1.printStackTrace();
-                     }
+         // if (bsGui != null)
+         sliderSpace.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(final ChangeEvent e) {
+               String text=Integer.toString(getSliderSpace().getValue());
+               getLblSpace().setText(text);
+               if (!getSliderSpace().getValueIsAdjusting()) {
+                  Backsnap.DELETEOLD.setParameter(text);
+                  try {
+                     bsGui.abgleich();
+                  } catch (IOException e1) {
+                     e1.printStackTrace();
                   }
                }
-            });
+            }
+         });
       }
       return sliderSpace;
    }

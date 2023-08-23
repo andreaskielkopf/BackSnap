@@ -16,6 +16,7 @@ import javax.swing.*;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
+import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotLabel.STATUS;
 import de.uhingen.kielkopf.andreas.beans.cli.Flag;
 
 /**
@@ -48,13 +49,12 @@ public class Backsnap {
    static final Flag                 AUTO             =new Flag('a', "auto");           // auto-close gui when ready
    static public final Flag          COMPRESSED       =new Flag('c', "compressed");
    static public final String        SNAPSHOT         ="snapshot";
-
    static public final Flag          DELETEOLD        =new Flag('o', "deleteold");      // mark old snapshots for
                                                                                         // deletion
    static public final Flag          KEEP_MINIMUM     =new Flag('m', "keepminimum");    // mark all but minimum
                                                                                         // snapshots
    static public final String        BACK_SNAP_VERSION=                                 // version
-            "BackSnap for Snapper and Timeshift(beta) Version 0.6.3.6 (2023/08/22)";
+            "BackSnap for Snapper and Timeshift(beta) Version 0.6.3.7 (2023/08/23)";
    static public final ReentrantLock BTRFS_LOCK       =new ReentrantLock();
    static public final String        LF               =System.lineSeparator();
    static public void main(String[] args) {
@@ -192,17 +192,17 @@ public class Backsnap {
          if (textPos == 0) {
             lnlog(5, "Überspringe bereits vorhandene Snapshots:");
             textPos=42;
-         } else
-            if (textPos >= 120) {
-               logln(5, "");
-               textPos=0;
-            }
+         }
          log(5, " " + srcSnapshot.dirName());
          textPos+=srcSnapshot.dirName().length() + 1;
          parentSnapshot=srcSnapshot;
          return false;
       }
-      textPos=0;
+      if (textPos > 0) {
+         textPos=0;
+         // lnlog(5, "");
+      }
+      // Backsnap.logln(7, srcSnapshot.getSnapshotMountPath().toString());
       logln(9, "Paths.get(backupDir=" + oneBackup.backupLabel() + " dirName=" + srcSnapshot.dirName() + ")");
       Path bDir=Paths.get(Pc.MNT_BACKSNAP, oneBackup.backupLabel().toString(), srcSnapshot.dirName());
       Path bSnapDir=backupMap.mount().btrfsPath().resolve(backupMap.mount().mountPath().relativize(bDir))
@@ -217,7 +217,7 @@ public class Backsnap {
       mkDirs(bDir);
       rsyncFiles(srcSnapshot.getSnapshotMountPath(), bDir);
       if (GUI.get())
-         bsGui.mark(srcSnapshot); // Pc backupPc=backupMap.mount().pc();
+         bsGui.mark(srcSnapshot.uuid(), STATUS.INPROGRESS); // Pc backupPc=backupMap.mount().pc();
       if (sendBtrfs(srcSnapshot, bDir))
          parentSnapshot=srcSnapshot;
       return true;
@@ -259,10 +259,10 @@ public class Backsnap {
          btrfsSendSB.append("'");
       logln(2, btrfsSendSB.toString());
       if (!DRYRUN.get()) {
+         if (bsGui != null)
+            bsGui.getPanelMaintenance().updateButtons();
          BTRFS_LOCK.lock();
          try (CmdStream btrfsSendStream=Commandline.executeCached(btrfsSendSB, null)) {
-            if (bsGui != null)
-               SwingUtilities.invokeLater(() -> bsGui.getPanelMaintenance().updateButtons());
             task=Commandline.background.submit(() -> btrfsSendStream.err().forEach(line -> {
                if (line.contains("ERROR: cannot find parent subvolume"))
                   Backsnap.canNotFindParent=line;
@@ -303,7 +303,8 @@ public class Backsnap {
          } finally {
             BTRFS_LOCK.unlock();
             if (bsGui != null)
-               SwingUtilities.invokeLater(() -> bsGui.getPanelMaintenance().updateButtons());
+               bsGui.getPanelMaintenance().updateButtons();
+            err.println();
          } // ende("S");// B
       }
       if (s.btrfsPath().toString().contains("timeshift-btrfs"))
@@ -320,9 +321,9 @@ public class Backsnap {
    static private final void show(String line) {
       if (bsGui == null)
          return;
-      if (line.equals("\n") || line.equals("\r"))
-         return;
-      bsGui.lblPvSetText(line);
+      line.replaceAll("[\n\r]?", " "); // if (line.equals("\n") || line.equals("\r")) return;
+      if (!line.isBlank())
+         bsGui.lblPvSetText(line);
    }
    static private void rsyncFiles(Path sDir, Path bDir) throws IOException {
       StringBuilder rsyncSB=new StringBuilder("/bin/rsync -vdcptgo --exclude \"@*\" --exclude \"" + SNAPSHOT + "\" ");
@@ -365,36 +366,29 @@ public class Backsnap {
          throw new SecurityException("I am not allowed to delete " + bmp.toString());
       StringBuilder removeSB=new StringBuilder("/bin/btrfs subvolume delete -Cv ").append(bmp);
       String removeCmd=s.mount().pc().getCmd(removeSB);
-      if (bsGui != null) {
-         bsGui.getLblSnapshot().setText("remove backup of:");
-         bsGui.getTxtSnapshot().setText(s.dirName());
-         bsGui.getLblParent().setText(" ");
-         bsGui.getTxtParent().setText(" ");
-         bsGui.getPanelWork().repaint(50);
-      }
+      if (bsGui != null)
+         bsGui.setDeleteInfo(s);
       log(4, removeCmd);
+      if (bsGui != null) {
+         bsGui.getPanelMaintenance().updateButtons();
+         String text="<html>" + s.btrfsPath().toString();
+         logln(7, text);
+         bsGui.mark(s.received_uuid(), STATUS.INPROGRESS);
+      }
       BTRFS_LOCK.lock();
-      try {
-         if (bsGui != null) {
-            SwingUtilities.invokeLater(() -> bsGui.getPanelMaintenance().updateButtons());
-            String text="<html>" + s.btrfsPath().toString();
-            logln(7, text);
-            bsGui.mark(s);
-         }
-         try (CmdStream removeStream=Commandline.executeCached(removeCmd, null)) {
-            removeStream.backgroundErr();
-            logln(1, "");
-            removeStream.erg().forEach(line -> {
-               log(1, line);
-               if (GUI.get())
-                  bsGui.lblPvSetText(line);
-            });
-            removeStream.waitFor();
-         }
+      try (CmdStream removeStream=Commandline.executeCached(removeCmd, null)) {
+         removeStream.backgroundErr();
+         logln(1, "");
+         removeStream.erg().forEach(line -> {
+            log(1, line);
+            if (GUI.get())
+               bsGui.lblPvSetText(line);
+         });
+         removeStream.waitFor();
       } finally {
          BTRFS_LOCK.unlock();
          if (bsGui != null)
-            SwingUtilities.invokeLater(() -> bsGui.getPanelMaintenance().updateButtons());
+            bsGui.getPanelMaintenance().updateButtons();
       }
    }
    /**
@@ -485,16 +479,28 @@ public class Backsnap {
       }
       // logln(4, "");
    }
+   static int       logPos   =0;
+   final static int logMAXLEN=120;
    static public void log(int level, String text) {
-      if ((Backsnap.VERBOSE.getParameterOrDefault(1) instanceof Integer v) && (v >= level))
+      if ((Backsnap.VERBOSE.getParameterOrDefault(1) instanceof Integer v) && (v >= level)) {
+         if (logPos + text.length() > logMAXLEN) {
+            System.out.print(System.lineSeparator());
+            logPos=0;
+         }
          System.out.print(text);
+         logPos+=text.length();
+      }
    }
    static public void logln(int level, String text) {
-      if ((Backsnap.VERBOSE.getParameterOrDefault(1) instanceof Integer v) && (v >= level))
+      if ((Backsnap.VERBOSE.getParameterOrDefault(1) instanceof Integer v) && (v >= level)) {
          System.out.print(text + System.lineSeparator());
+         logPos=0;
+      }
    }
    static public void lnlog(int level, String text) {
-      if ((Backsnap.VERBOSE.getParameterOrDefault(1) instanceof Integer v) && (v >= level))
+      if ((Backsnap.VERBOSE.getParameterOrDefault(1) instanceof Integer v) && (v >= level)) {
          System.out.print(System.lineSeparator() + text);
+         logPos=text.length();
+      }
    }
 }

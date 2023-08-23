@@ -23,29 +23,29 @@ import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
  *
  */
 public class PanelMeta extends JPanel {
-   static private final long serialVersionUID=-8829953253542936677L;
-   private JCheckBox   chckMeta;
-   private JButton     btnMeta;
-   static public int   DEFAULT_META=499;
-   private JSlider     sliderMeta;
-   private Lbl         lblMeta;
-   private JPanel      panel;
-   private JPanel      panel_c;
-   private TxtFeld     xtxDisabled;
- @NonNull  private final BacksnapGui bsGui;
+   static private final long          serialVersionUID=-8829953253542936677L;
+   private JCheckBox                  chckMeta;
+   private JButton                    btnMeta;
+   static public int                  DEFAULT_META    =499;
+   private JSlider                    sliderMeta;
+   private Lbl                        lblMeta;
+   private JPanel                     panel;
+   private JPanel                     panel_c;
+   private TxtFeld                    xtxDisabled;
+   @NonNull private final BacksnapGui bsGui;
    /**
     * Create the panel.
     */
-//   public PanelMeta() {
-//      this(null);
-//   }
+   // public PanelMeta() {
+   // this(null);
+   // }
    /**
     * @param bsGui
     */
    public PanelMeta(@NonNull BacksnapGui b) {
-//      if (!Beans.isDesignTime())
-//         if (b == null)
-//            throw new NullPointerException("BacksnapGui ist null");
+      // if (!Beans.isDesignTime())
+      // if (b == null)
+      // throw new NullPointerException("BacksnapGui ist null");
       bsGui=b;
       initialize();
    }
@@ -78,16 +78,16 @@ public class PanelMeta extends JPanel {
    public JButton getBtnMeta() {
       if (btnMeta == null) {
          btnMeta=new JButton("Delete some unneeded snapshots");
-//         if (bsGui != null)
-            btnMeta.addActionListener(e -> {
-               try {
-                  bsGui.delete(getBtnMeta(), SnapshotLabel.delete2Color);
-               } catch (IOException e1) {
-                  e1.printStackTrace();
-               }
-            });
+         // if (bsGui != null)
+         btnMeta.addActionListener(e -> {
+            try {
+               bsGui.delete(getBtnMeta(), SnapshotLabel.STATUS.SPAM.color);
+            } catch (IOException e1) {
+               e1.printStackTrace();
+            }
+         });
          btnMeta.setEnabled(false);
-         btnMeta.setBackground(SnapshotLabel.delete2Color);
+         btnMeta.setBackground(SnapshotLabel.STATUS.SPAM.color);
       }
       return btnMeta;
    }
@@ -110,22 +110,22 @@ public class PanelMeta extends JPanel {
          sliderMeta.setPaintLabels(true);
          sliderMeta.setPaintTicks(true);
          sliderMeta.setValue(DEFAULT_META - 1);
-//         if (bsGui != null)
-            sliderMeta.addChangeListener(new ChangeListener() {
-               @Override
-               public void stateChanged(final ChangeEvent e) {
-                  String text=Integer.toString(getSliderMeta().getValue());
-                  getLblMeta().setText(text);
-                  if (!getSliderMeta().getValueIsAdjusting()) {
-                     Backsnap.KEEP_MINIMUM.setParameter(text);
-                     try {
-                        bsGui.abgleich();
-                     } catch (IOException e1) {
-                        e1.printStackTrace();
-                     }
+         // if (bsGui != null)
+         sliderMeta.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(final ChangeEvent e) {
+               String text=Integer.toString(getSliderMeta().getValue());
+               getLblMeta().setText(text);
+               if (!getSliderMeta().getValueIsAdjusting()) {
+                  Backsnap.KEEP_MINIMUM.setParameter(text);
+                  try {
+                     bsGui.abgleich();
+                  } catch (IOException e1) {
+                     e1.printStackTrace();
                   }
                }
-            });
+            }
+         });
       }
       return sliderMeta;
    }
