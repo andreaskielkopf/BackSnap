@@ -7,6 +7,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import javax.swing.*;
@@ -129,32 +130,46 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
       ConcurrentSkipListMap<String, Snapshot> neuList=new ConcurrentSkipListMap<>();
       for (Snapshot snap:list)
          if (!labelTree_UUID.containsKey(snap.uuid()))
-            neuList.put(snap.keyB(), snap);
+            neuList.put(snap.keyB(), snap); // mit sortierter Reihenfolge für die Labels
       labelTree_UUID.clear();
       labelTree_ParentUuid.clear();
       labelTree_KeyO.clear();
       labelTree_DirName.clear();
+      final ArrayList<SnapshotLabel> pvList=new ArrayList<>();
+      List<Component> aktuell;
+      final JPanel pv=getPanelView();
       synchronized (mixedList) {
          boolean doShuffle=(mixedList.size() < list.size() / 2);
-         JPanel pv=getPanelView();
-         pv.removeAll(); // alle Labels entfernen
+         aktuell=Arrays.asList(pv.getComponents());
          for (Snapshot snapshot:list) {
             SnapshotLabel snapshotLabel=SnapshotLabel.getSnapshotLabel(snapshot);// gespeichertes Label holen
             snapshotLabel.addMouseListener(this);
             labelTree_UUID.put(snapshot.uuid(), snapshotLabel);// nach UUID sortiert
+            if (snapshot.isBackup())
+               labelTree_R_UUID.put(snapshot.received_uuid(), snapshotLabel);
             labelTree_ParentUuid.put(snapshot.parent_uuid(), snapshotLabel);// parent sortiert (keine doppelten !)
             labelTree_KeyO.put(snapshot.keyO(), snapshotLabel);// nach Key sortiert (keine doppelten !)
             labelTree_DirName.put(snapshot.dirName(), snapshotLabel);// nach Key sortiert (keine doppelten !)
             if (!mixedList.contains(snapshotLabel))
                mixedList.add(snapshotLabel);
-            pv.add(snapshotLabel);
+            pvList.add(snapshotLabel);
          }
-         pv.revalidate();
          if (doShuffle)
             Collections.shuffle(mixedList);
       }
-      componentResized(null);
-      repaint(100);
+      for (Component c:aktuell) // nur entfernen, was weg muss
+         if (c instanceof SnapshotLabel sl)
+            if (!pvList.contains(sl))
+               SwingUtilities.invokeLater(() -> pv.remove(sl));
+      for (SnapshotLabel sl:pvList) // neue hinzufügen
+         if (!aktuell.contains(sl))
+            SwingUtilities.invokeLater(() -> pv.add(sl));
+      SwingUtilities.invokeLater(() -> {
+         pv.revalidate();
+         pv.repaint(100);
+         componentResized(null);
+         repaint(100);
+      });
       return neuList;
    }
    private JPanel getPanelSnapshots() {
@@ -300,11 +315,13 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
     * @param srcConfig
     */
    public void setInfo(Mount mount) {
-      getInfoPc().setText(mount.pc().extern());
-      getInfoVolume().setText(mount.devicePath().toString());
-      getInfoSubvolume().setText(mount.btrfsPath().toString());
-      getInfoMountPoint().setText(mount.mountPath().toString());
-      repaint(100);
+      SwingUtilities.invokeLater(() -> {
+         getInfoPc().setText(mount.pc().extern());
+         getInfoVolume().setText(mount.devicePath().toString());
+         getInfoSubvolume().setText(mount.btrfsPath().toString());
+         getInfoMountPoint().setText(mount.mountPath().toString());
+//         repaint(100);
+      });
    }
    private JSplitPane getSplitPane() {
       if (splitPane == null) {

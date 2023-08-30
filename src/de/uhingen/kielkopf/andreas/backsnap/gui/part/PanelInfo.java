@@ -3,6 +3,7 @@ package de.uhingen.kielkopf.andreas.backsnap.gui.part;
 import java.awt.*;
 
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.Usage;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
@@ -35,19 +36,21 @@ public class PanelInfo extends JPanel {
    }
    /**
     * @param usage
-    * Setzt die durch usage gewonnenen Infos in die passendne Felder
+    *           Setzt die durch usage gewonnenen Infos in die passendne Felder
     */
    public void setUsage(Usage usage) {
-      getTextSize().setText(usage.size());
-      getTextFree().setText(usage.free());
-      getTextUnallocated().setText(usage.unallcoated());
-      getLblWarning()
-               .setText(usage.isFull() ? "There doesn't seem to be more than 10GiB unallocated. Please clean up first."
-                        : usage.needsBalance() ? "It seems urgently advisable to balance the backup volume" : "");
-      getLblWarning().setBackground(
-               usage.isFull() ? Color.RED : usage.needsBalance() ? Color.ORANGE : getLblWarning().getBackground());
-      revalidate();
-      repaint(50);
+      SwingUtilities.invokeLater(() -> {
+         getTextSize().setText(usage.size());
+         getTextFree().setText(usage.free());
+         getTextUnallocated().setText(usage.unallcoated());
+         getLblWarning().setText(
+                  usage.isFull() ? "There doesn't seem to be more than 10GiB unallocated. Please clean up first."
+                           : usage.needsBalance() ? "It seems urgently advisable to balance the backup volume" : "");
+         getLblWarning().setBackground(
+                  usage.isFull() ? Color.RED : usage.needsBalance() ? Color.ORANGE : getLblWarning().getBackground());
+         revalidate();
+         repaint(50);
+      });
    }
    private JPanel getPanel() {
       if (panel == null) {

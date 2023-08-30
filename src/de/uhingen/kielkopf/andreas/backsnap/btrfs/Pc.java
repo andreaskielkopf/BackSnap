@@ -217,10 +217,10 @@ public record Pc(String extern, // Marker für diesen PC
       ConcurrentSkipListMap<String, Mount> mt=getSubVolumeList().mountTree();
       String vorschlag=extern() + ":" + MNT_BACKSNAP;
       if (mt.get(vorschlag) instanceof Mount m) {
-//         if (!m.btrfsMap().isEmpty())
-            return m;
-//         throw new FileNotFoundException(
-//                  System.lineSeparator() + "Ingnoring, because there are no snapshots in: " + this);
+         // if (!m.btrfsMap().isEmpty())
+         return m;
+         // throw new FileNotFoundException(
+         // System.lineSeparator() + "Ingnoring, because there are no snapshots in: " + this);
       }
       throw new RuntimeException(System.lineSeparator() + "Could not find the volume for backupDir: " + Pc.MNT_BACKSNAP
                + "/" + OneBackup.backupPc.getBackupLabel() + System.lineSeparator()
@@ -240,9 +240,11 @@ public record Pc(String extern, // Marker für diesen PC
     */
    public void mountBtrfsRoot(Path srcDir1, boolean doMount) throws IOException {
       Collection<Mount> ml=getMountList(true).values(); // eventuell reicht false;
-      if (doMount == ml.stream().anyMatch(m -> m.mountPath().toString().equals(TMP_BTRFS_ROOT)))
+      if (doMount == ml.stream().filter(m -> m.mountPath() != null)
+               .anyMatch(m -> m.mountPath().toString().equals(TMP_BTRFS_ROOT)))
          return; // mount hat schon den gewünschten Status
-      Optional<Mount> mount=ml.stream().filter(m -> m.mountPath().toString().equals(srcDir1.toString())).findAny();
+      Optional<Mount> mount=ml.stream().filter(m -> m.mountPath() != null)
+               .filter(m -> m.mountPath().toString().equals(srcDir1.toString())).findAny();
       if (mount.isEmpty())
          throw new RuntimeException(
                   Backsnap.LF + "Not able to find the right device for: " + this + ":" + srcDir1.toString());

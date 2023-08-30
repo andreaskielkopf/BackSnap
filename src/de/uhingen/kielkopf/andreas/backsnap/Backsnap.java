@@ -11,7 +11,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 
-import javax.swing.*;
+import javax.swing.JProgressBar;
+import javax.swing.SwingUtilities;
 
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
@@ -54,7 +55,7 @@ public class Backsnap {
    static public final Flag          KEEP_MINIMUM     =new Flag('m', "keepminimum");    // mark all but minimum
                                                                                         // snapshots
    static public final String        BACK_SNAP_VERSION=                                 // version
-            "BackSnap for Snapper and Timeshift(beta) Version 0.6.3.7 (2023/08/23)";
+            "BackSnap for Snapper and Timeshift(beta) Version 0.6.3.11 (2023/08/30)";
    static public final ReentrantLock BTRFS_LOCK       =new ReentrantLock();
    static public final String        LF               =System.lineSeparator();
    static public void main(String[] args) {
@@ -434,30 +435,34 @@ public class Backsnap {
       if (t.startsWith("X")) {
          log(4, " ready");
          if (GUI.get()) {
-            if (bsGui != null) {
-               JProgressBar sl=bsGui.getSpeedBar();
-               sl.setString("Ready to exit".toString());
-               sl.repaint(100);
-            }
+            if (bsGui != null)
+               SwingUtilities.invokeLater(() -> {
+                  JProgressBar sl=bsGui.getSpeedBar();
+                  sl.setString("Ready to exit".toString()); // sl.repaint(100);
+               });
             if (AUTO.get()) {
                if ((bsGui != null) && (bsGui.frame instanceof Frame frame)) {
-                  JProgressBar exitBar=bsGui.getSpeedBar();
-                  JToggleButton pauseButton=bsGui.getTglPause();
-                  int countdownStart=10;
-                  if (AUTO.getParameterOrDefault(10) instanceof Integer n)
-                     countdownStart=n;
-                  exitBar.setMaximum(countdownStart);
+                  final float FAKTOR=2f;
+                  final int countdownStart=(int) (FAKTOR * ((AUTO.getParameterOrDefault(10) instanceof Integer n) ? n : 10));
+                  final JProgressBar speedBar=bsGui.getSpeedBar();
+                  SwingUtilities.invokeLater(() -> speedBar.setMaximum(countdownStart));
                   int countdown=countdownStart;
                   while (countdown-- > 0) {
-                     exitBar.setString(Integer.toString(countdown) + " sec till exit");
-                     exitBar.setValue(countdownStart - countdown);
-                     do {
-                        try {
-                           Thread.sleep(1000);
-                        } catch (InterruptedException ignore) {/* ignore */}
-                     } while (pauseButton.isSelected());
+                     final float f=countdown / FAKTOR;
+                     final int p=countdownStart - countdown;
+                     SwingUtilities.invokeLater(() -> {
+                        speedBar.setValue(p);
+                        speedBar.setString(String.format("%2.1f sec till exit", f));
+//                        speedBar.repaint(50);
+                     });
+                     try {
+                        Thread.sleep((long) (1000/FAKTOR));
+                        while (bsGui.getTglPause().isSelected())
+                           Thread.sleep(50);
+                     } catch (InterruptedException ignore) {/* ignore */}
                   }
-                  bsGui.saveFramePos();
+                  bsGui.getPrefs().
+                  saveFramePos(bsGui.frame);
                   frame.setVisible(false);
                   frame.dispose();
                }

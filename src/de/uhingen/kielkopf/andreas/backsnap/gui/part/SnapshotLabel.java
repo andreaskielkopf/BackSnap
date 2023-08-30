@@ -4,6 +4,7 @@
 package de.uhingen.kielkopf.andreas.backsnap.gui.part;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.event.MouseListener;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -23,8 +24,8 @@ public class SnapshotLabel extends JLabel {
    static private ConcurrentSkipListMap<String, SnapshotLabel> cache           =new ConcurrentSkipListMap<>();
    public final Snapshot                                       snapshot;
    private STATUS                                              status;
-   private SnapshotLabel() throws IOException {
-      this(null);
+   static private final Font                                   font            =new Font("Noto Sans", Font.BOLD, 11);
+   private SnapshotLabel() throws IOException {      this(null);
    }
    /**
     * Ein Label das einen Snapshot oder ein Backup von einem Snapshot grafisch repräsentiert
@@ -70,7 +71,7 @@ public class SnapshotLabel extends JLabel {
       setBorder(new CompoundBorder(new MatteBorder(1, 1, 1, 1, (Color) new Color(0, 0, 0)),
                new EmptyBorder(1, 4, 1, 4)));
       setOpaque(true);
-      // setBackground(unknownColor);
+      setFont(font);
       setHorizontalAlignment(SwingConstants.CENTER);
    }
    /**
@@ -105,11 +106,13 @@ public class SnapshotLabel extends JLabel {
       return status;
    }
    public void setStatus(@NonNull STATUS s) {
+      if (status == s)
+         return;
       status=s;
       SwingUtilities.invokeLater(() -> setBackground(status.color));
-      SwingUtilities.invokeLater(() -> {
-         if (getParent() instanceof SnapshotPanel sp)
-            sp.repaint(50);
-      });
+      // SwingUtilities.invokeLater(() -> {
+      // if (getParent() instanceof SnapshotPanel sp)
+      // sp.repaint(10);
+      // });
    }
 }

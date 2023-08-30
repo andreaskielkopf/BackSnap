@@ -8,13 +8,14 @@ import static de.uhingen.kielkopf.andreas.beans.RecordParser.*;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.text.DecimalFormat;
 import java.time.Instant;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+
+import org.eclipse.jdt.annotation.Nullable;
 
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
@@ -57,9 +58,6 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       if ((btrfsPath == null) || (mount == null))
          throw new FileNotFoundException("btrfs-path is missing for snapshot: " + mount + from_btrfs);
    }
-   // public Snapshot(String from_btrfs) throws FileNotFoundException {
-   // this(null, from_btrfs);
-   // }
    static private Pattern createPatternFor(String s) {
       return Pattern.compile("^(?:.*[ \\[])?" + s + "[ =]([^ ,\\]]+)");
    }
@@ -75,23 +73,23 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    }
    public String keyO() {
       return new StringBuilder((mount == null) ? "null:" : mount().keyM()).append(otime()).append(idN())
-               .append(btrfsPath().getFileName()).toString();
+               .append(sortableDirname()).append(btrfsPath().getFileName()).toString();
    }
    public String keyB() {
-      return new StringBuilder((mount == null) ? "null:" : mount().keyM()).append(dirName())
+      return new StringBuilder((mount == null) ? "null:" : mount().keyM()).append(sortableDirname())
                .append(btrfsPath().getFileName()).append(idN()).toString();
    }
-   static DecimalFormat df=new DecimalFormat("0000000000");
    /**
     * @return sortable Integer
     */
    private String idN() {
       String s=Integer.toUnsignedString(id());
-      String t="0".repeat(11 - s.length()) + s;
+      String t="0".repeat(SORT_LEN - s.length()) + s;
       return t;
    }
-   static public final String dir2key(String dir) { // ??? numerisch sortieren ;-)
-      return (dir.length() >= SORT_LEN) ? dir : ".".repeat(SORT_LEN - dir.length()).concat(dir);
+   static private final String dir2key(@Nullable String dir) { // numerisch sortierbar ;-)
+      return (dir instanceof String d) ? (d.length() >= SORT_LEN) ? d : ".".repeat(SORT_LEN - d.length()).concat(d)
+               : null;
    }
    public String dirName() {
       Matcher m=DIRNAME.matcher(btrfsPath.toString());
@@ -101,6 +99,9 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       if (dn == null)
          return null;
       return dn.toString();
+   }
+   private String sortableDirname() {
+      return dir2key(dirName());
    }
    /**
     * Das soll den Zeitpunkt liefern, an dem der Snapshot gemacht wurde, wenn der berechnet werden kann
