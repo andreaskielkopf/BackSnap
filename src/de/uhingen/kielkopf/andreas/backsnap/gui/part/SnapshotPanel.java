@@ -198,12 +198,9 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
       final JPanel pv=getPanelView();
       long v=pv.getComponentCount() * 2000L;
       final int c=(int) (v / w);
-      SwingUtilities.invokeLater(new Runnable() {
-         @Override
-         public void run() {
-            pv.setPreferredSize(new Dimension(w, c));
-            pv.revalidate();
-         }
+      SwingUtilities.invokeLater(() -> {
+         pv.setPreferredSize(new Dimension(w, c));
+         pv.revalidate();
       });
    }
    /**
@@ -320,7 +317,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
          getInfoVolume().setText(mount.devicePath().toString());
          getInfoSubvolume().setText(mount.btrfsPath().toString());
          getInfoMountPoint().setText(mount.mountPath().toString());
-//         repaint(100);
+         // repaint(100);
       });
    }
    private JSplitPane getSplitPane() {

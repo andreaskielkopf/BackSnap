@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.*;
 
@@ -171,157 +172,153 @@ public class BacksnapGui implements MouseListener {
       // for DELETEOLD get all old snapshots that are "o=999" older than the newest one
       Entry<String, SnapshotLabel> srcLast=getPanelSrc().labelTree_DirName.lastEntry();
       ArrayList<SnapshotLabel> backupMixedList=getPanelBackup().mixedList;
-      return virtual.submit(new Runnable() {
-         @Override
-         public void run() {
-            ConcurrentNavigableMap<String, SnapshotLabel> toDeleteOld=new ConcurrentSkipListMap<>();
-            if (Backsnap.DELETEOLD.get()) { // sollen alte Snapshots gelöscht werden ?
-               int deleteOld=Flag.parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), PanelSpace.DEFAULT_SPACE);
-               if (srcLast instanceof Entry<String, SnapshotLabel> lastEntry) {
-                  Snapshot lastSnapshot=lastEntry.getValue().snapshot;
-                  Instant q=lastSnapshot.stunden();
-                  if (q != null) {
-                     Instant grenze=q.minusSeconds(deleteOld * 3600l);// mit 1 Snapshot pro Stunde rechnen
-                     for (Entry<String, SnapshotLabel> entry:backupLabels_DirName.descendingMap().entrySet()) {
-                        Instant instant=entry.getValue().snapshot.stunden();
-                        if (instant.isBefore(grenze))
-                           toDeleteOld.put(entry.getKey(), entry.getValue());
-                     }
-                  } else
-                     if (lastSnapshot.btrfsPath().toString().startsWith("/timeshift-btrfs")) {
-                        if (backupLabels_DirName.lastEntry() instanceof Entry<String, SnapshotLabel> lastBackupLabel) {
-                           SnapshotLabel lastB=lastBackupLabel.getValue();
-                           int firstId=lastB.snapshot.id() - deleteOld;
-                           for (Entry<String, SnapshotLabel> entry:backupLabels_DirName.descendingMap().entrySet()) {
-                              int id=entry.getValue().snapshot.id();
-                              if (id <= firstId)
-                                 toDeleteOld.put(entry.getKey(), entry.getValue());
-                           }
-                        }
-                     } else {
-                        int firstNr=Flag.parseIntOrDefault(lastSnapshot.dirName(), deleteOld) - deleteOld;
-                        if (firstNr > 0) {
-                           toDeleteOld=backupLabels_DirName.headMap(Integer.toString(firstNr));
-                        }
-                     }
-               }
-            }
-            ConcurrentSkipListMap<String, SnapshotLabel> keineSackgasse=new ConcurrentSkipListMap<>();
-            // suche Sackgassen um sie bevorzugt zu löschen
-            if (!backupLabels_KeyO.isEmpty()) {
-               SnapshotLabel child=backupLabels_KeyO.lastEntry().getValue();
-               while (child != null) {
-                  if (keineSackgasse.containsValue(child))
-                     break; // Bloß keine Endlosschleife !
-                  Snapshot s=child.snapshot;
-                  keineSackgasse.put(s.keyO(), child);
-                  String parent_uuid=s.parent_uuid();
-                  SnapshotLabel parent=backupLabels_Uuid.get(parent_uuid);
-                  child=parent;
-               }
-            }
-            // KEEP_MINIMUM
-            int minimum=PanelMeta.DEFAULT_META;
-            if (Backsnap.KEEP_MINIMUM.get())
-               minimum=Flag.parseIntOrDefault(Backsnap.KEEP_MINIMUM.getParameter(), PanelMeta.DEFAULT_META);
-            ArrayList<SnapshotLabel> mixedList2;
-            synchronized (backupMixedList) {
-               mixedList2=new ArrayList<>(backupMixedList);
-            }
-            int deletable=mixedList2.size() - minimum;
-            for (SnapshotLabel sl:backupLabels_DirName.values()) { // GrundFarbe setzen
-               if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid())) {
-                  sl.setStatus(STATUS.FIXIERT);// Das ist ein aktuelles Backup ! (unlöschbar)
-                  snapshotLabels_Uuid.get(sl.snapshot.received_uuid()).setStatus(STATUS.GESICHERT);
+      return virtual.submit(() -> {
+         ConcurrentNavigableMap<String, SnapshotLabel> toDeleteOld=new ConcurrentSkipListMap<>();
+         if (Backsnap.DELETEOLD.get()) { // sollen alte Snapshots gelöscht werden ?
+            int deleteOld=Flag.parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), PanelSpace.DEFAULT_SPACE);
+            if (srcLast instanceof Entry<String, SnapshotLabel> lastEntry) {
+               Snapshot lastSnapshot=lastEntry.getValue().snapshot;
+               Instant q=lastSnapshot.stunden();
+               if (q != null) {
+                  Instant grenze=q.minusSeconds(deleteOld * 3600l);// mit 1 Snapshot pro Stunde rechnen
+                  for (Entry<String, SnapshotLabel> entry:backupLabels_DirName.descendingMap().entrySet()) {
+                     Instant instant=entry.getValue().snapshot.stunden();
+                     if (instant.isBefore(grenze))
+                        toDeleteOld.put(entry.getKey(), entry.getValue());
+                  }
                } else
-                  sl.setStatus(STATUS.NAHE);
-               // panelBackup.repaint(100);
+                  if (lastSnapshot.btrfsPath().toString().startsWith("/timeshift-btrfs")) {
+                     if (backupLabels_DirName.lastEntry() instanceof Entry<String, SnapshotLabel> lastBackupLabel) {
+                        SnapshotLabel lastB=lastBackupLabel.getValue();
+                        int firstId=lastB.snapshot.id() - deleteOld;
+                        for (Entry<String, SnapshotLabel> entry:backupLabels_DirName.descendingMap().entrySet()) {
+                           int id=entry.getValue().snapshot.id();
+                           if (id <= firstId)
+                              toDeleteOld.put(entry.getKey(), entry.getValue());
+                        }
+                     }
+                  } else {
+                     int firstNr=Flag.parseIntOrDefault(lastSnapshot.dirName(), deleteOld) - deleteOld;
+                     if (firstNr > 0) {
+                        toDeleteOld=backupLabels_DirName.headMap(Integer.toString(firstNr));
+                     }
+                  }
             }
-            ArrayList<SnapshotLabel> deleteList=new ArrayList<>();
-            // Schauen was gelöscht werden könnte von den alten Backups
-            for (SnapshotLabel sl:toDeleteOld.values()) {
-               if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid()))
-                  continue;// aktuell, unlöschbar
-               deleteList.add(sl);
-               sl.setStatus(STATUS.ALT);// rot
-               deletable--;
-               // panelBackup.repaint(100);
+         }
+         ConcurrentSkipListMap<String, SnapshotLabel> keineSackgasse=new ConcurrentSkipListMap<>();
+         // suche Sackgassen um sie bevorzugt zu löschen
+         if (!backupLabels_KeyO.isEmpty()) {
+            SnapshotLabel child=backupLabels_KeyO.lastEntry().getValue();
+            while (child != null) {
+               if (keineSackgasse.containsValue(child))
+                  break; // Bloß keine Endlosschleife !
+               Snapshot s=child.snapshot;
+               keineSackgasse.put(s.keyO(), child);
+               String parent_uuid=s.parent_uuid();
+               SnapshotLabel parent=backupLabels_Uuid.get(parent_uuid);
+               child=parent;
             }
-            for (SnapshotLabel sl:mixedList2) { // manuell gelöschte anbieten
-               if (deletable < 1)
-                  break;
-               if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid()))
-                  continue;// aktuell, unlöschbar
-               if (deleteList.contains(sl))
-                  continue;// wird schon gelöscht
-               if (!manualDelete.containsValue(sl))
-                  continue; // nicht angeklickt
-               deleteList.add(sl);
-               sl.setStatus(STATUS.SPAM);// orange
-               deletable--;
-               // panelBackup.repaint(100);
-            }
-            for (SnapshotLabel sl:mixedList2) { // dann Sackgassen anbieten
-               if (deletable < 1)
-                  break;
-               if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid()))
-                  continue;// aktuell, unlöschbar
-               if (deleteList.contains(sl))
-                  continue;
-               if (keineSackgasse.containsValue(sl))
-                  continue;
-               deleteList.add(sl);
-               sl.setStatus(STATUS.SPAM);
-               deletable--;
-               // panelBackup.repaint(100);
-            }
-            for (SnapshotLabel sl:mixedList2) { // zuletzt reguläre Snapshots anbieten
-               if (deletable < 1)
-                  break;
-               if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid()))
-                  continue;// aktuell, unlöschbar
-               if (deleteList.contains(sl))
-                  continue;
-               deleteList.add(sl);
-               sl.setStatus(STATUS.SPAM);
-               deletable--;
-               // panelBackup.repaint(100);
-            }
+         }
+         // KEEP_MINIMUM
+         int minimum=PanelMeta.DEFAULT_META;
+         if (Backsnap.KEEP_MINIMUM.get())
+            minimum=Flag.parseIntOrDefault(Backsnap.KEEP_MINIMUM.getParameter(), PanelMeta.DEFAULT_META);
+         ArrayList<SnapshotLabel> mixedList2;
+         synchronized (backupMixedList) {
+            mixedList2=new ArrayList<>(backupMixedList);
+         }
+         int deletable=mixedList2.size() - minimum;
+         for (SnapshotLabel sl:backupLabels_DirName.values()) { // GrundFarbe setzen
+            if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid())) {
+               sl.setStatus(STATUS.FIXIERT);// Das ist ein aktuelles Backup ! (unlöschbar)
+               snapshotLabels_Uuid.get(sl.snapshot.received_uuid()).setStatus(STATUS.GESICHERT);
+            } else
+               sl.setStatus(STATUS.NAHE);
+            // panelBackup.repaint(100);
+         }
+         ArrayList<SnapshotLabel> deleteList=new ArrayList<>();
+         // Schauen was gelöscht werden könnte von den alten Backups
+         for (SnapshotLabel sl:toDeleteOld.values()) {
+            if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid()))
+               continue;// aktuell, unlöschbar
+            deleteList.add(sl);
+            sl.setStatus(STATUS.ALT);// rot
+            deletable--;
+            // panelBackup.repaint(100);
+         }
+         for (SnapshotLabel sl:mixedList2) { // manuell gelöschte anbieten
+            if (deletable < 1)
+               break;
+            if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid()))
+               continue;// aktuell, unlöschbar
+            if (deleteList.contains(sl))
+               continue;// wird schon gelöscht
+            if (!manualDelete.containsValue(sl))
+               continue; // nicht angeklickt
+            deleteList.add(sl);
+            sl.setStatus(STATUS.SPAM);// orange
+            deletable--;
+            // panelBackup.repaint(100);
+         }
+         for (SnapshotLabel sl:mixedList2) { // dann Sackgassen anbieten
+            if (deletable < 1)
+               break;
+            if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid()))
+               continue;// aktuell, unlöschbar
+            if (deleteList.contains(sl))
+               continue;
+            if (keineSackgasse.containsValue(sl))
+               continue;
+            deleteList.add(sl);
+            sl.setStatus(STATUS.SPAM);
+            deletable--;
+            // panelBackup.repaint(100);
+         }
+         for (SnapshotLabel sl:mixedList2) { // zuletzt reguläre Snapshots anbieten
+            if (deletable < 1)
+               break;
+            if (snapshotLabels_Uuid.containsKey(sl.snapshot.received_uuid()))
+               continue;// aktuell, unlöschbar
+            if (deleteList.contains(sl))
+               continue;
+            deleteList.add(sl);
+            sl.setStatus(STATUS.SPAM);
+            deletable--;
+            // panelBackup.repaint(100);
          }
       });
    }
-   public void delete(final JButton jButton, Color deleteColor) throws IOException {
-      ConcurrentSkipListMap<String, SnapshotLabel> alle=getPanelBackup().labelTree_KeyO;
-      final ArrayList<Snapshot> toRemove=new ArrayList<>();
-      for (Entry<String, SnapshotLabel> entry:alle.entrySet())
-         if (entry.getValue() instanceof SnapshotLabel sl && (sl.getBackground() == deleteColor))
-            toRemove.add(sl.snapshot);
+   /**
+    * Wird auf Knopfdruck aufgerufen, und darf daher keine exception werfen und sollte auch im Hintergrund ausgeführt
+    * werden
+    * 
+    * @param jCheckBox
+    */
+   public void delete(final JButton jButton, final JCheckBox jCheckBox, STATUS status) {
       try {
+         List<Snapshot> toRemove=getPanelBackup().labelTree_KeyO.values().stream()
+                  .filter(i -> (i instanceof SnapshotLabel sl && sl.getStatus() == status)).map(sl -> sl.snapshot)
+                  .toList();
+         if (toRemove.isEmpty())
+            return;
+         jButton.setEnabled(false);
          if (Backsnap.BTRFS_LOCK.tryLock(1, TimeUnit.SECONDS)) // try {
-            Commandline.background.submit(new Runnable() {
-               @Override
-               public void run() {
-                  jButton.setEnabled(false);
-                  for (Snapshot snapshot:toRemove) {
-                     Backsnap.logln(6, "to remove " + snapshot.dirName());
-                     if (jButton == getPanelMaintenance().getPanelMeta().getBtnMeta())
-                        if (!getPanelMaintenance().getPanelMeta().getChckMeta().isSelected())
-                           continue;
-                     if (jButton == getPanelMaintenance().getPanelSpace().getBtnSpace())
-                        if (!getPanelMaintenance().getPanelSpace().getChckSpace().isSelected())
-                           continue;
-                     try {
-                        Backsnap.removeSnapshot(snapshot);
-                     } catch (IOException e1) { /* */ }
-                     refreshGUI(refreshBackupPc);
-                     if (Backsnap.SINGLESNAPSHOT.get())
-                        break;
-                  }
-                  Backsnap.logln(1, "");
-                  jButton.setEnabled(true);
+            virtual.execute(() -> {// jButton.setEnabled(false);
+               for (Snapshot snapshot:toRemove) {
+                  Backsnap.logln(6, "to remove " + snapshot.dirName());
+                  if (!jCheckBox.isSelected())
+                     continue;
+                  try {
+                     Backsnap.removeSnapshot(snapshot);
+                  } catch (IOException e1) { /* */ }
+                  refreshGUI();
+                  if (Backsnap.SINGLESNAPSHOT.get())
+                     break;
                }
+               Backsnap.logln(1, "");
+               jButton.setEnabled(true);
             });
-      } catch (InterruptedException ignore) { /* */ } finally {
+      } catch (IOException | InterruptedException ignore) { /* */ } finally {
          Backsnap.BTRFS_LOCK.unlock();
       }
    }
@@ -567,7 +564,7 @@ public class BacksnapGui implements MouseListener {
    private TxtFeld         txtTime;
    private Lbl             lblSize;
    private TxtFeld         txtSize;
-   public Pc               refreshBackupPc =null;
+   // public Pc refreshBackupPc =null;
    public String           refreshGUIcKey  =null;
    public Instant          refreshUsage    =Instant.now();
    private JPanel getPanelUnten() {
@@ -725,13 +722,11 @@ public class BacksnapGui implements MouseListener {
     * @throws FileNotFoundException
     */
    public void setBackupInfo(Snapshot srcSnapshot, Snapshot parentSnapshot) throws FileNotFoundException {
-      
       SwingUtilities.invokeLater(() -> {
          getLblSnapshot().setText("backup of : ");
          getTxtSnapshot().setText(srcSnapshot.dirName());
          getLblParent().setText((parentSnapshot == null) ? " " : "based on:");
          getTxtParent().setText((parentSnapshot == null) ? " " : parentSnapshot.dirName());
-         
       });
    }
    public void setDeleteInfo(Snapshot toDelete) throws FileNotFoundException {
@@ -741,56 +736,29 @@ public class BacksnapGui implements MouseListener {
          getTxtSnapshot().setText(toDelete.dirName());
          getLblParent().setText(" ");
          getTxtParent().setText(" ");
-       
       });
    }
    /**
-    * @param backupVolume
-    * @param backupDir
-    * @param backupSsh
+    * @param backupPc
     * @throws IOException
     * 
     */
-   public void refreshGUI(Pc backupPc) {
-      virtual.execute(new Runnable() {
-         @Override
-         public void run() {
-            try {
-               if (refreshGUIcKey == null) {
-                  refreshBackupPc=backupPc;
-                  refreshGUIcKey=backupPc.extern() + ":" + backupPc.getBackupVolume().devicePath();
-               }
-               Commandline.removeFromCache(refreshGUIcKey); // umgeht den cache
-               setBackup(new SnapTree(refreshBackupPc.getBackupVolume()), refreshBackupPc.getBackupLabel());
-               if (Instant.now().isAfter(refreshUsage)) {
-                  getPanelMaintenance().setUsage(new Usage(refreshBackupPc.getBackupVolume(), false));
-                  refreshUsage=Instant.now().plusSeconds(60);
-               }
-               abgleich();
-//               getPanelBackup().repaint(50);
-            } catch (IOException e) {
-               e.printStackTrace();
+   public void refreshGUI() {
+      virtual.execute(() -> {
+         try {
+            if (refreshGUIcKey == null) // refreshBackupPc=backupPc;
+               refreshGUIcKey=OneBackup.backupPc.extern() + ":" + OneBackup.backupPc.getBackupVolume().devicePath();
+            Commandline.removeFromCache(refreshGUIcKey); // umgeht den cache
+            setBackup(new SnapTree(OneBackup.backupPc.getBackupVolume()), OneBackup.backupPc.getBackupLabel());
+            if (Instant.now().isAfter(refreshUsage)) {
+               getPanelMaintenance().setUsage(new Usage(OneBackup.backupPc.getBackupVolume(), false));
+               refreshUsage=Instant.now().plusSeconds(60);
             }
+            abgleich(); // getPanelBackup().repaint(50);
+         } catch (IOException e) {
+            e.printStackTrace();
          }
       });
-//      SwingUtilities.invokeLater(() -> {
-//         try {
-//            if (refreshGUIcKey == null) {
-//               refreshBackupPc=backupPc;
-//               refreshGUIcKey=backupPc.extern() + ":" + backupPc.getBackupVolume().devicePath();
-//            }
-//            Commandline.removeFromCache(refreshGUIcKey); // umgeht den cache
-//            setBackup(new SnapTree(refreshBackupPc.getBackupVolume()), refreshBackupPc.getBackupLabel());
-//            if (Instant.now().isAfter(refreshUsage)) {
-//               getPanelMaintenance().setUsage(new Usage(refreshBackupPc.getBackupVolume(), false));
-//               refreshUsage=Instant.now().plusSeconds(60);
-//            }
-//            abgleich();
-//            getPanelBackup().repaint(50);
-//         } catch (IOException e) {
-//            e.printStackTrace();
-//         }
-//      });
    }
    /**
     * @param counter
@@ -800,7 +768,7 @@ public class BacksnapGui implements MouseListener {
       SwingUtilities.invokeLater(() -> {
          getProgressBar().setValue(counter);
          getProgressBar().setString(counter + "/" + size);
-//         getProgressBar().repaint(50);
+         // getProgressBar().repaint(50);
       });
    }
 }

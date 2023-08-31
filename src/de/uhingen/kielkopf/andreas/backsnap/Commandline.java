@@ -59,16 +59,13 @@ public class Commandline {
       public void backgroundErr() { // Fehler im Hintergrund ausgeben und ablegen // System.out.print("0");
          if ((key != null) && cache.containsKey(key))
             return; // ist schon im cache
-         background.submit(new Runnable() {
-            @Override
-            public void run() {
-               try { // System.out.print("1");
-                  try (BufferedReader q=brErr()) {
-                     errList.addAll(q.lines()/* .peek(System.err::println) */.toList());
-                  } // System.out.print("2"); // System.out.println("3");
-               } catch (IOException e) {
-                  e.printStackTrace();
-               }
+         background.submit(() -> {
+            try { // System.out.print("1");
+               try (BufferedReader q=brErr()) {
+                  errList.addAll(q.lines()/* .peek(System.err::println) */.toList());
+               } // System.out.print("2"); // System.out.println("3");
+            } catch (IOException e) {
+               e.printStackTrace();
             }
          }); // System.out.print("4");
       }

@@ -7,11 +7,11 @@ import java.awt.BorderLayout;
 import java.io.IOException;
 import java.util.Dictionary;
 import java.util.Hashtable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 import org.eclipse.jdt.annotation.NonNull;
 
@@ -19,12 +19,14 @@ import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
+import de.uhingen.kielkopf.andreas.beans.Version;
 
 /**
  * @author Andreas Kielkopf
  *
  */
 public class PanelSpace extends JPanel {
+   static private ExecutorService     virtual         =Version.getVx();
    static private final long          serialVersionUID=-8473404478127990644L;
    private JPanel                     panel;
    private JPanel                     panel_c;
@@ -34,14 +36,8 @@ public class PanelSpace extends JPanel {
    private JCheckBox                  chckSpace;
    private JButton                    btnSpace;
    static public int                  DEFAULT_SPACE   =1999;
+   AtomicBoolean                      needsAbgleich   =new AtomicBoolean(false);
    @NonNull final private BacksnapGui bsGui;
-   /**
-    * Create the panel.
-    */
-   // @SuppressWarnings("unused")
-   // private PanelSpace() {
-   // this(null);
-   // }
    public PanelSpace(@NonNull BacksnapGui b) {
       // if (!Beans.isDesignTime())
       // if (b == null)
@@ -89,14 +85,7 @@ public class PanelSpace extends JPanel {
    public JButton getBtnSpace() {
       if (btnSpace == null) {
          btnSpace=new JButton("Delete some old snapshots");
-         // if (bsGui != null)
-         btnSpace.addActionListener(e -> {
-            try {
-               bsGui.delete(getBtnSpace(), SnapshotLabel.STATUS.ALT.color);
-            } catch (IOException e1) {
-               e1.printStackTrace();
-            }
-         });
+         btnSpace.addActionListener(e -> bsGui.delete(getBtnSpace(), getChckSpace(), SnapshotLabel.STATUS.ALT));
          btnSpace.setEnabled(false);
          btnSpace.setBackground(SnapshotLabel.STATUS.ALT.color);
       }
@@ -116,21 +105,20 @@ public class PanelSpace extends JPanel {
          for (int i=0; i <= 5; i++)
             labelTable.put(Integer.valueOf(i * 1000), new JLabel((i == 0) ? "0" : Integer.toString(i) + "T"));
          sliderSpace.setLabelTable(labelTable);
-         // if (bsGui != null)
-         sliderSpace.addChangeListener(new ChangeListener() {
-            @Override
-            public void stateChanged(final ChangeEvent e) {
-               String text=Integer.toString(getSliderSpace().getValue());
-               getLblSpace().setText(text);
-               if (!getSliderSpace().getValueIsAdjusting()) {
-                  Backsnap.DELETEOLD.setParameter(text);
+         sliderSpace.addChangeListener(e -> {
+            String text=Integer.toString(getSliderSpace().getValue());
+            getLblSpace().setText(text);
+            Backsnap.DELETEOLD.setParameter(text);
+            if (needsAbgleich.compareAndSet(false, true))
+               virtual.execute(() -> {
                   try {
-                     bsGui.abgleich();
-                  } catch (IOException e1) {
-                     e1.printStackTrace();
+                     Thread.sleep(50);
+                     if (needsAbgleich.compareAndSet(true, false))
+                        bsGui.abgleich();
+                  } catch (IOException | InterruptedException ignore) {
+                     ignore.printStackTrace();
                   }
-               }
-            }
+               });
          });
       }
       return sliderSpace;

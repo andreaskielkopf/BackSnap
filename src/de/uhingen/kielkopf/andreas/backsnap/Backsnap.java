@@ -55,7 +55,7 @@ public class Backsnap {
    static public final Flag          KEEP_MINIMUM     =new Flag('m', "keepminimum");    // mark all but minimum
                                                                                         // snapshots
    static public final String        BACK_SNAP_VERSION=                                 // version
-            "BackSnap for Snapper and Timeshift(beta) Version 0.6.3.11 (2023/08/30)";
+            "BackSnap for Snapper and Timeshift Version 0.6.3.13 (2023/08/31)";
    static public final ReentrantLock BTRFS_LOCK       =new ReentrantLock();
    static public final String        LF               =System.lineSeparator();
    static public void main(String[] args) {
@@ -143,7 +143,7 @@ public class Backsnap {
                   continue;
                // Anzeige im Progressbar anpassen
                if (bsGui instanceof BacksnapGui gui)
-                  gui.refreshGUI(OneBackup.backupPc);
+                  gui.refreshGUI();
                if (SINGLESNAPSHOT.get())// nur einen Snapshot übertragen und dann abbrechen
                   break;
             } catch (NullPointerException n) {

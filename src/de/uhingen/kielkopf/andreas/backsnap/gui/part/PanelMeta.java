@@ -5,11 +5,11 @@ package de.uhingen.kielkopf.andreas.backsnap.gui.part;
 
 import java.awt.BorderLayout;
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 import org.eclipse.jdt.annotation.NonNull;
 
@@ -17,12 +17,14 @@ import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
+import de.uhingen.kielkopf.andreas.beans.Version;
 
 /**
  * @author Andreas Kielkopf
  *
  */
 public class PanelMeta extends JPanel {
+   static private ExecutorService     virtual         =Version.getVx();
    static private final long          serialVersionUID=-8829953253542936677L;
    private JCheckBox                  chckMeta;
    private JButton                    btnMeta;
@@ -32,13 +34,8 @@ public class PanelMeta extends JPanel {
    private JPanel                     panel;
    private JPanel                     panel_c;
    private TxtFeld                    xtxDisabled;
+   AtomicBoolean                      needsAbgleich   =new AtomicBoolean(false);
    @NonNull private final BacksnapGui bsGui;
-   /**
-    * Create the panel.
-    */
-   // public PanelMeta() {
-   // this(null);
-   // }
    /**
     * @param bsGui
     */
@@ -78,14 +75,7 @@ public class PanelMeta extends JPanel {
    public JButton getBtnMeta() {
       if (btnMeta == null) {
          btnMeta=new JButton("Delete some unneeded snapshots");
-         // if (bsGui != null)
-         btnMeta.addActionListener(e -> {
-            try {
-               bsGui.delete(getBtnMeta(), SnapshotLabel.STATUS.SPAM.color);
-            } catch (IOException e1) {
-               e1.printStackTrace();
-            }
-         });
+         btnMeta.addActionListener(e -> bsGui.delete(getBtnMeta(), getChckMeta(), SnapshotLabel.STATUS.SPAM));
          btnMeta.setEnabled(false);
          btnMeta.setBackground(SnapshotLabel.STATUS.SPAM.color);
       }
@@ -110,21 +100,20 @@ public class PanelMeta extends JPanel {
          sliderMeta.setPaintLabels(true);
          sliderMeta.setPaintTicks(true);
          sliderMeta.setValue(DEFAULT_META - 1);
-         // if (bsGui != null)
-         sliderMeta.addChangeListener(new ChangeListener() {
-            @Override
-            public void stateChanged(final ChangeEvent e) {
-               String text=Integer.toString(getSliderMeta().getValue());
-               getLblMeta().setText(text);
-               if (!getSliderMeta().getValueIsAdjusting()) {
-                  Backsnap.KEEP_MINIMUM.setParameter(text);
+         sliderMeta.addChangeListener(e -> {
+            String text=Integer.toString(getSliderMeta().getValue());
+            getLblMeta().setText(text);
+            Backsnap.KEEP_MINIMUM.setParameter(text);
+            if (needsAbgleich.compareAndSet(false, true))
+               virtual.execute(() -> {
                   try {
-                     bsGui.abgleich();
-                  } catch (IOException e1) {
-                     e1.printStackTrace();
+                     Thread.sleep(50);
+                     if (needsAbgleich.compareAndSet(true, false))
+                        bsGui.abgleich();
+                  } catch (IOException | InterruptedException ignore) {
+                     ignore.printStackTrace();
                   }
-               }
-            }
+               });
          });
       }
       return sliderMeta;
