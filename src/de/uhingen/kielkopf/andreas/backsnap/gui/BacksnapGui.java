@@ -124,13 +124,14 @@ public class BacksnapGui implements MouseListener {
     * @param bsGui
     * @throws IOException
     */
-   static public BacksnapGui getGui(SnapConfig srcConfig, SnapTree backupTree, Usage usage) throws IOException {
+   static public BacksnapGui getGui( SnapConfig srcConfig, SnapTree backupTree, Usage usage)
+            throws IOException {
       if (backSnapGui == null) {
          backSnapGui=new BacksnapGui();
          main2(null); // zeigt die GUI an
          backSnapGui.setArgs(Flag.getArgs());
          backSnapGui.setSrc(srcConfig);
-         backSnapGui.setBackup(backupTree, OneBackup.backupPc.getBackupLabel());
+         backSnapGui.setBackup(backupTree);
          backSnapGui.setUsage(usage);
          SwingUtilities.invokeLater(() -> {
             try {
@@ -138,6 +139,11 @@ public class BacksnapGui implements MouseListener {
             } catch (IOException ignore) { /* ignore */ }
          });
          backSnapGui.getPanelMaintenance().updateButtons();
+      } else {
+         backSnapGui.setArgs(Flag.getArgs());
+         backSnapGui.setSrc(srcConfig);
+         backSnapGui.setBackup(backupTree);
+         backSnapGui.setUsage(usage);
       }
       backSnapGui.getProgressBar().setMaximum(srcConfig.volumeMount().otimeKeyMap().size());
       return backSnapGui;
@@ -167,10 +173,11 @@ public class BacksnapGui implements MouseListener {
       ConcurrentSkipListMap<String, SnapshotLabel> snapshotLabels_Uuid=getPanelSrc().labelTree_UUID;
       ConcurrentSkipListMap<String, SnapshotLabel> backupLabels_Uuid=getPanelBackup().labelTree_UUID;
       ConcurrentSkipListMap<String, SnapshotLabel> backupLabels_KeyO=getPanelBackup().labelTree_KeyO;
-      ConcurrentSkipListMap<String, SnapshotLabel> backupLabels_DirName=getPanelBackup().labelTree_DirName;
+      ConcurrentSkipListMap<String, SnapshotLabel> backupLabels_DirName=getPanelBackup().labelTree_DirNameS;
       // SINGLESNAPSHOT make or delete only one(1) snapshot per call
       // for DELETEOLD get all old snapshots that are "o=999" older than the newest one
-      Entry<String, SnapshotLabel> srcLast=getPanelSrc().labelTree_DirName.lastEntry();
+      Entry<String, SnapshotLabel> srcLast=getPanelSrc().labelTree_DirNameS.lastEntry();
+//      System.out.println("srcLast:"+srcLast.getKey());
       ArrayList<SnapshotLabel> backupMixedList=getPanelBackup().mixedList;
       return virtual.submit(() -> {
          ConcurrentNavigableMap<String, SnapshotLabel> toDeleteOld=new ConcurrentSkipListMap<>();
@@ -234,7 +241,6 @@ public class BacksnapGui implements MouseListener {
                snapshotLabels_Uuid.get(sl.snapshot.received_uuid()).setStatus(STATUS.GESICHERT);
             } else
                sl.setStatus(STATUS.NAHE);
-           
          }
          ArrayList<SnapshotLabel> deleteList=new ArrayList<>();
          // Schauen was gelöscht werden könnte von den alten Backups
@@ -244,7 +250,6 @@ public class BacksnapGui implements MouseListener {
             deleteList.add(sl);
             sl.setStatus(STATUS.ALT);// rot
             deletable--;
-           
          }
          for (SnapshotLabel sl:mixedList2) { // manuell gelöschte anbieten
             if (deletable < 1)
@@ -258,7 +263,6 @@ public class BacksnapGui implements MouseListener {
             deleteList.add(sl);
             sl.setStatus(STATUS.SPAM);// orange
             deletable--;
-           
          }
          for (SnapshotLabel sl:mixedList2) { // dann Sackgassen anbieten
             if (deletable < 1)
@@ -272,7 +276,6 @@ public class BacksnapGui implements MouseListener {
             deleteList.add(sl);
             sl.setStatus(STATUS.SPAM);
             deletable--;
-           
          }
          for (SnapshotLabel sl:mixedList2) { // zuletzt reguläre Snapshots anbieten
             if (deletable < 1)
@@ -284,7 +287,6 @@ public class BacksnapGui implements MouseListener {
             deleteList.add(sl);
             sl.setStatus(STATUS.SPAM);
             deletable--;
-           
          }
       });
    }
@@ -330,9 +332,9 @@ public class BacksnapGui implements MouseListener {
     * @throws IOException
     * 
     */
-   public void setBackup(SnapTree backupTree, Path backupLabel) throws IOException {
+   public void setBackup(SnapTree backupTree) throws IOException {
       ConcurrentSkipListMap<String, Snapshot> passendBackups=new ConcurrentSkipListMap<>();
-      Path rest=Path.of(Pc.MNT_BACKSNAP).resolve(backupLabel);
+      Path rest=Path.of(Pc.MNT_BACKSNAP).resolve(Backsnap.actualBackup.backupLabel());
       for (Snapshot snapshot:backupTree.dateMap().values()) // sortiert nach otime und NAME
          if (snapshot.getBackupMountPath() instanceof Path pfad && pfad.startsWith(rest))
             passendBackups.put(snapshot.keyB(), snapshot);
@@ -346,7 +348,7 @@ public class BacksnapGui implements MouseListener {
       abgleich(); // läuft virtuell
       SnapshotPanel pb=getPanelBackup();
       SwingUtilities.invokeLater(() -> {
-         pb.setTitle("Backup to Label " + backupLabel);
+         pb.setTitle("Backup to Label " + Backsnap.actualBackup.backupLabel());
          pb.setInfo(backupTree.mount());
       });
    }
@@ -564,7 +566,6 @@ public class BacksnapGui implements MouseListener {
    private TxtFeld         txtTime;
    private Lbl             lblSize;
    private TxtFeld         txtSize;
-
    public String           refreshGUIcKey  =null;
    public Instant          refreshUsage    =Instant.now();
    private JPanel getPanelUnten() {
@@ -749,7 +750,7 @@ public class BacksnapGui implements MouseListener {
             if (refreshGUIcKey == null) // refreshBackupPc=backupPc;
                refreshGUIcKey=OneBackup.backupPc.extern() + ":" + OneBackup.backupPc.getBackupVolume().devicePath();
             Commandline.removeFromCache(refreshGUIcKey); // umgeht den cache
-            setBackup(new SnapTree(OneBackup.backupPc.getBackupVolume()), OneBackup.backupPc.getBackupLabel());
+            setBackup(new SnapTree(OneBackup.backupPc.getBackupVolume()));
             if (Instant.now().isAfter(refreshUsage)) {
                getPanelMaintenance().setUsage(new Usage(OneBackup.backupPc.getBackupVolume(), false));
                refreshUsage=Instant.now().plusSeconds(60);

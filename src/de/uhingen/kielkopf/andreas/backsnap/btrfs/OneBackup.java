@@ -51,7 +51,7 @@ public record OneBackup(Pc srcPc, Path srcPath, Path backupLabel, String flags) 
                && (srcPc().getKernelVersion() instanceof Version v1 && v1.getMayor() < 6)
                && (backupPc.getBtrfsVersion() instanceof Version v2 && v2.getMayor() < 6);
    }
-   static Pattern linePattern=Pattern.compile("^([a-zA-Z0-9.]{2,80}) *= *(.+)");
+   static Pattern linePattern=Pattern.compile("^([a-zA-Z0-9._]{2,80}) *= *(.+)");
    /**
     * @param etc
     */
@@ -61,6 +61,7 @@ public record OneBackup(Pc srcPc, Path srcPath, Path backupLabel, String flags) 
             Pc pc=null;
             String flags=null;
             for (String line:file) {
+               // if (line.startsWith("#")) continue; // Kommentare ausblenden
                Matcher m=linePattern.matcher(line);
                if (m.matches()) {
                   String a=m.group(1);

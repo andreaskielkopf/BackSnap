@@ -100,7 +100,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          return null;
       return dn.toString();
    }
-   private String sortableDirname() {
+   public String sortableDirname() {
       return dir2key(dirName());
    }
    /**
@@ -112,6 +112,11 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       try {
          String[] t=dirName().split("_");
          return Instant.parse(t[0] + "T" + t[1].replace('-', ':') + "Z");
+      } catch (Exception e) {/* ignore */ }
+      try {
+         long nr=Long.parseLong(dirName()) * 3_600L;// 1 Stunde
+         Instant i=Instant.now().plusSeconds(nr);
+         return i;
       } catch (Exception e) {/* ignore */ }
       return null;
    }

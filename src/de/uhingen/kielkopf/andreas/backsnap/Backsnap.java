@@ -40,6 +40,7 @@ public class Backsnap {
    static public int                 disconnectCount  =0;
    static Future<?>                  task             =null;
    static public BacksnapGui         bsGui;
+   static public OneBackup           actualBackup     =null;
    static private int                textPos          =0;
    static final Flag                 HELP             =new Flag('h', "help");           // show usage
    static final Flag                 VERSION          =new Flag('x', "version");        // show date and version
@@ -92,46 +93,45 @@ public class Backsnap {
          OneBackup.backupPc=backupPc;
          OneBackup oneBackup=new OneBackup(srcPc, srcPath, backupLabel, null);
          OneBackup.backupList.add(oneBackup);
-      } else {
+      } else
          try {
-            // boolean h=Etc.hasConfig("backsnap");
-            Etc etc=Etc.getConfig("backsnap");
-            OneBackup.setConfig(etc);
-            // List<Pc> pcs=OneBackup.getPcs();
-            // List<OneBackup> backups=OneBackup.getBackups();
-            // etc.save();
+            OneBackup.setConfig(Etc.getConfig("backsnap"));
          } catch (IOException e) {
             e.printStackTrace();
          }
-      }
       try { // teste ob pv da ist
          usePv=Paths.get("/bin/pv").toFile().canExecute();
       } catch (Exception e1) {/* */}
       OneBackup lastBackup=null;
-      for (OneBackup thisBackup:OneBackup.backupList) {
+      for (OneBackup ob:OneBackup.backupList) {
          BTRFS_LOCK.lock();
+         actualBackup=ob;
          try {
-            if (thisBackup.flags() instanceof String s)
-               Flag.setArgs(s.split(" "), "");
+            if (actualBackup.flags() instanceof String s) {
+               String a=String.join(" ", args).concat(" ").concat(s);
+               Flag.setArgs(a.split(" "), "");
+               
+            } else  Flag.setArgs(args, "");
+            TIMESHIFT.set(true);
             if (TIMESHIFT.get()) {
                if (lastBackup != null)
-                  if (thisBackup.srcPc() != lastBackup.srcPc())
+                  if (actualBackup.srcPc() != lastBackup.srcPc())
                      try {
                         lastBackup.srcPc().mountBtrfsRoot(lastBackup.srcPath(), false);
                      } catch (IOException e) {/* */ } // umount
-               thisBackup.mountBtrfsRoot();
-               lastBackup=thisBackup;
+               actualBackup.mountBtrfsRoot();
+               lastBackup=actualBackup;
             }
             // Start collecting information
-            SnapConfig srcConfig=SnapConfig.getConfig(thisBackup);
+            SnapConfig srcConfig=SnapConfig.getConfig(actualBackup);
             srcConfig.volumeMount().populate();
             logln(1, "Backup snapshots from " + srcConfig.volumeMount().keyM());
             OneBackup.backupPc.getMountList(false); // eventuell unnötig
             {
                Mount backupVolume=OneBackup.backupPc.getBackupVolume();
-               if (backupVolume.devicePath().equals(srcConfig.volumeMount().devicePath()) && thisBackup.isSamePc())
+               if (backupVolume.devicePath().equals(srcConfig.volumeMount().devicePath()) && actualBackup.isSamePc())
                   throw new RuntimeException(LF + "Backup is not possible onto the same device: "
-                           + OneBackup.backupPc.getBackupLabel() + " <= " + thisBackup.srcPath() + LF
+                           + OneBackup.backupPc.getBackupLabel() + " <= " + actualBackup.srcPath() + LF
                            + "Please select another partition for the backup");
                logln(2, "Try to use backupDir  " + backupVolume.keyM());
                usage=new Usage(backupVolume, false);
@@ -143,6 +143,13 @@ public class Backsnap {
                System.exit(0);
             }
             bsGui=GUI.get() ? bsGui=BacksnapGui.getGui(srcConfig, backupTree, usage) : null;
+            if (bsGui instanceof BacksnapGui g) {
+               final JProgressBar speedBar=g.getSpeedBar();
+               SwingUtilities.invokeLater(() -> {
+                  speedBar.setValue(0);
+                  speedBar.setString("doing Backups");
+               });
+            }
             if (usage.isFull())
                throw new RuntimeException(
                         LF + "The backup volume has less than 10GiB unallocated: " + usage.unallcoated() + " of "
@@ -165,7 +172,7 @@ public class Backsnap {
                try {
                   if (bsGui instanceof BacksnapGui gui)
                      gui.updateProgressbar(counter, srcConfig.volumeMount().otimeKeyMap().size());
-                  if (!backup(thisBackup, sourceSnapshot, backupTree))
+                  if (!backup(actualBackup, sourceSnapshot, backupTree))
                      continue;
                   // Anzeige im Progressbar anpassen
                   if (bsGui instanceof BacksnapGui gui)
@@ -184,6 +191,11 @@ public class Backsnap {
             else
                e.printStackTrace();
             if (OneBackup.backupList.size() <= 1) {
+               if (TIMESHIFT.get())
+                  try {
+                     if (lastBackup != null)
+                        lastBackup.srcPc().mountBtrfsRoot(lastBackup.srcPath(), false);
+                  } catch (IOException ignore) {/* */ } // umount
                ende("Xabbruch");
                System.exit(-1);
             }
@@ -192,12 +204,13 @@ public class Backsnap {
             if (bsGui instanceof BacksnapGui gui)
                gui.getPanelMaintenance().updateButtons();
          }
+         pause();
       }
       if (TIMESHIFT.get())
          try {
             if (lastBackup != null)
                lastBackup.srcPc().mountBtrfsRoot(lastBackup.srcPath(), false);
-         } catch (IOException e) {/* */ } // umount
+         } catch (IOException ignore) {/* */ } // umount
       ende("X");
       System.exit(-2);
    }
@@ -447,6 +460,46 @@ public class Backsnap {
          }
       }
       throw new FileNotFoundException("Could not create dir: " + bdir);
+   }
+   static private final void pause() {
+      if (GUI.get()) {
+         if (bsGui != null)
+            SwingUtilities.invokeLater(() -> {
+               bsGui.getSpeedBar().setString("Ready"); // sl.repaint(100);
+               bsGui.refreshGUI();
+            });
+         if (AUTO.get()) {
+            if ((bsGui != null) && (bsGui.frame instanceof Frame frame)) {
+               final float FAKTOR=2f;
+               final int countdownStart=(int) (FAKTOR
+                        * ((AUTO.getParameterOrDefault(10) instanceof Integer n) ? n : 10));
+               final JProgressBar speedBar=bsGui.getSpeedBar();
+               SwingUtilities.invokeLater(() -> speedBar.setMaximum(countdownStart));
+               int countdown=countdownStart;
+               while (countdown-- > 0) {
+                  final float f=countdown / FAKTOR;
+                  final int p=countdownStart - countdown;
+                  SwingUtilities.invokeLater(() -> {
+                     speedBar.setValue(p);
+                     speedBar.setString(String.format("waiting for %2.1f sec", f));
+                  });
+                  try {
+                     Thread.sleep((long) (1000 / FAKTOR));
+                     while (bsGui.getTglPause().isSelected())
+                        Thread.sleep(50);
+                  } catch (InterruptedException ignore) {/* ignore */}
+               }
+            }
+         } else
+            while (bsGui != null)
+               try {
+                  if (bsGui.frame == null)
+                     break;
+                  if (!bsGui.getTglPause().isSelected())
+                     break;
+                  Thread.sleep(1000);
+               } catch (InterruptedException ignore) {/* */}
+      }
    }
    /**
     * prozesse aufräumen

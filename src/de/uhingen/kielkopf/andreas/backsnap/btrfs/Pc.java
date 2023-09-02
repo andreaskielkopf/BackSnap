@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
@@ -27,6 +29,7 @@ public record Pc(String extern, // Marker für diesen PC
    /* In /tmp werden bei Timeshift Pcs die Snapshots vorübergehnd eingehängt */
    static public final String TMP_BTRFS_ROOT="/tmp/BtrfsRoot";
    static public final String MNT_BACKSNAP="/mnt/BackSnap";
+   static final Pattern allowExtern=Pattern.compile("[a-zA-Z_0-9]+@[a-zA-Z_0-9.]+|sudo ");
    /**
     * Sicherstellen, dass jeder Pc nur einmal erstellt wird
     * 
@@ -37,8 +40,10 @@ public record Pc(String extern, // Marker für diesen PC
     */
    static public Pc getPc(String extern) /* throws IOException */ {
       String x=(extern == null) ? "" : extern.startsWith("sudo") ? "sudo " : extern;
-      if (!pcCache.containsKey(x))
-         pcCache.put(x, new Pc(x));
+      Matcher m=allowExtern.matcher(x);
+      if (m.matches())
+         if (!pcCache.containsKey(x))
+            pcCache.put(x, new Pc(x));
       return pcCache.get(x);
    }
    private Pc(String extern)/* throws IOException */ {

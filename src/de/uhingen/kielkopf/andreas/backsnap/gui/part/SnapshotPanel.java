@@ -33,7 +33,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_R_UUID    =new ConcurrentSkipListMap<>();
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_ParentUuid=new ConcurrentSkipListMap<>();
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_KeyO      =new ConcurrentSkipListMap<>();
-   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_DirName   =new ConcurrentSkipListMap<>();
+   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_DirNameS   =new ConcurrentSkipListMap<>();
    public ArrayList<SnapshotLabel>                     mixedList           =new ArrayList<>();
    private TitledBorder                                tBorder             =new TitledBorder(null, "Snapshots of ...",
             TitledBorder.LEADING, TitledBorder.TOP, null, null);
@@ -134,7 +134,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
       labelTree_UUID.clear();
       labelTree_ParentUuid.clear();
       labelTree_KeyO.clear();
-      labelTree_DirName.clear();
+      labelTree_DirNameS.clear();
       final ArrayList<SnapshotLabel> pvList=new ArrayList<>();
       List<Component> aktuell;
       final JPanel pv=getPanelView();
@@ -149,7 +149,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
                labelTree_R_UUID.put(snapshot.received_uuid(), snapshotLabel);
             labelTree_ParentUuid.put(snapshot.parent_uuid(), snapshotLabel);// parent sortiert (keine doppelten !)
             labelTree_KeyO.put(snapshot.keyO(), snapshotLabel);// nach Key sortiert (keine doppelten !)
-            labelTree_DirName.put(snapshot.dirName(), snapshotLabel);// nach Key sortiert (keine doppelten !)
+            labelTree_DirNameS.put(snapshot.sortableDirname(), snapshotLabel);// nach Key sortiert (keine doppelten !)
             if (!mixedList.contains(snapshotLabel))
                mixedList.add(snapshotLabel);
             pvList.add(snapshotLabel);
