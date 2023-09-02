@@ -19,6 +19,7 @@ import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
 import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotLabel.STATUS;
 import de.uhingen.kielkopf.andreas.beans.cli.Flag;
+import de.uhingen.kielkopf.andreas.beans.minijson.Etc;
 
 /**
  * License: 'GNU General Public License v3.0'
@@ -55,11 +56,11 @@ public class Backsnap {
    static public final Flag          KEEP_MINIMUM     =new Flag('m', "keepminimum");    // mark all but minimum
                                                                                         // snapshots
    static public final String        BACK_SNAP_VERSION=                                 // version
-            "BackSnap for Snapper and Timeshift Version 0.6.3.13 (2023/08/31)";
+            "BackSnap for Snapper and Timeshift Version 0.6.3.14 (2023/09/01)";
    static public final ReentrantLock BTRFS_LOCK       =new ReentrantLock();
    static public final String        LF               =System.lineSeparator();
    static public void main(String[] args) {
-      Flag.setArgs(args, DEFAULT_SRC + " " + DEFAULT_BACKUP);
+      Flag.setArgs(args, "");
       logln(0, BACK_SNAP_VERSION);
       logln(1, "args > " + Flag.getArgs());
       if (VERSION.get())
@@ -67,7 +68,7 @@ public class Backsnap {
       if (DRYRUN.get())
          logln(0, "Doing a dry run ! ");
       TIMESHIFT.set(true);
-      { // Parameter sammeln für SOURCE
+      if (!Flag.getParameter(1).isBlank()) { // Parameter sammeln für SOURCE
          String[] source=Flag.getParameterOrDefault(0, DEFAULT_SRC).split("[:]");
          Pc srcPc=Pc.getPc(switch (source.length) {
             // case 0 -> throw new IllegalArgumentException("Ein Configfile wird noch nicht unterstützt");
@@ -89,85 +90,114 @@ public class Backsnap {
          Path backupLabel=Paths.get(backup[backup.length - 1]).getFileName();
          backupPc.setBackupLabel(backupLabel);
          OneBackup.backupPc=backupPc;
-         oneBackup=new OneBackup(srcPc, srcPath, backupLabel);
-      }
-      try {
-         try { // teste ob pv da ist
-            usePv=Paths.get("/bin/pv").toFile().canExecute();
-         } catch (Exception e1) {/* */}
-         if (TIMESHIFT.get())
-            oneBackup.mountBtrfsRoot();
-         // Start collecting information
-         SnapConfig srcConfig=SnapConfig.getConfig(oneBackup);
-         srcConfig.volumeMount().populate();
-         logln(1, "Backup snapshots from " + srcConfig.volumeMount().keyM());
-         OneBackup.backupPc.getMountList(false); // eventuell unnötig
-         {
-            Mount backupVolume=OneBackup.backupPc.getBackupVolume();
-            if (backupVolume.devicePath().equals(srcConfig.volumeMount().devicePath()) && oneBackup.isSamePc())
-               throw new RuntimeException(LF + "Backup is not possible onto the same device: "
-                        + OneBackup.backupPc.getBackupLabel() + " <= " + oneBackup.srcPath() + LF
-                        + "Please select another partition for the backup");
-            logln(2, "Try to use backupDir  " + backupVolume.keyM());
-            usage=new Usage(backupVolume, false);
-            backupTree=SnapTree.getSnapTree(backupVolume);
-         }
-         if (disconnectCount > 0) {
-            err.println("no SSH Connection");
-            ende("X");
-            System.exit(0);
-         }
-         bsGui=GUI.get() ? bsGui=BacksnapGui.getGui(srcConfig, backupTree, usage) : null;
-         if (usage.isFull())
-            throw new RuntimeException(LF + "The backup volume has less than 10GiB unallocated: " + usage.unallcoated()
-                     + " of " + usage.size() + LF + "Please free some space on the backup volume");
-         /// Alle Snapshots einzeln sichern
-         int counter=0;
-         for (Snapshot sourceSnapshot:srcConfig.volumeMount().otimeKeyMap().values()) {
-            counter++;
-            if (canNotFindParent != null) {
-               err.println("Please remove " + Pc.MNT_BACKSNAP + "/" + OneBackup.backupPc.getBackupLabel() + "/"
-                        + canNotFindParent + "/" + SNAPSHOT + " !");
-               ende("X");
-               System.exit(-9);
-            } else
-               if (disconnectCount > 3) {
-                  err.println("SSH Connection lost !");
-                  ende("X");
-                  System.exit(-8);
-               }
-            try {
-               if (bsGui instanceof BacksnapGui gui)
-                  gui.updateProgressbar(counter, srcConfig.volumeMount().otimeKeyMap().size());
-               if (!backup(sourceSnapshot, backupTree))
-                  continue;
-               // Anzeige im Progressbar anpassen
-               if (bsGui instanceof BacksnapGui gui)
-                  gui.refreshGUI();
-               if (SINGLESNAPSHOT.get())// nur einen Snapshot übertragen und dann abbrechen
-                  break;
-            } catch (NullPointerException n) {
-               n.printStackTrace();
-               break;
-            }
-         }
-      } catch (IOException e) {
-         if ((e.getMessage().startsWith("ssh: connect to host"))
-                  || (e.getMessage().startsWith("Could not find snapshot:")))
-            System.err.println(e.getMessage());
-         else
+         OneBackup oneBackup=new OneBackup(srcPc, srcPath, backupLabel, null);
+         OneBackup.backupList.add(oneBackup);
+      } else {
+         try {
+            // boolean h=Etc.hasConfig("backsnap");
+            Etc etc=Etc.getConfig("backsnap");
+            OneBackup.setConfig(etc);
+            // List<Pc> pcs=OneBackup.getPcs();
+            // List<OneBackup> backups=OneBackup.getBackups();
+            // etc.save();
+         } catch (IOException e) {
             e.printStackTrace();
-         ende("Xabbruch");
-         System.exit(-1);
-      } finally {
-         BTRFS_LOCK.unlock();
-         if (bsGui instanceof BacksnapGui gui)
-            gui.getPanelMaintenance().updateButtons();
-         if (TIMESHIFT.get())
-            try {
-               oneBackup.srcPc().mountBtrfsRoot(oneBackup.srcPath(), false);
-            } catch (IOException e) {/* */ } // umount
+         }
       }
+      try { // teste ob pv da ist
+         usePv=Paths.get("/bin/pv").toFile().canExecute();
+      } catch (Exception e1) {/* */}
+      OneBackup lastBackup=null;
+      for (OneBackup thisBackup:OneBackup.backupList) {
+         BTRFS_LOCK.lock();
+         try {
+            if (thisBackup.flags() instanceof String s)
+               Flag.setArgs(s.split(" "), "");
+            if (TIMESHIFT.get()) {
+               if (lastBackup != null)
+                  if (thisBackup.srcPc() != lastBackup.srcPc())
+                     try {
+                        lastBackup.srcPc().mountBtrfsRoot(lastBackup.srcPath(), false);
+                     } catch (IOException e) {/* */ } // umount
+               thisBackup.mountBtrfsRoot();
+               lastBackup=thisBackup;
+            }
+            // Start collecting information
+            SnapConfig srcConfig=SnapConfig.getConfig(thisBackup);
+            srcConfig.volumeMount().populate();
+            logln(1, "Backup snapshots from " + srcConfig.volumeMount().keyM());
+            OneBackup.backupPc.getMountList(false); // eventuell unnötig
+            {
+               Mount backupVolume=OneBackup.backupPc.getBackupVolume();
+               if (backupVolume.devicePath().equals(srcConfig.volumeMount().devicePath()) && thisBackup.isSamePc())
+                  throw new RuntimeException(LF + "Backup is not possible onto the same device: "
+                           + OneBackup.backupPc.getBackupLabel() + " <= " + thisBackup.srcPath() + LF
+                           + "Please select another partition for the backup");
+               logln(2, "Try to use backupDir  " + backupVolume.keyM());
+               usage=new Usage(backupVolume, false);
+               backupTree=SnapTree.getSnapTree(backupVolume);
+            }
+            if (disconnectCount > 0) {
+               err.println("no SSH Connection");
+               ende("X");
+               System.exit(0);
+            }
+            bsGui=GUI.get() ? bsGui=BacksnapGui.getGui(srcConfig, backupTree, usage) : null;
+            if (usage.isFull())
+               throw new RuntimeException(
+                        LF + "The backup volume has less than 10GiB unallocated: " + usage.unallcoated() + " of "
+                                 + usage.size() + LF + "Please free some space on the backup volume");
+            /// Alle Snapshots einzeln sichern
+            int counter=0;
+            for (Snapshot sourceSnapshot:srcConfig.volumeMount().otimeKeyMap().values()) {
+               counter++;
+               if (canNotFindParent != null) {
+                  err.println("Please remove " + Pc.MNT_BACKSNAP + "/" + OneBackup.backupPc.getBackupLabel() + "/"
+                           + canNotFindParent + "/" + SNAPSHOT + " !");
+                  ende("X");
+                  System.exit(-9);
+               } else
+                  if (disconnectCount > 3) {
+                     err.println("SSH Connection lost !");
+                     ende("X");
+                     System.exit(-8);
+                  }
+               try {
+                  if (bsGui instanceof BacksnapGui gui)
+                     gui.updateProgressbar(counter, srcConfig.volumeMount().otimeKeyMap().size());
+                  if (!backup(thisBackup, sourceSnapshot, backupTree))
+                     continue;
+                  // Anzeige im Progressbar anpassen
+                  if (bsGui instanceof BacksnapGui gui)
+                     gui.refreshGUI();
+                  if (SINGLESNAPSHOT.get())// nur einen Snapshot übertragen und dann abbrechen
+                     break;
+               } catch (NullPointerException n) {
+                  n.printStackTrace();
+                  break;
+               }
+            }
+         } catch (IOException e) {
+            if ((e.getMessage().startsWith("ssh: connect to host"))
+                     || (e.getMessage().startsWith("Could not find snapshot:")))
+               System.err.println(e.getMessage());
+            else
+               e.printStackTrace();
+            if (OneBackup.backupList.size() <= 1) {
+               ende("Xabbruch");
+               System.exit(-1);
+            }
+         } finally {
+            BTRFS_LOCK.unlock();
+            if (bsGui instanceof BacksnapGui gui)
+               gui.getPanelMaintenance().updateButtons();
+         }
+      }
+      if (TIMESHIFT.get())
+         try {
+            if (lastBackup != null)
+               lastBackup.srcPc().mountBtrfsRoot(lastBackup.srcPath(), false);
+         } catch (IOException e) {/* */ } // umount
       ende("X");
       System.exit(-2);
    }
@@ -182,7 +212,7 @@ public class Backsnap {
     * @param dMap
     * @throws IOException
     */
-   static private boolean backup(Snapshot srcSnapshot, SnapTree backupMap) throws IOException {
+   static private boolean backup(OneBackup oneBackup, Snapshot srcSnapshot, SnapTree backupMap) throws IOException {
       if (bsGui instanceof BacksnapGui gui)
          gui.setBackupInfo(srcSnapshot, parentSnapshot);
       if (srcSnapshot.isBackup()) {
@@ -216,14 +246,14 @@ public class Backsnap {
       log(3, "Backup of " + srcSnapshot.dirName()
                + (parentSnapshot instanceof Snapshot ps ? " based on " + ps.dirName() : ""));
       mkDirs(bDir);
-      rsyncFiles(srcSnapshot.getSnapshotMountPath(), bDir);
+      rsyncFiles(oneBackup, srcSnapshot.getSnapshotMountPath(), bDir);
       if (GUI.get())
          bsGui.mark(srcSnapshot.uuid(), STATUS.INPROGRESS); // Pc backupPc=backupMap.mount().pc();
-      if (sendBtrfs(srcSnapshot, bDir))
+      if (sendBtrfs(oneBackup, srcSnapshot, bDir))
          parentSnapshot=srcSnapshot;
       return true;
    }
-   static private boolean sendBtrfs(Snapshot s, Path bDir) throws IOException {
+   static private boolean sendBtrfs(OneBackup oneBackup, Snapshot s, Path bDir) throws IOException {
       StringBuilder btrfsSendSB=new StringBuilder("/bin/btrfs send ");
       if (bsGui instanceof BacksnapGui gui)
          gui.setBackupInfo(s, parentSnapshot);
@@ -312,10 +342,10 @@ public class Backsnap {
          Snapshot.setReadonly(parentSnapshot, s, false);
       return true;
    }
-   static StringBuilder     pv=new StringBuilder("- Info -");
-   private static OneBackup oneBackup;
-   private static Usage     usage;
-   private static SnapTree  backupTree;
+   static StringBuilder    pv=new StringBuilder("- Info -");
+   // private static OneBackup oneBackup;
+   private static Usage    usage;
+   private static SnapTree backupTree;
    /**
     * @param line
     */
@@ -326,7 +356,7 @@ public class Backsnap {
       if (!line.isBlank())
          bsGui.lblPvSetText(line);
    }
-   static private void rsyncFiles(Path sDir, Path bDir) throws IOException {
+   static private void rsyncFiles(OneBackup oneBackup, Path sDir, Path bDir) throws IOException {
       StringBuilder rsyncSB=new StringBuilder("/bin/rsync -vdcptgo --exclude \"@*\" --exclude \"" + SNAPSHOT + "\" ");
       if (DRYRUN.get())
          rsyncSB.append("--dry-run ");
@@ -443,7 +473,8 @@ public class Backsnap {
             if (AUTO.get()) {
                if ((bsGui != null) && (bsGui.frame instanceof Frame frame)) {
                   final float FAKTOR=2f;
-                  final int countdownStart=(int) (FAKTOR * ((AUTO.getParameterOrDefault(10) instanceof Integer n) ? n : 10));
+                  final int countdownStart=(int) (FAKTOR
+                           * ((AUTO.getParameterOrDefault(10) instanceof Integer n) ? n : 10));
                   final JProgressBar speedBar=bsGui.getSpeedBar();
                   SwingUtilities.invokeLater(() -> speedBar.setMaximum(countdownStart));
                   int countdown=countdownStart;
@@ -453,16 +484,15 @@ public class Backsnap {
                      SwingUtilities.invokeLater(() -> {
                         speedBar.setValue(p);
                         speedBar.setString(String.format("%2.1f sec till exit", f));
-//                        speedBar.repaint(50);
+                        // speedBar.repaint(50);
                      });
                      try {
-                        Thread.sleep((long) (1000/FAKTOR));
+                        Thread.sleep((long) (1000 / FAKTOR));
                         while (bsGui.getTglPause().isSelected())
                            Thread.sleep(50);
                      } catch (InterruptedException ignore) {/* ignore */}
                   }
-                  bsGui.getPrefs().
-                  saveFramePos(bsGui.frame);
+                  bsGui.getPrefs().saveFramePos(bsGui.frame);
                   frame.setVisible(false);
                   frame.dispose();
                }

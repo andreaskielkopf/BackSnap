@@ -234,7 +234,7 @@ public class BacksnapGui implements MouseListener {
                snapshotLabels_Uuid.get(sl.snapshot.received_uuid()).setStatus(STATUS.GESICHERT);
             } else
                sl.setStatus(STATUS.NAHE);
-            // panelBackup.repaint(100);
+           
          }
          ArrayList<SnapshotLabel> deleteList=new ArrayList<>();
          // Schauen was gelöscht werden könnte von den alten Backups
@@ -244,7 +244,7 @@ public class BacksnapGui implements MouseListener {
             deleteList.add(sl);
             sl.setStatus(STATUS.ALT);// rot
             deletable--;
-            // panelBackup.repaint(100);
+           
          }
          for (SnapshotLabel sl:mixedList2) { // manuell gelöschte anbieten
             if (deletable < 1)
@@ -258,7 +258,7 @@ public class BacksnapGui implements MouseListener {
             deleteList.add(sl);
             sl.setStatus(STATUS.SPAM);// orange
             deletable--;
-            // panelBackup.repaint(100);
+           
          }
          for (SnapshotLabel sl:mixedList2) { // dann Sackgassen anbieten
             if (deletable < 1)
@@ -272,7 +272,7 @@ public class BacksnapGui implements MouseListener {
             deleteList.add(sl);
             sl.setStatus(STATUS.SPAM);
             deletable--;
-            // panelBackup.repaint(100);
+           
          }
          for (SnapshotLabel sl:mixedList2) { // zuletzt reguläre Snapshots anbieten
             if (deletable < 1)
@@ -284,7 +284,7 @@ public class BacksnapGui implements MouseListener {
             deleteList.add(sl);
             sl.setStatus(STATUS.SPAM);
             deletable--;
-            // panelBackup.repaint(100);
+           
          }
       });
    }
@@ -564,7 +564,7 @@ public class BacksnapGui implements MouseListener {
    private TxtFeld         txtTime;
    private Lbl             lblSize;
    private TxtFeld         txtSize;
-   // public Pc refreshBackupPc =null;
+
    public String           refreshGUIcKey  =null;
    public Instant          refreshUsage    =Instant.now();
    private JPanel getPanelUnten() {
