@@ -44,10 +44,6 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    static final Pattern NUMERIC_DIRNAME=Pattern.compile("([0-9]+)/snapshot$");
    static final Pattern DIRNAME=Pattern.compile("([^/]+)/snapshot$");
    static final Pattern SUBVOLUME=Pattern.compile("^(@[0-9a-zA-Z.]+)/.*[0-9]+/snapshot$");
-   /**
-    * 
-    */
-   private static final String PROPERTY_SET="btrfs property set ";
    public Snapshot(Mount mount, String from_btrfs) throws IOException {
       this(getMount(mount, getPath(BTRFS_PATH.matcher(from_btrfs))), getInt(ID.matcher(from_btrfs)),
                getInt(GEN.matcher(from_btrfs)), getInt(CGEN.matcher(from_btrfs)), getInt(PARENT.matcher(from_btrfs)),
@@ -166,9 +162,9 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    private boolean isReadonly() throws IOException {
       if (readonlyL().get() == null)
          try {
-            Backsnap.BTRFS_LOCK.lock();
+            Btrfs.LOCK.lock();
             String getReadonlyCmd=mount().pc()
-                     .getCmd(new StringBuilder("btrfs property get ").append(getSnapshotMountPath()).append(" ro"));
+                     .getCmd(new StringBuilder(Btrfs.PROPERTY_GET).append(getSnapshotMountPath()).append(" ro"));
             Backsnap.logln(4, getReadonlyCmd);// if (!DRYRUN.get())
             try (CmdStream getReadonlyStream=Commandline.executeCached(getReadonlyCmd, null)) { // not cached
                getReadonlyStream.backgroundErr();
@@ -188,7 +184,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
                }
             }
          } finally {
-            Backsnap.BTRFS_LOCK.unlock();
+            Btrfs.LOCK.unlock();
          }
       return readonlyL().get();
    }
@@ -291,16 +287,16 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    static public void setReadonly(Snapshot parent, Snapshot snapshot, boolean ro) throws IOException {
       StringBuilder readonlySB=new StringBuilder();
       if (parent instanceof Snapshot p && p.btrfsPath().toString().contains("timeshift"))
-         readonlySB.append(PROPERTY_SET).append(p.getSnapshotMountPath()).append(" ro ").append(ro).append(";");
+         readonlySB.append(Btrfs.PROPERTY_SET).append(p.getSnapshotMountPath()).append(" ro ").append(ro).append(";");
       if (snapshot instanceof Snapshot s && s.btrfsPath().toString().contains("timeshift"))
-         readonlySB.append(PROPERTY_SET).append(s.getSnapshotMountPath()).append(" ro ").append(ro).append(";");
+         readonlySB.append(Btrfs.PROPERTY_SET).append(s.getSnapshotMountPath()).append(" ro ").append(ro).append(";");
       if (readonlySB.isEmpty())
          return;
       if (Backsnap.bsGui instanceof BacksnapGui gui)
          gui.getPanelMaintenance().updateButtons();
       String readonlyCmd=snapshot.mount().pc().getCmd(readonlySB);
       Backsnap.logln(4, readonlyCmd);// if (!DRYRUN.get())
-      Backsnap.BTRFS_LOCK.lock();
+      Btrfs.LOCK.lock();
       // try {
       try (CmdStream readonlyStream=Commandline.executeCached(readonlyCmd, null)) { // not cached
          readonlyStream.backgroundErr();
@@ -314,7 +310,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
             } // ende("");// R
          // }
       } finally {
-         Backsnap.BTRFS_LOCK.unlock();
+         Btrfs.LOCK.unlock();
          if (Backsnap.bsGui instanceof BacksnapGui gui)
             gui.getPanelMaintenance().updateButtons();
       }
@@ -330,10 +326,10 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          return;
       if (isReadonly() == readonly)
          return;
-      Backsnap.BTRFS_LOCK.lock();
+      Btrfs.LOCK.lock();
       try {
          String setReadonlyCmd=mount().pc().getCmd(
-                  new StringBuilder(PROPERTY_SET).append(getSnapshotMountPath()).append(" ro ").append(readonly));
+                  new StringBuilder(Btrfs .PROPERTY_SET).append(getSnapshotMountPath()).append(" ro ").append(readonly));
          Backsnap.logln(4, setReadonlyCmd);// if (!DRYRUN.get())
          try (CmdStream setReadonlyStream=Commandline.executeCached(setReadonlyCmd, null)) { // not cached
             setReadonlyStream.backgroundErr();
@@ -347,7 +343,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
                } // ende("");// R
          }
       } finally {
-         Backsnap.BTRFS_LOCK.unlock();
+         Btrfs.LOCK.unlock();
          readonlyL().clear(); // nicht weiter im cache
       }
    }
@@ -376,13 +372,14 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          if (srcVolume.btrfsMap().isEmpty())
             throw new RuntimeException(Backsnap.LF + "Ingnoring, because there are no snapshots in: " + sourceDir);
          Backsnap.logln(1, "backup snapshots from: " + srcVolume.keyM());
+         subVolumes.pc();
          // BackupVolume ermitteln
-         Mount backupVolume=subVolumes.pc().getBackupVolume();
-         if (backupVolume == null)
+         Mount backupMount=Pc.getBackupMount();
+         if (backupMount == null)
             throw new RuntimeException(Backsnap.LF + "Could not find backupDir: " + backupDir);
-         Backsnap.logln(1, "Will try to use backupDir: " + backupVolume.keyM());
+         Backsnap.logln(1, "Will try to use backupDir: " + backupMount.keyM());
          // Subdir ermitteln
-         Path pathBackupDir=backupVolume.mountPath().relativize(Path.of(backupDir));
+         Path pathBackupDir=backupMount.mountPath().relativize(Path.of(backupDir));
          System.out.println(pathBackupDir);
          // Verifizieren !#
          if (!subVolumes.mountTree().isEmpty())
@@ -397,11 +394,12 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
                } else
                   System.out.println("NO snapshots of: " + e.getKey());
             }
-         Mount backupVolumeMount=subVolumes.pc().getBackupVolume();
-         System.out.println(backupVolumeMount);
+         subVolumes.pc();
+         // Mount backupVolumeMount=Pc.getBackupVolumeMount();
+         System.out.println(backupMount);
          System.exit(-9);
          List<Snapshot> snapshots=new ArrayList<>();
-         StringBuilder subvolumeListCmd=new StringBuilder("btrfs subvolume list -aspuqR ").append(backupDir);
+         StringBuilder subvolumeListCmd=new StringBuilder(Btrfs.SUBVOLUME_LIST_1).append(backupDir);
          if ((externSsh instanceof String x) && (!x.isBlank()))
             if (x.startsWith("sudo "))
                subvolumeListCmd.insert(0, x);

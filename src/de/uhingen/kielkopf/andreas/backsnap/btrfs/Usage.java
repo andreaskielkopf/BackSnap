@@ -33,10 +33,7 @@ public record Usage(String size, String allocated, String unallcoated, String mi
    static final Pattern DATA=Pattern.compile("Data,single:" + A);
    static final Pattern METADATA=Pattern.compile("Metadata,DUP:" + A);
    static final Pattern SYSTEM=Pattern.compile("System,DUP:" + A);
-   static private final long KiB=1024;
-   static private final long MiB=KiB * KiB;
-   static private final long GiB=KiB * MiB;
-   static private final long TiB=MiB * MiB;
+   static private final long K=1024;
    public Usage(String u) {
       this(getString(SIZE.matcher(u)), getString(ALLOCATED.matcher(u)), getString(UNALLOCATED.matcher(u)),
                getString(MISSING.matcher(u)), getString(SLACK.matcher(u)), getString(USED.matcher(u)),
@@ -56,9 +53,9 @@ public record Usage(String size, String allocated, String unallcoated, String mi
     * @throws IOException
     */
    static private String getMString(Mount m, boolean b) throws IOException {
-      String dir=b ? "-b " + Pc.MNT_BACKSNAP : Pc.MNT_BACKSNAP;
-      String usageCmd=m.pc().getCmd(new StringBuilder("btrfs filesystem usage ").append(dir).append(";")
-               .append("btrfs device usage ").append(dir));
+      String dir=b ? "-b " + Pc.TMP_BACKUP_ROOT.toString() : Pc.TMP_BACKUP_ROOT.toString();
+      String usageCmd=m.pc().getCmd(new StringBuilder(Btrfs.FILESYSTEM_USAGE).append(dir).append(";")
+               .append(Btrfs.DEVICE_USAGE).append(dir));
       Backsnap.logln(3, usageCmd);
       try (CmdStream usageStream=Commandline.executeCached(usageCmd, null)) {
          usageStream.backgroundErr();
@@ -74,19 +71,35 @@ public record Usage(String size, String allocated, String unallcoated, String mi
          return usageLine.toString();
       }
    }
-   static private double getZahl(String s) {
-      long f=switch (s.replaceAll("[0-9.]", "")) {
-         case "TiB" -> TiB;
-         case "GiB" -> GiB;
-         case "MiB" -> MiB;
-         case "KiB" -> KiB;
-         default -> 1L;
-      };
-      return Double.parseDouble(s.replaceAll("[KMGTiB]", "")) * f;
+   static public double getZahl(String s) {
+      IB f=IB.valueOf(s.replaceAll("[0-9.]", ""));
+      return Double.parseDouble(s.replaceAll("[KMGTiB]", "")) * f.f;
+   }
+   enum IB {
+      KiB(K), MiB(K * K), GiB(K * K * K), TiB(K * K * K * K);
+      final long f;
+      IB(long l) {
+         f=l;
+      }
+      /**
+       * @param z
+       * @return
+       */
+      String get(double z) {
+         double erg=z / f;
+         String s=Long.toString((long) erg) + name();
+         return " ".repeat(7 - s.length()) + s;
+      }
+      static String getText(double z) {
+         for (IB ib:IB.values())
+            if (z < 3000 * ib.f)
+               return ib.get(z);
+         return Long.toString((long) z);
+      }
    }
    public boolean isFull() {
       double ual=getZahl(unallcoated);
-      return ual < (10 * GiB);
+      return ual < (10 * IB.GiB.f);
    }
    public boolean needsBalance() {
       return getFree() < 0.2d;

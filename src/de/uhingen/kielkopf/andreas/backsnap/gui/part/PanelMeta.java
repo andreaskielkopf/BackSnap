@@ -14,6 +14,7 @@ import javax.swing.border.TitledBorder;
 import org.eclipse.jdt.annotation.NonNull;
 
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
+import de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
@@ -68,7 +69,7 @@ public class PanelMeta extends JPanel {
       Backsnap.log(3, "-------------- getChckMeta() actionPerformed");
       Backsnap.KEEP_MINIMUM.set(s);
       getSliderMeta().setEnabled(s);
-      getBtnMeta().setEnabled(s & !Backsnap.BTRFS_LOCK.isLocked());
+      getBtnMeta().setEnabled(s & !Btrfs.LOCK.isLocked());
       if (s && !bsGui.getTglPause().isSelected())
          SwingUtilities.invokeLater(() -> bsGui.getTglPause().doClick());
    }
@@ -125,8 +126,8 @@ public class PanelMeta extends JPanel {
       return lblMeta;
    }
    public void updateButtons() {
-      getBtnMeta().setEnabled(getChckMeta().isSelected() & !Backsnap.BTRFS_LOCK.isLocked());
-      getLblDisabled_1().setVisible(Backsnap.BTRFS_LOCK.isLocked());
+      getBtnMeta().setEnabled(getChckMeta().isSelected() & !Btrfs.LOCK.isLocked());
+      getLblDisabled_1().setVisible(Btrfs.LOCK.isLocked());
       repaint(50);
    }
    private JPanel getPanel_c() {

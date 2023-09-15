@@ -17,7 +17,7 @@ public class Commandline {
    static public final String                                   UTF_8         ="UTF-8";
    static public final ConcurrentSkipListMap<String, CmdStream> cache         =new ConcurrentSkipListMap<>();
    /** ExecutorService um den Errorstream im Hintergrund zu lesen */
-   static public final ExecutorService                          background    =Version.getVx();
+   static private final ExecutorService                         virtual       =Version.getVx();
    /**
     * @param cmd
     * @return
@@ -27,8 +27,10 @@ public class Commandline {
       return executeCached(cmd.toString(), key);
    }
    static public CmdStream executeCached(StringBuilder cmd1) throws IOException {
-      String cmd=cmd1.toString();
-      return executeCached(cmd, cmd);
+      return executeCached(cmd1.toString());
+   }
+   static public CmdStream executeCached(String cmd1) throws IOException {
+      return executeCached(cmd1, cmd1);
    }
    /**
     * Einen Befehl ausführen, Fehlermeldungen direkt ausgeben, stdout als stream zurückgeben
@@ -49,6 +51,12 @@ public class Commandline {
                new BufferedReader(new InputStreamReader(process.getErrorStream(), UTF_8)), new ArrayList<>(),
                new ArrayList<>(), key);
    }
+   // static public CmdStream execute(String cmd) throws IOException {
+   // Process process=processBuilder.command(List.of("/bin/bash", "-c", cmd)).start();
+   // return new CmdStream(process, new BufferedReader(new InputStreamReader(process.getInputStream(), UTF_8)),
+   // new BufferedReader(new InputStreamReader(process.getErrorStream(), UTF_8)), new ArrayList<>(),
+   // new ArrayList<>(), key);
+   // }
    /**
     * Zusammenfassung von beiden Streams (Ergebnis und Error) zu einem Objekt
     * 
@@ -57,18 +65,19 @@ public class Commandline {
    public record CmdStream(Process process, BufferedReader brErg, BufferedReader brErr, List<String> errList,
             List<String> ergList, String key) implements Closeable {
       public void backgroundErr() { // Fehler im Hintergrund ausgeben und ablegen // System.out.print("0");
-         if ((key != null) && cache.containsKey(key))
-            return; // ist schon im cache
-         background.submit(() -> {
-            try { // System.out.print("1");
-               try (BufferedReader q=brErr()) {
-                  errList.addAll(q.lines()/* .peek(System.err::println) */.toList());
-               } // System.out.print("2"); // System.out.println("3");
-            } catch (IOException e) {
-               e.printStackTrace();
-            }
-         }); // System.out.print("4");
+         if ((key == null) || !cache.containsKey(key)) {// ist nicht schon im cache
+            virtual.submit(() -> {
+               try { // System.out.print("1");
+                  try (BufferedReader q=brErr()) {
+                     errList.addAll(q.lines()/* .peek(System.err::println) */.toList());
+                  } // System.out.print("2"); // System.out.println("3");
+               } catch (IOException e) {
+                  e.printStackTrace();
+               }
+            }); // System.out.print("4");
+         } // return this;
       }
+      
       /**
        * Schließt diesen Stream automatisch wenn alles gelesen wurde. Wenn ein cache-key vergeben wurde, wird der Inhalt
        * des Streams gecaches
@@ -119,22 +128,20 @@ public class Commandline {
          // System.err.println("reuse " + key + " from cache");
          return ergList.stream(); // Konserve
       }
-      /**
-       * 
-       */
+      /** warte auf den Abschluß des Befehls */
       public void waitFor() {
          try {
             process.waitFor();
          } catch (InterruptedException ignore) {
             System.err.println(ignore.toString());
-         }
+         } // return this;
       }
    }
    /**
     * Wenn die Errorstreams nicht mehr gebraucht werden, aufräumen
     */
    static public void cleanup() {
-      background.shutdownNow();
+      virtual.shutdownNow();
    }
    @SuppressWarnings("resource")
    static public void removeFromCache(String cacheKey) {

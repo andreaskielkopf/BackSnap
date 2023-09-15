@@ -20,7 +20,7 @@ import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 /**
  * @author Andreas Kielkopf results of mount | grep -E 'btrfs' as records
  */
-public record Mount(Pc pc,  Path devicePath, Path mountPath, Path btrfsPath, String options,
+public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, String options,
          ConcurrentSkipListMap<Path, Snapshot> btrfsMap, ConcurrentSkipListMap<String, Snapshot> otimeKeyMap,
          ConcurrentSkipListSet<String> name) {
    static final Pattern DEVICE=Pattern.compile("^(?:.*[ \\[]device=)?([^ ,]+)");
@@ -77,10 +77,10 @@ public record Mount(Pc pc,  Path devicePath, Path mountPath, Path btrfsPath, Str
     * @throws IOException
     */
    public void populate() throws IOException {
-      SnapTree      snapTree         =SnapTree.getSnapTree(this);
-      boolean       snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.dateMap().isEmpty() : false;
-      StringBuilder subvolumeShowSB  =new StringBuilder("btrfs subvolume show ").append(mountPath);
-      String        subvolumeSchowCmd=pc.getCmd(subvolumeShowSB);
+      SnapTree snapTree=SnapTree.getSnapTree(this);
+      boolean snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.dateMap().isEmpty() : false;
+      StringBuilder subvolumeShowSB=new StringBuilder(Btrfs.SUBVOLUME_SHOW).append(mountPath);
+      String subvolumeSchowCmd=pc.getCmd(subvolumeShowSB);
       Backsnap.logln(3, subvolumeSchowCmd);
       try (CmdStream snapshotStream=Commandline.executeCached(subvolumeSchowCmd, keyM())) {
          snapshotStream.backgroundErr();
@@ -93,8 +93,8 @@ public record Mount(Pc pc,  Path devicePath, Path mountPath, Path btrfsPath, Str
                if (snapTreeVorhanden) {
                   Matcher ms=SNAPSHOT.matcher(line);
                   if (ms.find()) {
-                     Path     btrfsPath1=Path.of("/", ms.group(1));
-                     Snapshot snapshot  =snapTree.btrfsPathMap().get(btrfsPath1);
+                     Path btrfsPath1=Path.of("/", ms.group(1));
+                     Snapshot snapshot=snapTree.btrfsPathMap().get(btrfsPath1);
                      if ((snapshot != null) && (snapshot.mount() != null)) {
                         if (!snapshot.mount().mountPath.startsWith(this.mountPath))
                            System.err.println("Mount passt nicht für: " + this + " -> " + snapshot);
@@ -116,15 +116,12 @@ public record Mount(Pc pc,  Path devicePath, Path mountPath, Path btrfsPath, Str
                      || line.contains("connection unexpectedly closed"))
                throw new IOException(line);
       }
-//      if (btrfsMap().isEmpty())
-//         throw new FileNotFoundException(System.lineSeparator() + "Ingnoring, because there are no snapshots in: " 
-//      + pc.toString());
    }
    public void updateSnapshots() throws IOException {
-      SnapTree      snapTree         =SnapTree.getSnapTree(this);
-      boolean       snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.dateMap().isEmpty() : false;
-      StringBuilder subvolumeShowSB  =new StringBuilder("btrfs subvolume show ").append(mountPath);
-      String        subvolumeShowCmd =pc.getCmd(subvolumeShowSB);
+      SnapTree snapTree=SnapTree.getSnapTree(this);
+      boolean snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.dateMap().isEmpty() : false;
+      StringBuilder subvolumeShowSB=new StringBuilder(Btrfs.SUBVOLUME_SHOW).append(mountPath);
+      String subvolumeShowCmd=pc.getCmd(subvolumeShowSB);
       Backsnap.logln(3, subvolumeShowCmd);
       try (CmdStream snapshotStream=Commandline.executeCached(subvolumeShowCmd, keyM())) {
          snapshotStream.backgroundErr();
@@ -137,8 +134,8 @@ public record Mount(Pc pc,  Path devicePath, Path mountPath, Path btrfsPath, Str
                if (snapTreeVorhanden) {
                   Matcher ms=SNAPSHOT.matcher(line);
                   if (ms.find()) {
-                     Path     btrfsPath1=Path.of("/", ms.group(1));
-                     Snapshot snapshot  =snapTree.btrfsPathMap().get(btrfsPath1);
+                     Path btrfsPath1=Path.of("/", ms.group(1));
+                     Snapshot snapshot=snapTree.btrfsPathMap().get(btrfsPath1);
                      if ((snapshot != null) && (snapshot.mount() != null)) {
                         if (!snapshot.mount().mountPath.startsWith(this.mountPath))
                            System.err.println("Mount passt nicht für: " + this + " -> " + snapshot);

@@ -304,14 +304,14 @@ public class BacksnapGui implements MouseListener {
          if (toRemove.isEmpty())
             return;
          jButton.setEnabled(false);
-         if (Backsnap.BTRFS_LOCK.tryLock(1, TimeUnit.SECONDS)) // try {
+         if (Btrfs.LOCK.tryLock(1, TimeUnit.SECONDS)) // try {
             virtual.execute(() -> {// jButton.setEnabled(false);
                for (Snapshot snapshot:toRemove) {
                   Backsnap.logln(6, "to remove " + snapshot.dirName());
                   if (!jCheckBox.isSelected())
                      continue;
                   try {
-                     Backsnap.removeSnapshot(snapshot);
+                     Btrfs.removeSnapshot(snapshot);
                   } catch (IOException e1) { /* */ }
                   refreshGUI();
                   if (Backsnap.SINGLESNAPSHOT.get())
@@ -321,7 +321,7 @@ public class BacksnapGui implements MouseListener {
                jButton.setEnabled(true);
             });
       } catch (IOException | InterruptedException ignore) { /* */ } finally {
-         Backsnap.BTRFS_LOCK.unlock();
+         Btrfs.LOCK.unlock();
       }
    }
    /**
@@ -334,7 +334,7 @@ public class BacksnapGui implements MouseListener {
     */
    public void setBackup(SnapTree backupTree) throws IOException {
       ConcurrentSkipListMap<String, Snapshot> passendBackups=new ConcurrentSkipListMap<>();
-      Path rest=Path.of(Pc.MNT_BACKSNAP).resolve(Backsnap.actualBackup.backupLabel());
+      Path rest=Pc.TMP_BACKSNAP.resolve(Backsnap.actualBackup.backupLabel());
       for (Snapshot snapshot:backupTree.dateMap().values()) // sortiert nach otime und NAME
          if (snapshot.getBackupMountPath() instanceof Path pfad && pfad.startsWith(rest))
             passendBackups.put(snapshot.keyB(), snapshot);
@@ -748,11 +748,11 @@ public class BacksnapGui implements MouseListener {
       virtual.execute(() -> {
          try {
             if (refreshGUIcKey == null) // refreshBackupPc=backupPc;
-               refreshGUIcKey=OneBackup.backupPc.extern() + ":" + OneBackup.backupPc.getBackupVolume().devicePath();
+               refreshGUIcKey=OneBackup.backupPc.extern() + ":" + Pc.getBackupMount().devicePath();
             Commandline.removeFromCache(refreshGUIcKey); // umgeht den cache
-            setBackup(new SnapTree(OneBackup.backupPc.getBackupVolume()));
+            setBackup(new SnapTree(Pc.getBackupMount()));
             if (Instant.now().isAfter(refreshUsage)) {
-               getPanelMaintenance().setUsage(new Usage(OneBackup.backupPc.getBackupVolume(), false));
+               getPanelMaintenance().setUsage(new Usage(Pc.getBackupMount(), false));
                refreshUsage=Instant.now().plusSeconds(60);
             }
             abgleich(); // getPanelBackup().repaint(50);

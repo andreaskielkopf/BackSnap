@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.*;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 
 import javax.swing.JProgressBar;
@@ -16,8 +15,10 @@ import javax.swing.SwingUtilities;
 
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
+import de.uhingen.kielkopf.andreas.backsnap.config.OnTheFly;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
 import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotLabel.STATUS;
+import de.uhingen.kielkopf.andreas.beans.Version;
 import de.uhingen.kielkopf.andreas.beans.cli.Flag;
 import de.uhingen.kielkopf.andreas.beans.minijson.Etc;
 
@@ -32,34 +33,36 @@ import de.uhingen.kielkopf.andreas.beans.minijson.Etc;
  * 
  */
 public class Backsnap {
-   static private final String       DEFAULT_SRC      ="sudo:/";
-   static private final String       DEFAULT_BACKUP   ="sudo:/mnt/BackSnap/manjaro23";
-   static boolean                    usePv            =false;
-   static int                        lastLine         =0;
-   static String                     canNotFindParent;
-   static public int                 disconnectCount  =0;
-   static Future<?>                  task             =null;
-   static public BacksnapGui         bsGui;
-   static public OneBackup           actualBackup     =null;
-   static private int                textPos          =0;
-   static final Flag                 HELP             =new Flag('h', "help");           // show usage
-   static final Flag                 VERSION          =new Flag('x', "version");        // show date and version
-   static final Flag                 DRYRUN           =new Flag('d', "dryrun");         // do not do anythimg ;-)
-   static public final Flag          VERBOSE          =new Flag('v', "verbose");
-   static public final Flag          SINGLESNAPSHOT   =new Flag('s', "singlesnapshot"); // backup exactly one snapshot
-   static public final Flag          TIMESHIFT        =new Flag('t', "timeshift");
-   static final Flag                 GUI              =new Flag('g', "gui");            // enable gui (only with sudo)
-   static final Flag                 AUTO             =new Flag('a', "auto");           // auto-close gui when ready
-   static public final Flag          COMPRESSED       =new Flag('c', "compressed");
-   static public final String        SNAPSHOT         ="snapshot";
-   static public final Flag          DELETEOLD        =new Flag('o', "deleteold");      // mark old snapshots for
-                                                                                        // deletion
-   static public final Flag          KEEP_MINIMUM     =new Flag('m', "keepminimum");    // mark all but minimum
-                                                                                        // snapshots
-   static public final String        BACK_SNAP_VERSION=                                 // version
-            "BackSnap for Snapper and Timeshift Version 0.6.3.14 (2023/09/01)";
-   static public final ReentrantLock BTRFS_LOCK       =new ReentrantLock();
-   static public final String        LF               =System.lineSeparator();
+   static public final ExecutorService virtual          =Version.getVx();
+   static private final String         DEFAULT_SRC      ="sudo:/";
+   static private final String         DEFAULT_BACKUP   ="sudo:/mnt/BackSnap/manjaro23";
+   static boolean                      usePv            =false;
+   static int                          lastLine         =0;
+   static String                       canNotFindParent;
+   static public int                   disconnectCount  =0;
+   static Future<?>                    task             =null;
+   static public BacksnapGui           bsGui;
+   static public OneBackup             actualBackup     =null;
+   static private int                  textPos          =0;
+   static final Flag                   HELP             =new Flag('h', "help");           // show usage
+   static final Flag                   VERSION          =new Flag('x', "version");        // show date and version
+   static final Flag                   DRYRUN           =new Flag('d', "dryrun");         // do not do anythimg ;-)
+   static public final Flag            VERBOSE          =new Flag('v', "verbose");
+   static public final Flag            SINGLESNAPSHOT   =new Flag('s', "singlesnapshot"); // backup exactly one snapshot
+   static public final Flag            TIMESHIFT        =new Flag('t', "timeshift");
+   public static final Flag            GUI              =new Flag('g', "gui");            // enable gui (only with sudo)
+   static final Flag                   AUTO             =new Flag('a', "auto");           // auto-close gui when ready
+   static final Flag                   NOSYNC           =new Flag('n', "nosync");         // no sync after every command
+   static public final Flag            COMPRESSED       =new Flag('c', "compressed");     // use protokoll 2
+   static final Flag                   INIT             =new Flag('i', "init");           // init /etc/backsnap.d
+   static public final String          SNAPSHOT         ="snapshot";
+   static public final Flag            DELETEOLD        =new Flag('o', "deleteold");      // mark old snapshots for
+                                                                                          // deletion
+   static public final Flag            KEEP_MINIMUM     =new Flag('m', "keepminimum");    // mark all but minimum
+                                                                                          // snapshots
+   static public final String          BACK_SNAP_VERSION=                                 // version
+            "BackSnap for Snapper and Timeshift Version 0.6.6.0 (2023/09/15)";
+   static public final String          LF               =System.lineSeparator();
    static public void main(String[] args) {
       Flag.setArgs(args, "");
       logln(0, BACK_SNAP_VERSION);
@@ -78,7 +81,7 @@ public class Backsnap {
             default -> throw new IllegalArgumentException("Mehr als ein Doppelpunkt ist nicht erlaubt");
          });
          Path srcPath=Path.of("/", source[source.length - 1].replace(Snapshot.DOT_SNAPSHOTS, ""));
-         BTRFS_LOCK.lock();
+         Btrfs.LOCK.lock();
          // BackupVolume ermitteln
          String[] backup=Flag.getParameterOrDefault(1, DEFAULT_BACKUP).split("[:]");
          Pc backupPc=Pc.getPc(switch (backup.length) {
@@ -95,7 +98,8 @@ public class Backsnap {
          OneBackup.backupList.add(oneBackup);
       } else
          try {
-            OneBackup.setConfig(Etc.getConfig("backsnap"));
+            if ((INIT.get() ? OnTheFly.prepare() : Etc.getConfig("backsnap")) instanceof Etc etc)
+               OneBackup.setConfig(etc);
          } catch (IOException e) {
             e.printStackTrace();
          }
@@ -104,14 +108,14 @@ public class Backsnap {
       } catch (Exception e1) {/* */}
       OneBackup lastBackup=null;
       for (OneBackup ob:OneBackup.backupList) {
-         BTRFS_LOCK.lock();
+         Btrfs.LOCK.lock();
          actualBackup=ob;
          try {
             if (actualBackup.flags() instanceof String s) {
                String a=String.join(" ", args).concat(" ").concat(s);
                Flag.setArgs(a.split(" "), "");
-               
-            } else  Flag.setArgs(args, "");
+            } else
+               Flag.setArgs(args, "");
             TIMESHIFT.set(true);
             if (TIMESHIFT.get()) {
                if (lastBackup != null)
@@ -126,16 +130,17 @@ public class Backsnap {
             SnapConfig srcConfig=SnapConfig.getConfig(actualBackup);
             srcConfig.volumeMount().populate();
             logln(1, "Backup snapshots from " + srcConfig.volumeMount().keyM());
+            Pc.mountBackupRoot(true);
             OneBackup.backupPc.getMountList(false); // eventuell unnötig
             {
-               Mount backupVolume=OneBackup.backupPc.getBackupVolume();
-               if (backupVolume.devicePath().equals(srcConfig.volumeMount().devicePath()) && actualBackup.isSamePc())
+               Mount backupMount=Pc.getBackupMount();
+               if (backupMount.devicePath().equals(srcConfig.volumeMount().devicePath()) && actualBackup.isSamePc())
                   throw new RuntimeException(LF + "Backup is not possible onto the same device: "
                            + OneBackup.backupPc.getBackupLabel() + " <= " + actualBackup.srcPath() + LF
                            + "Please select another partition for the backup");
-               logln(2, "Try to use backupDir  " + backupVolume.keyM());
-               usage=new Usage(backupVolume, false);
-               backupTree=SnapTree.getSnapTree(backupVolume);
+               logln(2, "Try to use backupDir  " + backupMount.keyM());
+               usage=new Usage(backupMount, false);
+               backupTree=SnapTree.getSnapTree(backupMount);
             }
             if (disconnectCount > 0) {
                err.println("no SSH Connection");
@@ -159,7 +164,7 @@ public class Backsnap {
             for (Snapshot sourceSnapshot:srcConfig.volumeMount().otimeKeyMap().values()) {
                counter++;
                if (canNotFindParent != null) {
-                  err.println("Please remove " + Pc.MNT_BACKSNAP + "/" + OneBackup.backupPc.getBackupLabel() + "/"
+                  err.println("Please remove " + Pc.TMP_BACKSNAP + "/" + OneBackup.backupPc.getBackupLabel() + "/"
                            + canNotFindParent + "/" + SNAPSHOT + " !");
                   ende("X");
                   System.exit(-9);
@@ -195,12 +200,13 @@ public class Backsnap {
                   try {
                      if (lastBackup != null)
                         lastBackup.srcPc().mountBtrfsRoot(lastBackup.srcPath(), false);
+                     Pc.mountBackupRoot(false);
                   } catch (IOException ignore) {/* */ } // umount
                ende("Xabbruch");
                System.exit(-1);
             }
          } finally {
-            BTRFS_LOCK.unlock();
+            Btrfs.LOCK.unlock();
             if (bsGui instanceof BacksnapGui gui)
                gui.getPanelMaintenance().updateButtons();
          }
@@ -210,6 +216,7 @@ public class Backsnap {
          try {
             if (lastBackup != null)
                lastBackup.srcPc().mountBtrfsRoot(lastBackup.srcPath(), false);
+            Pc.mountBackupRoot(false);
          } catch (IOException ignore) {/* */ } // umount
       ende("X");
       System.exit(-2);
@@ -248,7 +255,7 @@ public class Backsnap {
       }
       // Backsnap.logln(7, srcSnapshot.getSnapshotMountPath().toString());
       logln(9, "Paths.get(backupDir=" + oneBackup.backupLabel() + " dirName=" + srcSnapshot.dirName() + ")");
-      Path bDir=Paths.get(Pc.MNT_BACKSNAP, oneBackup.backupLabel().toString(), srcSnapshot.dirName());
+      Path bDir=Pc.TMP_BACKSNAP.resolve(oneBackup.backupLabel()).resolve(srcSnapshot.dirName());
       Path bSnapDir=backupMap.mount().btrfsPath().resolve(backupMap.mount().mountPath().relativize(bDir))
                .resolve(SNAPSHOT);
       lnlog(3, bSnapDir.toString());
@@ -267,7 +274,7 @@ public class Backsnap {
       return true;
    }
    static private boolean sendBtrfs(OneBackup oneBackup, Snapshot s, Path bDir) throws IOException {
-      StringBuilder btrfsSendSB=new StringBuilder("/bin/btrfs send ");
+      StringBuilder btrfsSendSB=new StringBuilder(Btrfs.SEND);
       if (bsGui instanceof BacksnapGui gui)
          gui.setBackupInfo(s, parentSnapshot);
       if (COMPRESSED.get() && !oneBackup.compressionPossible())
@@ -293,7 +300,9 @@ public class Backsnap {
             btrfsSendSB.append("ssh " + OneBackup.backupPc.extern() + " '");
          else
             btrfsSendSB.append(OneBackup.backupPc.extern());
-      btrfsSendSB.append("/bin/btrfs receive ").append(bDir).append(";/bin/sync");
+      btrfsSendSB.append(Btrfs.RECEIVE).append(bDir);
+      if (NOSYNC.get())
+         btrfsSendSB.append(";/bin/sync");
       if (oneBackup.isSameSsh())
          if (oneBackup.isExtern())
             btrfsSendSB.insert(0, "ssh " + oneBackup.extern() + " '");
@@ -305,9 +314,9 @@ public class Backsnap {
       if (!DRYRUN.get()) {
          if (bsGui != null)
             bsGui.getPanelMaintenance().updateButtons();
-         BTRFS_LOCK.lock();
+         Btrfs.LOCK.lock();
          try (CmdStream btrfsSendStream=Commandline.executeCached(btrfsSendSB, null)) {
-            task=Commandline.background.submit(() -> btrfsSendStream.err().forEach(line -> {
+            task=virtual.submit(() -> btrfsSendStream.err().forEach(line -> {
                if (line.contains("ERROR: cannot find parent subvolume"))
                   Backsnap.canNotFindParent=line;
                if (line.contains("No route to host") || line.contains("Connection closed")
@@ -345,7 +354,7 @@ public class Backsnap {
                logln(3, "");
             });
          } finally {
-            BTRFS_LOCK.unlock();
+            Btrfs.LOCK.unlock();
             if (bsGui != null)
                bsGui.getPanelMaintenance().updateButtons();
             err.println();
@@ -396,43 +405,6 @@ public class Backsnap {
                Backsnap.disconnectCount=10;
                break;
             } // ende("");// R
-      }
-   }
-   /**
-    * löscht eines der Backups im Auftrag der GUI
-    * 
-    * @param s
-    * @throws IOException
-    */
-   static public void removeSnapshot(Snapshot s) throws IOException {
-      Path bmp=s.getBackupMountPath();
-      if (!bmp.toString().startsWith(Pc.MNT_BACKSNAP) || bmp.toString().contains("../"))
-         throw new SecurityException("I am not allowed to delete " + bmp.toString());
-      StringBuilder removeSB=new StringBuilder("/bin/btrfs subvolume delete -Cv ").append(bmp);
-      String removeCmd=s.mount().pc().getCmd(removeSB);
-      if (bsGui != null)
-         bsGui.setDeleteInfo(s);
-      log(4, removeCmd);
-      if (bsGui != null) {
-         bsGui.getPanelMaintenance().updateButtons();
-         String text="<html>" + s.btrfsPath().toString();
-         logln(7, text);
-         bsGui.mark(s.received_uuid(), STATUS.INPROGRESS);
-      }
-      BTRFS_LOCK.lock();
-      try (CmdStream removeStream=Commandline.executeCached(removeCmd, null)) {
-         removeStream.backgroundErr();
-         logln(1, "");
-         removeStream.erg().forEach(line -> {
-            log(1, line);
-            if (GUI.get())
-               bsGui.lblPvSetText(line);
-         });
-         removeStream.waitFor();
-      } finally {
-         BTRFS_LOCK.unlock();
-         if (bsGui != null)
-            bsGui.getPanelMaintenance().updateButtons();
       }
    }
    /**
@@ -510,7 +482,7 @@ public class Backsnap {
       log(4, "ende:");
       if (task != null)
          try {
-            task.get(10, TimeUnit.SECONDS);
+            task.get(30, TimeUnit.SECONDS);
          } catch (InterruptedException | ExecutionException | TimeoutException e) {
             e.printStackTrace();
          }
@@ -558,8 +530,14 @@ public class Backsnap {
                   } catch (InterruptedException ignore) {/* */}
          }
          log(4, " to");
-         Commandline.background.shutdown();
-         log(4, " exit");
+         try {
+            virtual.shutdown();
+            log(4, " ex");
+            virtual.awaitTermination(120, TimeUnit.SECONDS);
+         } catch (InterruptedException e) {
+            e.printStackTrace();
+         }
+         log(4, "it");
          Commandline.cleanup();
          logln(4, " java");
          if (AUTO.get())
@@ -591,4 +569,4 @@ public class Backsnap {
          logPos=text.length();
       }
    }
-}
+}// getVx

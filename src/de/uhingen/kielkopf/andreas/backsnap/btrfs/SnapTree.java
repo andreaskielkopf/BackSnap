@@ -34,7 +34,7 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
    }
    private void populate() throws IOException {// otime kommt nur bei snapshots
       // mit -a bekommt man alle Snapshots für dieses Device
-      StringBuilder subvolumeListCommand=new StringBuilder("btrfs subvolume list -apcguqR ").append(mount.mountPath());
+      StringBuilder subvolumeListCommand=new StringBuilder(Btrfs.SUBVOLUME_LIST_2).append(mount.mountPath());
       String        subvolumeListCmd    =mount.pc().getCmd(subvolumeListCommand);
       Backsnap.logln(3, subvolumeListCmd);
       try (CmdStream snapshotStream=Commandline.executeCached(subvolumeListCmd, mount.keyD())) {
