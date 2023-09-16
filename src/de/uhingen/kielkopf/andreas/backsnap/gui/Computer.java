@@ -16,6 +16,7 @@ import javax.swing.event.ListSelectionListener;
 
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.Mount;
+import de.uhingen.kielkopf.andreas.backsnap.btrfs.Pc;
 
 /**
  * @author Andreas Kielkopf
@@ -215,7 +216,7 @@ public class Computer extends JPanel {
    /** recalculate the connectionString */
    protected void calculateExtern() {
       if (benutzer.getSelectedItem() instanceof String b) {
-         boolean s=(b.equals("sudo"));
+         boolean s=(b.equals(Pc.SUDO));
          getComputerName().setEnabled(!s);
          // extern=s ? b : b + "@" + getComputerName().getText();
          // System.out.println(extern);

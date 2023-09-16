@@ -31,7 +31,10 @@ public record Pc(String extern, // Marker für diesen PC
    static public final Path TMP_BTRFS_ROOT=Path.of("/tmp/BtrfsRoot");
    static public final Path TMP_BACKUP_ROOT=Path.of("/tmp/BackupRoot");
    static public final Path TMP_BACKSNAP=TMP_BACKUP_ROOT.resolve("@BackSnap");
-   static final Pattern allowExtern=Pattern.compile("[a-zA-Z_0-9]+@[a-zA-Z_0-9.]+|sudo ");
+   static public final String ROOT_LOCALHOST="root@localhost";
+   static public final String SUDO="sudo";
+   static public final String SUDO_=SUDO + " ";
+   static final Pattern allowExtern=Pattern.compile("[a-zA-Z_0-9]+@[a-zA-Z_0-9.]+|" + SUDO_);
    private static final String BACKUP_OPTIONS=",compress=zstd:9 ";
    /**
     * Sicherstellen, dass jeder Pc nur einmal erstellt wird
@@ -42,7 +45,7 @@ public record Pc(String extern, // Marker für diesen PC
     * @throws IOException
     */
    static public Pc getPc(String extern) /* throws IOException */ {
-      String x=(extern == null) ? "" : extern.startsWith("sudo") ? "sudo " : extern;
+      String x=(extern == null) ? "" : extern.startsWith(SUDO) ? SUDO_ : extern;
       Matcher m=allowExtern.matcher(x);
       if (m.matches())
          if (!pcCache.containsKey(x))
@@ -69,7 +72,7 @@ public record Pc(String extern, // Marker für diesen PC
          String[] cmdList=cmds.toString().split(";");
          cmds.setLength(0);
          for (int i=0; i < cmdList.length; i++) // Für jeden Befehl
-            cmds.append("sudo ").append(cmdList[i]).append(";");// sudo einfügen
+            cmds.append(SUDO_).append(cmdList[i]).append(";");// sudo einfügen
          cmds.setLength(cmds.length() - 1);
       }
       return cmds.toString();
@@ -286,9 +289,9 @@ public record Pc(String extern, // Marker für diesen PC
          mountSB.append("mount -t btrfs -o subvol=/").append(options).append(" ").append(device.toString()).append(" ")
                   .append(mountPoint.toString());
       } else {
-//         mountSB.append("sync;");
+         // mountSB.append("sync;");
          mountSB.append("umount -v ").append(mountPoint.toString()).append(";");
-//         mountSB.append("sync;");
+         // mountSB.append("sync;");
          mountSB.append("rmdir ").append(mountPoint.toString());
       }
       String mountCmd=getCmd(mountSB);

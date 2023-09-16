@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.regex.Pattern;
 
@@ -34,8 +35,8 @@ import de.uhingen.kielkopf.andreas.beans.minijson.Etc;
  */
 public class Backsnap {
    static public final ExecutorService virtual          =Version.getVx();
-   static private final String         DEFAULT_SRC      ="sudo:/";
-   static private final String         DEFAULT_BACKUP   ="sudo:/mnt/BackSnap/manjaro23";
+   static private final String         DEFAULT_SRC      =Pc.SUDO + ":/";
+   static private final String         DEFAULT_BACKUP   =Pc.SUDO + ":/mnt/BackSnap/manjaro23";
    static boolean                      usePv            =false;
    static int                          lastLine         =0;
    static String                       canNotFindParent;
@@ -44,24 +45,28 @@ public class Backsnap {
    static public BacksnapGui           bsGui;
    static public OneBackup             actualBackup     =null;
    static private int                  textPos          =0;
-   static final Flag                   HELP             =new Flag('h', "help");           // show usage
-   static final Flag                   VERSION          =new Flag('x', "version");        // show date and version
-   static final Flag                   DRYRUN           =new Flag('d', "dryrun");         // do not do anythimg ;-)
+   static final Flag                   HELP             =new Flag('h', "help");               // show usage
+   static final Flag                   VERSION          =new Flag('x', "version");            // show date and version
+   static final Flag                   DRYRUN           =new Flag('d', "dryrun");             // do not do anythimg ;-)
    static public final Flag            VERBOSE          =new Flag('v', "verbose");
-   static public final Flag            SINGLESNAPSHOT   =new Flag('s', "singlesnapshot"); // backup exactly one snapshot
+   static public final Flag            SINGLESNAPSHOT   =new Flag('s', "singlesnapshot");     // backup exactly one
+                                                                                              // snapshot
    static public final Flag            TIMESHIFT        =new Flag('t', "timeshift");
-   public static final Flag            GUI              =new Flag('g', "gui");            // enable gui (only with sudo)
-   static final Flag                   AUTO             =new Flag('a', "auto");           // auto-close gui when ready
-   static final Flag                   NOSYNC           =new Flag('n', "nosync");         // no sync after every command
-   static public final Flag            COMPRESSED       =new Flag('c', "compressed");     // use protokoll 2
-   static final Flag                   INIT             =new Flag('i', "init");           // init /etc/backsnap.d
+   public static final Flag            GUI              =new Flag('g', "gui");                // enable gui (only with
+                                                                                              // sudo)
+   static final Flag                   AUTO             =new Flag('a', "auto");               // auto-close gui when
+                                                                                              // ready
+   static final Flag                   NOSYNC           =new Flag('n', "nosync");             // no sync after every
+                                                                                              // command
+   static public final Flag            COMPRESSED       =new Flag('c', "compressed");         // use protokoll 2
+   static final Flag                   INIT             =new Flag('i', "init");               // init /etc/backsnap.d
    static public final String          SNAPSHOT         ="snapshot";
-   static public final Flag            DELETEOLD        =new Flag('o', "deleteold");      // mark old snapshots for
-                                                                                          // deletion
-   static public final Flag            KEEP_MINIMUM     =new Flag('m', "keepminimum");    // mark all but minimum
-                                                                                          // snapshots
-   static public final String          BACK_SNAP_VERSION=                                 // version
-            "BackSnap for Snapper and Timeshift Version 0.6.6.0 (2023/09/15)";
+   static public final Flag            DELETEOLD        =new Flag('o', "deleteold");          // mark old snapshots for
+                                                                                              // deletion
+   static public final Flag            KEEP_MINIMUM     =new Flag('m', "keepminimum");        // mark all but minimum
+                                                                                              // snapshots
+   static public final String          BACK_SNAP_VERSION=                                     // version
+            "BackSnap for Snapper and Timeshift Version 0.6.6.2 (2023/09/16)";
    static public final String          LF               =System.lineSeparator();
    static public void main(String[] args) {
       Flag.setArgs(args, "");
@@ -71,6 +76,8 @@ public class Backsnap {
          System.exit(0);
       if (DRYRUN.get())
          logln(0, "Doing a dry run ! ");
+      if (GUI.get() && Commandline.processBuilder.environment() instanceof Map<String, String> env)
+         env.putIfAbsent("SSH_ASKPASS_REQUIRE", "prefer");
       TIMESHIFT.set(true);
       if (!Flag.getParameter(1).isBlank()) { // Parameter sammeln für SOURCE
          String[] source=Flag.getParameterOrDefault(0, DEFAULT_SRC).split("[:]");

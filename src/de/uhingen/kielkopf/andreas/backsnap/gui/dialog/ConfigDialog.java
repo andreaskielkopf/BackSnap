@@ -20,10 +20,8 @@ import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
  * @author Andreas Kielkopf Ein ConfigDialog um das Volume für Backups festzulegen
  */
 public class ConfigDialog extends JDialog {
-   /**
-    * 
-    */
-   private static final String         ROOT_LOCALHOST  ="root@localhost";
+  
+  
    private static final long           serialVersionUID=-993461584598902127L;
    /** Use a bigger Font for this Dialog */
    private static final @NonNull Font  FONT            =new Font("Monospaced", Font.PLAIN, 15);
@@ -238,7 +236,7 @@ public class ConfigDialog extends JDialog {
     */
    public static void main(String[] args) {
       try {
-         if (getBackupVolume(Pc.getPc(ROOT_LOCALHOST)) instanceof Volume volume) {
+         if (getBackupVolume(Pc.getPc(Pc.ROOT_LOCALHOST)) instanceof Volume volume) {
             prepareBackupVolume(volume, false);
             System.out.println(volume.uuid());
          } else

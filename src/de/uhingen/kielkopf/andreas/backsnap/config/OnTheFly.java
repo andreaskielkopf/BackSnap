@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
 
 import javax.swing.*;
 
@@ -134,10 +133,10 @@ public class OnTheFly extends JPanel {
             Files.createFile(local);
             if (Etc.getConfig("backsnap") instanceof Etc etc) {
                List<String> lines=etc.conf.get(local);
-               lines.add("# backup local pc per sudo");
+               lines.add("# backup local pc per " + Pc.SUDO);
                lines.add("#pc = localhost");
                lines.add("# backup local pc per ssh");
-               lines.add("pc = root@localhost");
+               lines.add("pc = " + Pc.ROOT_LOCALHOST);
                lines.add("");
                lines.add("# backuplabel = manjaro18 for snapshots of /");
                lines.add("manjaro18 = /");
@@ -222,10 +221,10 @@ public class OnTheFly extends JPanel {
             Files.createFile(local);
             etc=Etc.getConfig("backsnap"); // neu einlesen
             List<String> lines=etc.conf.get(local);
-            lines.add("# backup local pc per sudo");
+            lines.add("# backup local pc per " + Pc.SUDO);
             lines.add("# pc = localhost");
             lines.add("# backup local pc per ssh");
-            lines.add("pc = root@localhost");
+            lines.add("pc = " + Pc.ROOT_LOCALHOST);
             lines.add("");
             lines.add("# backuplabel = manjaro18 for snapshots of /");
             lines.add("manjaro18 = /");
@@ -239,7 +238,7 @@ public class OnTheFly extends JPanel {
                   .filter(e -> e.getValue().stream().filter(l -> l.startsWith("backup_id")).findAny().isPresent())
                   .findAny().isPresent();
          if (!hasId) {
-            Volume v=ConfigDialog.getBackupVolume(Pc.getPc("root@localhost"));
+            Volume v=ConfigDialog.getBackupVolume(Pc.getPc(Pc.ROOT_LOCALHOST));
             // Volume v=ConfigDialog.prepareBackupVolume(null, false);
             if (v.uuid() instanceof String uuid && uuid.length() > 10) {
                List<String> lines=etc.conf.get(local);

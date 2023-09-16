@@ -69,7 +69,7 @@ public record OneBackup(Pc srcPc, Path srcPath, Path backupLabel, String flags) 
                   switch (a.toLowerCase()) {
                      case "pc":
                         if (pc == null)
-                           pc=Pc.getPc(b.startsWith("localhost") ? "sudo" : b);
+                           pc=Pc.getPc(b.startsWith("localhost") ? Pc.SUDO : b);
                         break;
                      case "backup_id":
                         if (backupPc == null)

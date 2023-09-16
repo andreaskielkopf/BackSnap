@@ -44,6 +44,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    static final Pattern NUMERIC_DIRNAME=Pattern.compile("([0-9]+)/snapshot$");
    static final Pattern DIRNAME=Pattern.compile("([^/]+)/snapshot$");
    static final Pattern SUBVOLUME=Pattern.compile("^(@[0-9a-zA-Z.]+)/.*[0-9]+/snapshot$");
+ 
    public Snapshot(Mount mount, String from_btrfs) throws IOException {
       this(getMount(mount, getPath(BTRFS_PATH.matcher(from_btrfs))), getInt(ID.matcher(from_btrfs)),
                getInt(GEN.matcher(from_btrfs)), getInt(CGEN.matcher(from_btrfs)), getInt(PARENT.matcher(from_btrfs)),
@@ -329,7 +330,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       Btrfs.LOCK.lock();
       try {
          String setReadonlyCmd=mount().pc().getCmd(
-                  new StringBuilder(Btrfs .PROPERTY_SET).append(getSnapshotMountPath()).append(" ro ").append(readonly));
+                  new StringBuilder(Btrfs.PROPERTY_SET).append(getSnapshotMountPath()).append(" ro ").append(readonly));
          Backsnap.logln(4, setReadonlyCmd);// if (!DRYRUN.get())
          try (CmdStream setReadonlyStream=Commandline.executeCached(setReadonlyCmd, null)) { // not cached
             setReadonlyStream.backgroundErr();
@@ -351,15 +352,15 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    static public final String AT_SNAPSHOTS="@snapshots";
    static public void mkain(String[] args) {
       try {
-         Flag.setArgs(args, "sudo:/" + DOT_SNAPSHOTS + " /mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro");// Par. sammeln
+         Flag.setArgs(args, Pc.SUDO+":/" + DOT_SNAPSHOTS + " /mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro");// Par. sammeln
          String backupDir=Flag.getParameterOrDefault(1, "@BackSnap");
          String source=Flag.getParameter(0);
          String externSsh=source.contains(":") ? source.substring(0, source.indexOf(":")) : "";
          String sourceDir=externSsh.isBlank() ? source : source.substring(externSsh.length() + 1);
-         if (externSsh.startsWith("sudo"))
-            externSsh="sudo ";
+         if (externSsh.startsWith(Pc.SUDO))
+            externSsh=Pc.SUDO_;
          if (externSsh.isBlank())
-            externSsh="root@localhost";
+            externSsh=Pc.ROOT_LOCALHOST;
          if (sourceDir.endsWith(DOT_SNAPSHOTS))
             sourceDir=sourceDir.substring(0, sourceDir.length() - DOT_SNAPSHOTS.length());
          if (sourceDir.endsWith("//"))
@@ -401,7 +402,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          List<Snapshot> snapshots=new ArrayList<>();
          StringBuilder subvolumeListCmd=new StringBuilder(Btrfs.SUBVOLUME_LIST_1).append(backupDir);
          if ((externSsh instanceof String x) && (!x.isBlank()))
-            if (x.startsWith("sudo "))
+            if (x.startsWith(Pc.SUDO_))
                subvolumeListCmd.insert(0, x);
             else
                subvolumeListCmd.insert(0, "ssh " + x + " '").append("'");

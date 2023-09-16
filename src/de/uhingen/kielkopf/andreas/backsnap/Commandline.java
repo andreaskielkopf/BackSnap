@@ -13,11 +13,11 @@ import de.uhingen.kielkopf.andreas.beans.Version;
  * @author Andreas Kielkopf
  */
 public class Commandline {
-   static final ProcessBuilder                                  processBuilder=new ProcessBuilder();
-   static public final String                                   UTF_8         ="UTF-8";
-   static public final ConcurrentSkipListMap<String, CmdStream> cache         =new ConcurrentSkipListMap<>();
+   static public final ProcessBuilder processBuilder=new ProcessBuilder();
+   static public final String                                   UTF_8  ="UTF-8";
+   static public final ConcurrentSkipListMap<String, CmdStream> cache  =new ConcurrentSkipListMap<>();
    /** ExecutorService um den Errorstream im Hintergrund zu lesen */
-   static private final ExecutorService                         virtual       =Version.getVx();
+   static private final ExecutorService                         virtual=Version.getVx();
    /**
     * @param cmd
     * @return
@@ -77,7 +77,6 @@ public class Commandline {
             }); // System.out.print("4");
          } // return this;
       }
-      
       /**
        * Schließt diesen Stream automatisch wenn alles gelesen wurde. Wenn ein cache-key vergeben wurde, wird der Inhalt
        * des Streams gecaches
