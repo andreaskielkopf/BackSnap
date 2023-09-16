@@ -1,7 +1,7 @@
 # Installation
 BackSnap is intentionally easy to install.
-## 1. Install `JAVA`
-This varies greatly depending on the distribution used. Please refer to your **distribution guide** on how to install **java** so you do it right from the start. I recommend using `java openjdk 21`.
+## 1. Install `JAVA 21`
+This varies greatly depending on the distribution used. Please refer to your **distribution guide** on how to install **java 21** so you do it right from the start. I recommend using `java openjdk 21`.
 #### For manjaro or arch:
 `pamac install jdk-openjdk`
 
@@ -30,14 +30,14 @@ or
 or
 `tricen -S pv`
 
-## 3. Install `BackSnap` for snapper
+## 3. Install `BackSnap`
 The installation must be done as root (or with sudo). It should be done in such a way that BackSnap is accessible in both **root**'s `$PATH` and **user**'s `$PATH`.
 
 `echo $PATH`
 #### in /usr/local/bin
 If `/usr/local/bin` is in your path, it's easiest to install BackSnap there.
 
-`sudo wget https://github.com/andreaskielkopf/BackSnap/raw/timeshift/backsnap -O /usr/local/bin/backsnap`
+`sudo wget https://github.com/andreaskielkopf/BackSnap/raw/compressed/backsnap -O /usr/local/bin/backsnap`
 
 Make BackSnap executable
 
@@ -45,7 +45,7 @@ Make BackSnap executable
 #### or in /usr/bin
 If `/usr/local/bin` is not in your path, the easiest way is to install BackSnap in `/usr/bin`.
 
-`sudo wget https://github.com/andreaskielkopf/BackSnap/raw/timeshift/backsnap -O /usr/bin/backsnap`
+`sudo wget https://github.com/andreaskielkopf/BackSnap/raw/compressed/backsnap -O /usr/bin/backsnap`
 
 Make BackSnap executable
 
