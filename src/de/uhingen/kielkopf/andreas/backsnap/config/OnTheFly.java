@@ -24,10 +24,8 @@ import de.uhingen.kielkopf.andreas.beans.minijson.Etc;
  *
  */
 public class OnTheFly extends JPanel {
-   /**
-    * 
-    */
-   private static final @NonNull Font FONT=new Font("Noto Sans", Font.PLAIN, 20);
+   private static final long          serialVersionUID=8249380521872985414L;
+   private static final @NonNull Font FONT            =new Font("Noto Sans", Font.PLAIN, 20);
    private JPanel                     panel;
    private JPanel                     panel_1;
    private JCheckBox                  cb_1;
@@ -131,20 +129,8 @@ public class OnTheFly extends JPanel {
             Path local=Path.of("/etc/backsnap.d/local.conf");
             System.out.println("create " + local.toString());
             Files.createFile(local);
-            if (Etc.getConfig("backsnap") instanceof Etc etc) {
-               List<String> lines=etc.conf.get(local);
-               lines.add("# backup local pc per " + Pc.SUDO);
-               lines.add("#pc = localhost");
-               lines.add("# backup local pc per ssh");
-               lines.add("pc = " + Pc.ROOT_LOCALHOST);
-               lines.add("");
-               lines.add("# backuplabel = manjaro18 for snapshots of /");
-               lines.add("manjaro18 = /");
-               lines.add("# backuplabel = manjaro18.home for snapshots of /home");
-               lines.add("manjaro18.home = /home");
-               lines.add("");
-               etc.save();
-            }
+            if (Etc.getConfig("backsnap") instanceof Etc etc)
+               etc=createLocalConf(local);
          } catch (IOException e) { /* */
             System.err.println(e.getMessage());
          }
@@ -216,44 +202,47 @@ public class OnTheFly extends JPanel {
          boolean hasLocal=etc.conf.entrySet().stream()
                   .filter(e -> e.getKey().getFileName().toString().startsWith("local")).findAny().isPresent();
          Path local=Path.of("/etc/backsnap.d/local.conf");
-         if (!hasLocal) {
-            System.out.println("create " + local.toString());
-            Files.createFile(local);
-            etc=Etc.getConfig("backsnap"); // neu einlesen
-            List<String> lines=etc.conf.get(local);
-            lines.add("# backup local pc per " + Pc.SUDO);
-            lines.add("# pc = localhost");
-            lines.add("# backup local pc per ssh");
-            lines.add("pc = " + Pc.ROOT_LOCALHOST);
-            lines.add("");
-            lines.add("# backuplabel = manjaro18 for snapshots of /");
-            lines.add("manjaro18 = /");
-            lines.add("# backuplabel = manjaro18.home for snapshots of /home");
-            lines.add("manjaro18.home = /home");
-            lines.add("");
-            etc.save();
-         }
+         if (!hasLocal)
+            etc=createLocalConf(local);
          // 3. Backup-UUID ermitteln und eintragen
          boolean hasId=etc.conf.entrySet().stream()
                   .filter(e -> e.getValue().stream().filter(l -> l.startsWith("backup_id")).findAny().isPresent())
                   .findAny().isPresent();
          if (!hasId) {
-            Volume v=ConfigDialog.getBackupVolume(Pc.getPc(Pc.ROOT_LOCALHOST));
-            // Volume v=ConfigDialog.prepareBackupVolume(null, false);
-            if (v.uuid() instanceof String uuid && uuid.length() > 10) {
-               List<String> lines=etc.conf.get(local);
-               int nr=lines.isEmpty() ? 0
-                        : lines.indexOf(lines.stream().filter(l -> (l.startsWith("pc ") || l.startsWith("pc=")))
-                                 .findFirst().orElse(lines.getLast()));
-               lines.add(++nr, "");
-               lines.add(++nr, "# detect and mount backupvolume by scanning for this id (as part of the uuid)");
-               lines.add(++nr, "backup_id = " + uuid);
-               lines.add(++nr, "");
-               etc.save();
-            }
+            if (ConfigDialog.getBackupVolume(Pc.getPc(null)).uuid() instanceof String uuid && uuid.length() > 10)
+               addUUID(etc, local, uuid);
          }
          return etc;
       }
       return null;
+   }
+   static void addUUID(Etc etc, Path local, String uuid) throws IOException {
+      List<String> lines=etc.conf.get(local);
+      int nr=lines.isEmpty() ? 0
+               : lines.indexOf(lines.stream().filter(l -> (l.startsWith("pc ") || l.startsWith("pc="))).findFirst()
+                        .orElse(lines.getLast()));
+      lines.add(++nr, "");
+      lines.add(++nr, "# detect and mount backupvolume by scanning for this id (as part of the uuid)");
+      lines.add(++nr, "backup_id = " + uuid);
+      lines.add(++nr, "");
+      etc.save();
+   }
+   static Etc createLocalConf(Path local) throws IOException {
+      System.out.println("create " + local.toString());
+      Files.createFile(local);
+      Etc etc=Etc.getConfig("backsnap"); // neu einlesen
+      List<String> lines=etc.conf.get(local);
+      lines.add("# backup local pc per " + Pc.SUDO);
+      lines.add("pc = localhost");
+      lines.add("# backup local pc per ssh");
+      lines.add("# pc = " + Pc.ROOT_LOCALHOST);
+      lines.add("");
+      lines.add("# backuplabel = manjaro18 for snapshots of /");
+      lines.add("manjaro18 = /");
+      lines.add("# backuplabel = manjaro18.home for snapshots of /home");
+      lines.add("manjaro18.home = /home");
+      lines.add("");
+      etc.save();
+      return etc;
    }
 }

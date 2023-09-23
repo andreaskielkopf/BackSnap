@@ -7,7 +7,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
-import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 
 /**
  * @author Andreas Kielkopf
@@ -53,26 +54,26 @@ public record SnapConfig(Mount volumeMount, Mount snapshotMount) {
    // }
    // return l;
    // }
-//   @Deprecated
-//   static public SnapConfig getConfig(Pc pc, Path srcDir) throws IOException {
-//      List<SnapConfig> l=pc.getSnapConfigs();
-//      for (SnapConfig snapConfig:l) {
-//         Backsnap.logln(9, snapConfig.toString());
-//         if (snapConfig.volumeMount.mountPath().equals(srcDir)) {
-//            System.err.println("Treffer: volumeMount " + srcDir);
-//            return snapConfig;
-//         }
-//         if (snapConfig.snapshotMount.mountPath().equals(srcDir)) {
-//            System.err.println("Treffer: snapshotMount " + srcDir);
-//            return snapConfig;
-//         }
-//      }
-//      return null;
-//   }
+   // @Deprecated
+   // static public SnapConfig getConfig(Pc pc, Path srcDir) throws IOException {
+   // List<SnapConfig> l=pc.getSnapConfigs();
+   // for (SnapConfig snapConfig:l) {
+   // Backsnap.logln(9, snapConfig.toString());
+   // if (snapConfig.volumeMount.mountPath().equals(srcDir)) {
+   // System.err.println("Treffer: volumeMount " + srcDir);
+   // return snapConfig;
+   // }
+   // if (snapConfig.snapshotMount.mountPath().equals(srcDir)) {
+   // System.err.println("Treffer: snapshotMount " + srcDir);
+   // return snapConfig;
+   // }
+   // }
+   // return null;
+   // }
    static public SnapConfig getConfig(OneBackup oneBackup) throws IOException {
       List<SnapConfig> l=oneBackup.srcPc().getSnapConfigs();
       for (SnapConfig snapConfig:l) {
-         Backsnap.logln(9, snapConfig.toString());
+         Log.logln(snapConfig.toString(), LEVEL.BTRFS);
          if (snapConfig.volumeMount.mountPath().equals(oneBackup.srcPath())) {
             System.err.println("Treffer: volumeMount " + oneBackup.srcPath());
             return snapConfig;

@@ -8,9 +8,10 @@ import static de.uhingen.kielkopf.andreas.beans.RecordParser.getString;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
-import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 
 /**
  * @author Andreas Kielkopf
@@ -54,9 +55,11 @@ public record Usage(String size, String allocated, String unallcoated, String mi
     */
    static private String getMString(Mount m, boolean b) throws IOException {
       String dir=b ? "-b " + Pc.TMP_BACKUP_ROOT.toString() : Pc.TMP_BACKUP_ROOT.toString();
-      String usageCmd=m.pc().getCmd(new StringBuilder(Btrfs.FILESYSTEM_USAGE).append(dir).append(";")
-               .append(Btrfs.DEVICE_USAGE).append(dir));
-      Backsnap.logln(3, usageCmd);
+      String usageCmd=m.pc().getCmd(
+               new StringBuilder(Btrfs.FILESYSTEM_USAGE).append(dir).append(";").append(Btrfs.DEVICE_USAGE).append(dir),
+               false);// TODO This may be wrong, and sometimes sudo may be needed
+      Log.logln(usageCmd, LEVEL.BTRFS);
+      Btrfs.READ.lock();
       try (CmdStream usageStream=Commandline.executeCached(usageCmd, null)) {
          usageStream.backgroundErr();
          StringBuilder usageLine=new StringBuilder();
@@ -67,8 +70,10 @@ public record Usage(String size, String allocated, String unallcoated, String mi
             if (line.contains("No route to host") || line.contains("Connection closed")
                      || line.contains("connection unexpectedly closed"))
                throw new IOException(line);
-         Backsnap.logln(7, usageLine.toString());
+         Log.logln(usageLine.toString(), LEVEL.BTRFS_ANSWER);
          return usageLine.toString();
+      } finally {
+         Btrfs.READ.unlock();
       }
    }
    static public double getZahl(String s) {

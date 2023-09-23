@@ -14,6 +14,8 @@ import java.util.regex.Pattern;
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 import de.uhingen.kielkopf.andreas.beans.Version;
 import de.uhingen.kielkopf.andreas.beans.data.Link;
 
@@ -27,15 +29,19 @@ public record Pc(String extern, // Marker für diesen PC
          Link<Version> kernelVersion, // Kernel-Version
          Link<Path> backupLabel) {// BackupLabel am BackupPC
    static final ConcurrentSkipListMap<String, Pc> pcCache=new ConcurrentSkipListMap<String, Pc>();
-   /* In /tmp werden bei Timeshift Pcs die Snapshots vorübergehnd eingehängt */
+   /* In /tmp werden die Snapshots vorübergehend eingehängt */
    static public final Path TMP_BTRFS_ROOT=Path.of("/tmp/BtrfsRoot");
    static public final Path TMP_BACKUP_ROOT=Path.of("/tmp/BackupRoot");
    static public final Path TMP_BACKSNAP=TMP_BACKUP_ROOT.resolve("@BackSnap");
+   static public final String ROOT="root";
    static public final String ROOT_LOCALHOST="root@localhost";
    static public final String SUDO="sudo";
-   static public final String SUDO_=SUDO + " ";
-   static final Pattern allowExtern=Pattern.compile("[a-zA-Z_0-9]+@[a-zA-Z_0-9.]+|" + SUDO_);
+   static public final String SUDO_="sudo ";
+   static public final String PKEXEC="pkexec";
+   static public final String PKEXEC_="pkexec ";
+   static final Pattern allowExtern=Pattern.compile("[a-zA-Z_0-9]+@[a-zA-Z_0-9.]+|" + SUDO_ + "|" + PKEXEC_);
    private static final String BACKUP_OPTIONS=",compress=zstd:9 ";
+   private static final String MOUNT_BTRFS="mount -t btrfs ";
    /**
     * Sicherstellen, dass jeder Pc nur einmal erstellt wird
     * 
@@ -45,7 +51,12 @@ public record Pc(String extern, // Marker für diesen PC
     * @throws IOException
     */
    static public Pc getPc(String extern) /* throws IOException */ {
-      String x=(extern == null) ? "" : extern.startsWith(SUDO) ? SUDO_ : extern;
+      String x=(extern == null) ? SUDO_
+               : extern.startsWith(SUDO) ? SUDO_ //
+                        : extern.startsWith(PKEXEC) ? PKEXEC_ : extern;
+      if ((x == SUDO_) && Commandline.processBuilder.environment() instanceof Map<String, String> env
+               && env.containsKey("ECLIPSE_RUN"))
+         x=ROOT_LOCALHOST;
       Matcher m=allowExtern.matcher(x);
       if (m.matches())
          if (!pcCache.containsKey(x))
@@ -65,16 +76,17 @@ public record Pc(String extern, // Marker für diesen PC
     * @param cmds
     * @return
     */
-   public String getCmd(StringBuilder cmds) {
-      if (isExtern()) {
+   public String getCmd(StringBuilder cmds, boolean needsSudo) {
+      if (isExtern())
          cmds.insert(0, "ssh " + extern + " '").append("'");
-      } else {
-         String[] cmdList=cmds.toString().split(";");
-         cmds.setLength(0);
-         for (int i=0; i < cmdList.length; i++) // Für jeden Befehl
-            cmds.append(SUDO_).append(cmdList[i]).append(";");// sudo einfügen
-         cmds.setLength(cmds.length() - 1);
-      }
+      else
+         if (needsSudo) {
+            String[] cmdList=cmds.toString().split(";");
+            cmds.setLength(0);
+            for (int i=0; i < cmdList.length; i++) // Für jeden Befehl
+               cmds.append(extern().equals(PKEXEC_) ? PKEXEC_ : SUDO_).append(cmdList[i]).append(";");// pkexec einfügen
+            cmds.setLength(cmds.length() - 1);// ; entfernen
+         }
       return cmds.toString();
    }
    /**
@@ -116,11 +128,10 @@ public record Pc(String extern, // Marker für diesen PC
    public ConcurrentSkipListMap<String, Mount> getMountList(boolean refresh) throws IOException {
       if (mountCache.isEmpty() || refresh) {
          ConcurrentSkipListMap<String, Mount> mountList2=new ConcurrentSkipListMap<>();
-         String mountCmd=getCmd(new StringBuilder("mount -t btrfs"));
-         Backsnap.logln(3, mountCmd);
-         if (refresh)
-            Commandline.removeFromCache(mountCmd);
-         try (CmdStream mountStream=Commandline.executeCached(mountCmd)) {
+         String mountCmd=getCmd(new StringBuilder(MOUNT_BTRFS), false);
+         Log.logln(mountCmd, LEVEL.BTRFS);// Commandline.removeFromCache(mountCmd);
+         Btrfs.READ.lock();
+         try (CmdStream mountStream=Commandline.executeCached(mountCmd, null)) {
             mountStream.backgroundErr();
             for (String line:mountStream.erg().toList())
                mountList2.put(line, mountCache.containsKey(line) //
@@ -133,7 +144,9 @@ public record Pc(String extern, // Marker für diesen PC
                if (line.contains("No route to host") || line.contains("Connection closed")
                         || line.contains("connection unexpectedly closed"))
                   throw new IOException(line);
-            Backsnap.logln(3, "");
+            Log.logln("", LEVEL.BTRFS);
+         } finally {
+            Btrfs.READ.unlock();
          }
       }
       return mountCache;
@@ -146,8 +159,9 @@ public record Pc(String extern, // Marker für diesen PC
     */
    public final Version getBtrfsVersion() throws IOException {
       if (btrfsVersion.get() == null) {
-         String versionCmd=getCmd(new StringBuilder(Btrfs.VERSION));
-         Backsnap.logln(6, versionCmd);
+         String versionCmd=getCmd(new StringBuilder(Btrfs.VERSION), false);
+         Log.logln(versionCmd, LEVEL.COMMANDS);
+         Btrfs.READ.lock();
          try (CmdStream versionStream=Commandline.executeCached(versionCmd)) {
             versionStream.backgroundErr();
             for (String line:versionStream.erg().toList())
@@ -157,8 +171,10 @@ public record Pc(String extern, // Marker für diesen PC
                if (line.contains("No route to host") || line.contains("Connection closed")
                         || line.contains("connection unexpectedly closed"))
                   throw new IOException(line);
+         } finally {
+            Btrfs.READ.unlock();
          }
-         Backsnap.logln(1, this + " btrfs: " + btrfsVersion.get());
+         Log.logln(this + " btrfs: " + btrfsVersion.get(), LEVEL.BASIC);
       }
       return btrfsVersion.get();
    }
@@ -170,8 +186,8 @@ public record Pc(String extern, // Marker für diesen PC
     */
    public final Version getKernelVersion() throws IOException {
       if (kernelVersion.get() == null) {
-         String versionCmd=getCmd(new StringBuilder("uname -rs"));
-         Backsnap.logln(6, versionCmd);
+         String versionCmd=getCmd(new StringBuilder("uname -rs"), false);
+         Log.logln(versionCmd, LEVEL.COMMANDS);
          try (CmdStream versionStream=Commandline.executeCached(versionCmd)) {
             versionStream.backgroundErr();
             for (String line:versionStream.erg().toList())
@@ -182,7 +198,7 @@ public record Pc(String extern, // Marker für diesen PC
                         || line.contains("connection unexpectedly closed"))
                   throw new IOException(line);
          }
-         Backsnap.logln(0, this + " kernel: " + kernelVersion.get());
+         Log.logln(this + " kernel: " + kernelVersion.get(), LEVEL.BASIC);
       }
       return kernelVersion.get();
    }
@@ -201,14 +217,18 @@ public record Pc(String extern, // Marker für diesen PC
     * @return
     * @throws IOException
     */
-   static public Mount getBackupMount() throws IOException {
-      Optional<Mount> o=OneBackup.backupPc.getMountList(true).values().stream()
-               .filter(m -> m.mountPath().equals(TMP_BACKUP_ROOT)).findAny();
-      if (o.isPresent())
-         return o.get();
-      throw new RuntimeException(System.lineSeparator() + "Could not find the volume for backupDir: " + Pc.TMP_BACKSNAP
-               + "/" + OneBackup.backupPc.getBackupLabel() + System.lineSeparator()
-               + "Maybe it needs to be mounted first");
+   static public Mount getBackupMount(/*boolean refresh*/) throws IOException {
+      synchronized (pcCache) {
+         Optional<Mount> o=OneBackup.backupPc.getMountList(false).values().stream()
+                  .filter(m -> m.mountPath().toString().equals(TMP_BACKUP_ROOT.toString())).findFirst();
+         if (o.isPresent())
+            return o.get();
+         OneBackup.backupPc.getMountList(false).values().stream()
+                  .forEach(m -> System.err.println(m.mountPath().toString()));
+         throw new RuntimeException(System.lineSeparator() + "Could not find the volume for backupDir: "
+                  + Pc.TMP_BACKSNAP + "/" + OneBackup.backupPc.getBackupLabel() + System.lineSeparator()
+                  + "Maybe it needs to be mounted first");
+      }
    }
    @Override
    public String toString() {
@@ -223,7 +243,7 @@ public record Pc(String extern, // Marker für diesen PC
     * @throws IOException
     */
    public void mountBtrfsRoot(Path srcDir1, boolean doMount) throws IOException {
-      Collection<Mount> ml=getMountList(true).values(); // eventuell reicht false;
+      Collection<Mount> ml=getMountList(false).values(); // eventuell reicht false;
       if (doMount == ml.stream().filter(m -> m.mountPath() != null)
                .anyMatch(m -> m.mountPath().toString().equals(TMP_BTRFS_ROOT.toString())))
          return; // mount hat schon den gewünschten Status
@@ -241,7 +261,7 @@ public record Pc(String extern, // Marker für diesen PC
     */
    public List<SnapConfig> getSnapConfigs() throws IOException {
       ArrayList<SnapConfig> l=new ArrayList<>();
-      ConcurrentSkipListMap<String, Mount> ml=getMountList(true);
+      ConcurrentSkipListMap<String, Mount> ml=getMountList(false);
       for (Mount m:ml.values()) {
          SnapTree st=m.getSnapTree();
          Optional<Snapshot> first=st.btrfsPathMap().values().stream()
@@ -281,32 +301,34 @@ public record Pc(String extern, // Marker für diesen PC
          mount(Pc.TMP_BACKUP_ROOT, device, doMount, BACKUP_OPTIONS);
    }
    public void mount(Path mountPoint, Path device, boolean doMount, String options) throws IOException {
-      if (doMount == getMountList(true).values().stream().anyMatch(m -> m.mountPath().equals(mountPoint)))
+      if (doMount == getMountList(false).values().stream().anyMatch(m -> m.mountPath().equals(mountPoint)))
          return;
       StringBuilder mountSB=new StringBuilder();
       if (doMount) {
          mountSB.append("mkdir --mode=000 -p ").append(mountPoint.toString()).append(";");
-         mountSB.append("mount -t btrfs -o subvol=/").append(options).append(" ").append(device.toString()).append(" ")
-                  .append(mountPoint.toString());
-      } else {
-         // mountSB.append("sync;");
-         mountSB.append("umount -v ").append(mountPoint.toString()).append(";");
-         // mountSB.append("sync;");
+         mountSB.append(MOUNT_BTRFS).append("-o subvol=/").append(options).append(" ").append(device.toString())
+                  .append(" ").append(mountPoint.toString());
+      } else { // mountSB.append("sync;");
+         mountSB.append("umount -v ").append(mountPoint.toString()).append(";"); // mountSB.append("sync;");
          mountSB.append("rmdir ").append(mountPoint.toString());
       }
-      String mountCmd=getCmd(mountSB);
+      String mountCmd=getCmd(mountSB, true);
       System.out.println(mountCmd);
-      Backsnap.logln(4, mountCmd);// if (!DRYRUN.get())
+      Log.logln(mountCmd, LEVEL.BTRFS);
+      Btrfs.LOCK.lock();
       try (CmdStream mountStream=Commandline.executeCached(mountCmd, null)) { // not cached
          mountStream.backgroundErr();
-         mountStream.erg().forEach(t -> Backsnap.logln(4, t));
+         mountStream.erg().forEach(t -> Log.logln(t, LEVEL.BTRFS_ANSWER));
          mountStream.waitFor();
          for (String line:mountStream.errList())
             if (line.contains("No route to host") || line.contains("Connection closed")
                      || line.contains("connection unexpectedly closed")) {
                Backsnap.disconnectCount=10;
                break;
-            } // ende("");// R
+            }
+      } finally {
+         Btrfs.LOCK.unlock();
       }
+      getMountList(true); // Mountlist neu einlesen und Mounts gegen-prüfen
    }
 }

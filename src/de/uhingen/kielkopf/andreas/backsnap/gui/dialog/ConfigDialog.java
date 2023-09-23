@@ -236,7 +236,7 @@ public class ConfigDialog extends JDialog {
     */
    public static void main(String[] args) {
       try {
-         if (getBackupVolume(Pc.getPc(Pc.ROOT_LOCALHOST)) instanceof Volume volume) {
+         if (getBackupVolume(Pc.getPc(null)) instanceof Volume volume) {
             prepareBackupVolume(volume, false);
             System.out.println(volume.uuid());
          } else

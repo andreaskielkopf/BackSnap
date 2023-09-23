@@ -15,6 +15,8 @@ import org.eclipse.jdt.annotation.NonNull;
 
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
@@ -66,12 +68,13 @@ public class PanelMeta extends JPanel {
    }
    public void flagMeta() {
       boolean s=getChckMeta().isSelected();
-      Backsnap.log(3, "-------------- getChckMeta() actionPerformed");
+      Log.log("-------------- getChckMeta() actionPerformed", LEVEL.DEBUG);
       Backsnap.KEEP_MINIMUM.set(s);
       getSliderMeta().setEnabled(s);
       getBtnMeta().setEnabled(s & !Btrfs.LOCK.isLocked());
       if (s && !bsGui.getTglPause().isSelected())
          SwingUtilities.invokeLater(() -> bsGui.getTglPause().doClick());
+      SwingUtilities.invokeLater(() -> updateButtons());
    }
    public JButton getBtnMeta() {
       if (btnMeta == null) {
@@ -141,7 +144,7 @@ public class PanelMeta extends JPanel {
    }
    private TxtFeld getLblDisabled_1() {
       if (xtxDisabled == null) {
-         xtxDisabled=new TxtFeld("deleting of backups is disabled while backups are running");
+         xtxDisabled=new TxtFeld("deleting of backups is disabled while btrfs is busy ");
       }
       return xtxDisabled;
    }

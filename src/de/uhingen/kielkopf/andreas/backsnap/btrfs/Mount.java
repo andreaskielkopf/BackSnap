@@ -13,9 +13,10 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 
 /**
  * @author Andreas Kielkopf results of mount | grep -E 'btrfs' as records
@@ -80,12 +81,13 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
       SnapTree snapTree=SnapTree.getSnapTree(this);
       boolean snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.dateMap().isEmpty() : false;
       StringBuilder subvolumeShowSB=new StringBuilder(Btrfs.SUBVOLUME_SHOW).append(mountPath);
-      String subvolumeSchowCmd=pc.getCmd(subvolumeShowSB);
-      Backsnap.logln(3, subvolumeSchowCmd);
+      String subvolumeSchowCmd=pc.getCmd(subvolumeShowSB, true);
+      Log.logln(subvolumeSchowCmd, LEVEL.BTRFS);
+      Btrfs.READ.lock();
       try (CmdStream snapshotStream=Commandline.executeCached(subvolumeSchowCmd, keyM())) {
          snapshotStream.backgroundErr();
          snapshotStream.erg().forEach(line -> {
-            Backsnap.logln(9, line);
+            Log.logln(line, LEVEL.BTRFS_ANSWER);
             Matcher mn=NAME.matcher(line);
             if (mn.find())
                name.add("/" + mn.group(1));// store Name: ...
@@ -115,18 +117,21 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
             if (line.contains("No route to host") || line.contains("Connection closed")
                      || line.contains("connection unexpectedly closed"))
                throw new IOException(line);
+      } finally {
+         Btrfs.READ.unlock();
       }
    }
    public void updateSnapshots() throws IOException {
       SnapTree snapTree=SnapTree.getSnapTree(this);
       boolean snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.dateMap().isEmpty() : false;
       StringBuilder subvolumeShowSB=new StringBuilder(Btrfs.SUBVOLUME_SHOW).append(mountPath);
-      String subvolumeShowCmd=pc.getCmd(subvolumeShowSB);
-      Backsnap.logln(3, subvolumeShowCmd);
+      String subvolumeShowCmd=pc.getCmd(subvolumeShowSB, true);
+      Log.logln(subvolumeShowCmd, LEVEL.BTRFS);
+      Btrfs.READ.lock();
       try (CmdStream snapshotStream=Commandline.executeCached(subvolumeShowCmd, keyM())) {
          snapshotStream.backgroundErr();
          snapshotStream.erg().forEach(line -> {
-            Backsnap.logln(9, line);
+            Log.logln(line, LEVEL.BTRFS_ANSWER);
             Matcher mn=NAME.matcher(line);
             if (mn.find())
                name.add("/" + mn.group(1));// store Name: ...
@@ -156,6 +161,8 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
             if (line.contains("No route to host") || line.contains("Connection closed")
                      || line.contains("connection unexpectedly closed"))
                throw new IOException(line);
+      } finally {
+         Btrfs.READ.unlock();
       }
    }
    @Override

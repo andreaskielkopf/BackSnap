@@ -14,9 +14,10 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 
 /**
  * @author Andreas Kielkopf
@@ -70,8 +71,8 @@ public record Volume(Pc pc, ArrayList<String> lines, ConcurrentSkipListMap<Strin
                .append(" ").append(label()).append("]").toString();
    }
    public boolean isUSB() {
-      String isUSBCmd=pc.getCmd(new StringBuilder(UDEVADM).append(devices().sequencedValues().getFirst()));
-      Backsnap.logln(7, isUSBCmd);
+      String isUSBCmd=pc.getCmd(new StringBuilder(UDEVADM).append(devices().sequencedValues().getFirst()), false);
+      Log.logln(isUSBCmd, LEVEL.BTRFS);
       boolean treffer=false; // if (refresh) Commandline.removeFromCache(isUSBCmd);
       try (CmdStream isUSBCmdStream=Commandline.executeCached(isUSBCmd)) {
          isUSBCmdStream.backgroundErr();

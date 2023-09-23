@@ -8,9 +8,10 @@ import java.nio.file.Path;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
-import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 
 /**
  * For one Subvolume that is mounted,
@@ -35,14 +36,15 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
    private void populate() throws IOException {// otime kommt nur bei snapshots
       // mit -a bekommt man alle Snapshots für dieses Device
       StringBuilder subvolumeListCommand=new StringBuilder(Btrfs.SUBVOLUME_LIST_2).append(mount.mountPath());
-      String        subvolumeListCmd    =mount.pc().getCmd(subvolumeListCommand);
-      Backsnap.logln(3, subvolumeListCmd);
+      String subvolumeListCmd=mount.pc().getCmd(subvolumeListCommand, true);
+      Log.logln(subvolumeListCmd, LEVEL.BTRFS);
+      Btrfs.READ.lock();
       try (CmdStream snapshotStream=Commandline.executeCached(subvolumeListCmd, mount.keyD())) {
          snapshotStream.backgroundErr();
          snapshotStream.erg().forEachOrdered(line -> {
             try {
                if (line.contains("timeshift"))
-                  Backsnap.logln(8, line);
+                  Log.logln(line, LEVEL.BTRFS_ANSWER);
                Snapshot snapshot=new Snapshot(mount, line);
                btrfsPathMap.put(snapshot.btrfsPath(), snapshot);// nach pfad sortiert
                uuidMap.put(snapshot.uuid(), snapshot);
@@ -51,18 +53,19 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
                   rUuidMap.put(snapshot.received_uuid(), snapshot);
             } catch (IOException e) {
                e.printStackTrace();
-            } 
+            }
          });
          snapshotStream.waitFor();
          for (String line:snapshotStream.errList())
             if (line.contains("No route to host") || line.contains("Connection closed")
                      || line.contains("connection unexpectedly closed"))
                throw new IOException(line);
+      } finally {
+         Btrfs.READ.unlock();
       }
    }
    /**
-    * Look for Snapshots of the specified mounted subvolume (But we get all snapshots of the underlying Volume, so this
-    * is worth caching)
+    * Look for Snapshots of the specified mounted subvolume (But we get all snapshots of the underlying Volume, so this is worth caching)
     * 
     * @param mount2
     * @param mountPoint
@@ -74,9 +77,9 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
       String deviceKey=mount2.keyD();
       if (!snapTreeCache.containsKey(deviceKey)) {
          snapTreeCache.put(deviceKey, new SnapTree(mount2));
-         Backsnap.logln(8, "set " + deviceKey + " into treeCache");
+         Log.logln("set " + deviceKey + " into treeCache", LEVEL.CACHE);
       } else
-         Backsnap.logln(8, "take " + deviceKey + " from treeCache");
+         Log.logln("take " + deviceKey + " from treeCache", LEVEL.CACHE);
       return snapTreeCache.get(deviceKey);
    }
    @Override

@@ -47,11 +47,11 @@ public record OneBackup(Pc srcPc, Path srcPath, Path backupLabel, String flags) 
     * @throws IOException
     */
    public boolean compressionPossible() throws IOException {
-      return (srcPc().getBtrfsVersion() instanceof Version v0 && v0.getMayor() < 6)
-               && (srcPc().getKernelVersion() instanceof Version v1 && v1.getMayor() < 6)
-               && (backupPc.getBtrfsVersion() instanceof Version v2 && v2.getMayor() < 6);
+      return (srcPc().getBtrfsVersion() instanceof Version v0 && (v0.getMayor() >= 6))
+               && (srcPc().getKernelVersion() instanceof Version v1 && (v1.getMayor() >= 6))
+               && (backupPc.getBtrfsVersion() instanceof Version v2 && (v2.getMayor() >= 6));
    }
-   static Pattern linePattern=Pattern.compile("^([a-zA-Z0-9._]{2,80}) *= *(.+)");
+   static Pattern linePattern=Pattern.compile("^( *[a-zA-Z0-9._]{2,80} *)=(.+)");
    /**
     * @param etc
     */
@@ -64,8 +64,8 @@ public record OneBackup(Pc srcPc, Path srcPath, Path backupLabel, String flags) 
                // if (line.startsWith("#")) continue; // Kommentare ausblenden
                Matcher m=linePattern.matcher(line);
                if (m.matches()) {
-                  String a=m.group(1);
-                  String b=m.group(2);
+                  String a=m.group(1).strip();
+                  String b=m.group(2).strip();
                   switch (a.toLowerCase()) {
                      case "pc":
                         if (pc == null)
@@ -93,6 +93,10 @@ public record OneBackup(Pc srcPc, Path srcPath, Path backupLabel, String flags) 
                }
             }
          }
+   }
+   public static void setBasis(Etc etc1) {
+      setConfig(etc1);
+      backupList.clear();
    }
    /**
     * @return

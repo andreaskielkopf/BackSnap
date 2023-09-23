@@ -14,9 +14,10 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.Mount;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.Pc;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 
 /**
  * @author Andreas Kielkopf
@@ -40,7 +41,6 @@ public class Computer extends JPanel {
    private String                  titel           ="?";
    private TitledBorder            titelBorder;
    private JButton                 btnNewButton;
-
    private DefaultListModel<Mount> listModel;
    /**
     * Create the panel.
@@ -129,7 +129,7 @@ public class Computer extends JPanel {
    protected void updateSubvolumeInfo(ListSelectionEvent ev) {
       if (ev.getSource() instanceof JList<?> l)
          if (l.getSelectedValue() instanceof Mount mount) {
-            Backsnap.logln(6, mount.toString());
+            Log.logln(mount.toString(), LEVEL.BTRFS);
             getSubvol().setMount(mount);
          }
    }
@@ -148,7 +148,7 @@ public class Computer extends JPanel {
                invokeLater(() -> calculateExtern());
             }
          });
-         benutzer.setModel(new DefaultComboBoxModel<String>(new String[] {"sudo", "root"}));
+         benutzer.setModel(new DefaultComboBoxModel<String>(new String[] {Pc.SUDO, Pc.ROOT}));
          benutzer.setSelectedIndex(0);
          benutzer.setEditable(true);
       }

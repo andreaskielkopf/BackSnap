@@ -23,6 +23,8 @@ import org.eclipse.jdt.annotation.NonNull;
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
 import de.uhingen.kielkopf.andreas.backsnap.gui.part.*;
@@ -110,7 +112,7 @@ public class BacksnapGui implements MouseListener {
     * @throws IOException
     */
    private void initialize() throws IOException {
-      frame=new JFrame(Backsnap.BACK_SNAP_VERSION);
+      frame=new JFrame(Backsnap.BS_VERSION);
       frame.getContentPane().add(getPanelOben(), BorderLayout.CENTER);
       frame.getContentPane().add(getPanelUnten(), BorderLayout.SOUTH);
       getPrefs().restoreFramePos(frame);
@@ -124,8 +126,7 @@ public class BacksnapGui implements MouseListener {
     * @param bsGui
     * @throws IOException
     */
-   static public BacksnapGui getGui( SnapConfig srcConfig, SnapTree backupTree, Usage usage)
-            throws IOException {
+   static public BacksnapGui getGui(SnapConfig srcConfig, SnapTree backupTree, Usage usage) throws IOException {
       if (backSnapGui == null) {
          backSnapGui=new BacksnapGui();
          main2(null); // zeigt die GUI an
@@ -153,12 +154,12 @@ public class BacksnapGui implements MouseListener {
     * @throws IOException
     */
    public void setSrc(SnapConfig srcConfig) throws IOException {
-      Backsnap.log(2, "Src:");
+      Log.log("Src:", LEVEL.BASIC);
       ConcurrentSkipListMap<String, Snapshot> neuList=getPanelSrc()
                .setVolume(srcConfig.volumeMount().otimeKeyMap().values());
       for (Snapshot snap:neuList.values())
-         Backsnap.log(2, " " + snap.dirName());
-      Backsnap.logln(2, "");
+         Log.log(" " + snap.dirName(), LEVEL.BASIC);
+      Log.logln("", LEVEL.BASIC);
       abgleich();
       getPanelSrc().setInfo(srcConfig.volumeMount());
    }
@@ -177,7 +178,7 @@ public class BacksnapGui implements MouseListener {
       // SINGLESNAPSHOT make or delete only one(1) snapshot per call
       // for DELETEOLD get all old snapshots that are "o=999" older than the newest one
       Entry<String, SnapshotLabel> srcLast=getPanelSrc().labelTree_DirNameS.lastEntry();
-//      System.out.println("srcLast:"+srcLast.getKey());
+      // System.out.println("srcLast:"+srcLast.getKey());
       ArrayList<SnapshotLabel> backupMixedList=getPanelBackup().mixedList;
       return virtual.submit(() -> {
          ConcurrentNavigableMap<String, SnapshotLabel> toDeleteOld=new ConcurrentSkipListMap<>();
@@ -291,8 +292,7 @@ public class BacksnapGui implements MouseListener {
       });
    }
    /**
-    * Wird auf Knopfdruck aufgerufen, und darf daher keine exception werfen und sollte auch im Hintergrund ausgeführt
-    * werden
+    * Wird auf Knopfdruck aufgerufen, und darf daher keine exception werfen und sollte auch im Hintergrund ausgeführt werden
     * 
     * @param jCheckBox
     */
@@ -304,25 +304,24 @@ public class BacksnapGui implements MouseListener {
          if (toRemove.isEmpty())
             return;
          jButton.setEnabled(false);
-         if (Btrfs.LOCK.tryLock(1, TimeUnit.SECONDS)) // try {
-            virtual.execute(() -> {// jButton.setEnabled(false);
-               for (Snapshot snapshot:toRemove) {
-                  Backsnap.logln(6, "to remove " + snapshot.dirName());
-                  if (!jCheckBox.isSelected())
-                     continue;
-                  try {
-                     Btrfs.removeSnapshot(snapshot);
-                  } catch (IOException e1) { /* */ }
-                  refreshGUI();
-                  if (Backsnap.SINGLESNAPSHOT.get())
-                     break;
-               }
-               Backsnap.logln(1, "");
-               jButton.setEnabled(true);
-            });
-      } catch (IOException | InterruptedException ignore) { /* */ } finally {
-         Btrfs.LOCK.unlock();
-      }
+         Pc.mountBackupRoot(true);
+         virtual.execute(() -> {// jButton.setEnabled(false);
+            for (Snapshot snapshot:toRemove) {
+               Log.logln("to remove " + snapshot.dirName(), LEVEL.DELETE);
+               if (!jCheckBox.isSelected())
+                  continue;
+               try {
+                  Btrfs.removeSnapshot(snapshot); // LOCK inside
+                  Thread.sleep(100);
+               } catch (IOException | InterruptedException e1) { /* */ }
+               refreshGUI();
+               if (Backsnap.SINGLESNAPSHOT.get())
+                  break;
+            }
+            Log.logln("", LEVEL.DELETE);
+            jButton.setEnabled(true);
+         });
+      } catch (IOException ignore) { /* */ }
    }
    /**
     * Erstelle oder Erneuere die Anzeige der Backups
@@ -341,10 +340,10 @@ public class BacksnapGui implements MouseListener {
       ConcurrentSkipListMap<String, Snapshot> neuList=getPanelBackup().setVolume(passendBackups.values());
       for (SnapshotLabel label:getPanelBackup().getLabels().values())
          SwingUtilities.invokeLater(() -> label.addMouseListener(this));
-      Backsnap.log(2, "Backup:");
+      Log.log("Backup:", LEVEL.GUI);
       for (Snapshot snap:neuList.values())
-         Backsnap.log(2, " " + snap.dirName());
-      Backsnap.logln(2, "");
+         Log.log(" " + snap.dirName(), LEVEL.GUI);
+      Log.logln("", LEVEL.GUI);
       abgleich(); // läuft virtuell
       SnapshotPanel pb=getPanelBackup();
       SwingUtilities.invokeLater(() -> {
@@ -362,12 +361,12 @@ public class BacksnapGui implements MouseListener {
    @Override
    public void mouseClicked(MouseEvent e) {
       if (e.getSource() instanceof SnapshotLabel sl) {
-         Backsnap.log(8, "click-" + sl);
+         Log.log("click-" + sl, LEVEL.DELETE);
          if (!manualDelete.containsValue(sl))
             manualDelete.put(sl.getText(), sl);
          else
             manualDelete.remove(sl.getText());
-         Backsnap.log(8, manualDelete.containsValue(sl) ? "del" : "keep");
+         Log.log(manualDelete.containsValue(sl) ? "del" : "keep", LEVEL.DELETE);
          try {
             abgleich();
          } catch (IOException e1) {
@@ -731,7 +730,7 @@ public class BacksnapGui implements MouseListener {
       });
    }
    public void setDeleteInfo(Snapshot toDelete) throws FileNotFoundException {
-      Backsnap.logln(7, toDelete.getSnapshotMountPath().toString());
+      Log.logln(toDelete.getSnapshotMountPath().toString(), LEVEL.DELETE);
       SwingUtilities.invokeLater(() -> {
          getLblSnapshot().setText("remove backup of:");
          getTxtSnapshot().setText(toDelete.dirName());
@@ -748,13 +747,15 @@ public class BacksnapGui implements MouseListener {
       virtual.execute(() -> {
          try {
             if (refreshGUIcKey == null) // refreshBackupPc=backupPc;
-               refreshGUIcKey=OneBackup.backupPc.extern() + ":" + Pc.getBackupMount().devicePath();
+               refreshGUIcKey=OneBackup.backupPc.extern() + ":" + Pc.getBackupMount(/*true*/).devicePath();
             Commandline.removeFromCache(refreshGUIcKey); // umgeht den cache
-            setBackup(new SnapTree(Pc.getBackupMount()));
+            setBackup(new SnapTree(Pc.getBackupMount(/*true*/)));
             if (Instant.now().isAfter(refreshUsage)) {
-               getPanelMaintenance().setUsage(new Usage(Pc.getBackupMount(), false));
+               getPanelMaintenance().setUsage(new Usage(Pc.getBackupMount(/*true*/), false));
                refreshUsage=Instant.now().plusSeconds(60);
             }
+            if (Backsnap.bsGui != null)
+               Backsnap.bsGui.getPanelMaintenance().updateButtons();
             abgleich(); // getPanelBackup().repaint(50);
          } catch (IOException e) {
             e.printStackTrace();

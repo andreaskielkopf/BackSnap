@@ -20,6 +20,8 @@ import org.eclipse.jdt.annotation.Nullable;
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
 import de.uhingen.kielkopf.andreas.beans.cli.Flag;
 import de.uhingen.kielkopf.andreas.beans.data.Link;
@@ -44,7 +46,6 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    static final Pattern NUMERIC_DIRNAME=Pattern.compile("([0-9]+)/snapshot$");
    static final Pattern DIRNAME=Pattern.compile("([^/]+)/snapshot$");
    static final Pattern SUBVOLUME=Pattern.compile("^(@[0-9a-zA-Z.]+)/.*[0-9]+/snapshot$");
- 
    public Snapshot(Mount mount, String from_btrfs) throws IOException {
       this(getMount(mount, getPath(BTRFS_PATH.matcher(from_btrfs))), getInt(ID.matcher(from_btrfs)),
                getInt(GEN.matcher(from_btrfs)), getInt(CGEN.matcher(from_btrfs)), getInt(PARENT.matcher(from_btrfs)),
@@ -147,9 +148,8 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       return true;
    }
    /**
-    * The subvolume flag currently implemented is the ro property. Read-write subvolumes have that set to false,
-    * snapshots as true. In addition to that, a plain snapshot will also have last change generation and creation
-    * generation equal.
+    * The subvolume flag currently implemented is the ro property. Read-write subvolumes have that set to false, snapshots as true. In addition to
+    * that, a plain snapshot will also have last change generation and creation generation equal.
     * 
     * @return
     */
@@ -163,13 +163,13 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    private boolean isReadonly() throws IOException {
       if (readonlyL().get() == null)
          try {
-            Btrfs.LOCK.lock();
+            Btrfs.READ.lock();
             String getReadonlyCmd=mount().pc()
-                     .getCmd(new StringBuilder(Btrfs.PROPERTY_GET).append(getSnapshotMountPath()).append(" ro"));
-            Backsnap.logln(4, getReadonlyCmd);// if (!DRYRUN.get())
+                     .getCmd(new StringBuilder(Btrfs.PROPERTY_GET).append(getSnapshotMountPath()).append(" ro"), false);
+            Log.logln(getReadonlyCmd, LEVEL.BTRFS);
             try (CmdStream getReadonlyStream=Commandline.executeCached(getReadonlyCmd, null)) { // not cached
                getReadonlyStream.backgroundErr();
-               Optional<String> erg=getReadonlyStream.erg().peek(t -> Backsnap.logln(4, t))
+               Optional<String> erg=getReadonlyStream.erg().peek(t -> Log.logln(t, LEVEL.BTRFS))
                         .filter(t -> t.startsWith("ro=")).findAny();
                getReadonlyStream.waitFor();
                for (String line:getReadonlyStream.errList())
@@ -177,7 +177,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
                            || line.contains("connection unexpectedly closed")) {
                      Backsnap.disconnectCount=10;
                      break;
-                  } // ende("");// R
+                  }
                if (erg.isPresent()) {
                   String u=erg.get().split("=")[1];
                   boolean b=Boolean.parseBoolean(u);
@@ -185,7 +185,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
                }
             }
          } finally {
-            Btrfs.LOCK.unlock();
+            Btrfs.READ.unlock();
          }
       return readonlyL().get();
    }
@@ -222,15 +222,15 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    public Path getSnapshotMountPath() throws FileNotFoundException {
       if (mount == null)
          throw new FileNotFoundException("Could not find dir: " + btrfsPath);
-      if (Backsnap.TIMESHIFT.get()) {
-         Optional<Mount> om=mount.pc().getTimeshiftBase();
-         if (om.isPresent())
-            if (om.get().devicePath().equals(mount.devicePath())) {
-               Path rel=Path.of("/").relativize(btrfsPath);
-               Path abs=om.get().mountPath().resolve(rel);
-               return abs;
-            }
-      }
+      // if (Backsnap.TIMESHIFT.get()) {
+      Optional<Mount> om=mount.pc().getTimeshiftBase();
+      if (om.isPresent())
+         if (om.get().devicePath().equals(mount.devicePath())) {
+            Path rel=Path.of("/").relativize(btrfsPath);
+            Path abs=om.get().mountPath().resolve(rel);
+            return abs;
+         }
+      // }
       Path rel=mount.btrfsPath().relativize(btrfsPath);
       Path abs=mount.mountPath().resolve(rel);
       return abs;
@@ -295,26 +295,24 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          return;
       if (Backsnap.bsGui instanceof BacksnapGui gui)
          gui.getPanelMaintenance().updateButtons();
-      String readonlyCmd=snapshot.mount().pc().getCmd(readonlySB);
-      Backsnap.logln(4, readonlyCmd);// if (!DRYRUN.get())
+      String readonlyCmd=snapshot.mount().pc().getCmd(readonlySB, true);
+      Log.logln(readonlyCmd, LEVEL.BTRFS);
       Btrfs.LOCK.lock();
-      // try {
       try (CmdStream readonlyStream=Commandline.executeCached(readonlyCmd, null)) { // not cached
          readonlyStream.backgroundErr();
-         readonlyStream.erg().forEach(t -> Backsnap.logln(4, t));
+         readonlyStream.erg().forEach(t -> Log.logln(t, LEVEL.BTRFS));
          readonlyStream.waitFor();
          for (String line:readonlyStream.errList())
             if (line.contains("No route to host") || line.contains("Connection closed")
                      || line.contains("connection unexpectedly closed")) {
                Backsnap.disconnectCount=10;
                break;
-            } // ende("");// R
-         // }
+            }
       } finally {
          Btrfs.LOCK.unlock();
-         if (Backsnap.bsGui instanceof BacksnapGui gui)
-            gui.getPanelMaintenance().updateButtons();
       }
+      if (Backsnap.bsGui instanceof BacksnapGui gui)
+         gui.getPanelMaintenance().updateButtons();
    }
    /**
     * Setze das Readonly-Attribut dieses Snapshots
@@ -328,13 +326,15 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       if (isReadonly() == readonly)
          return;
       Btrfs.LOCK.lock();
+      readonlyL().clear(); // nicht weiter im cache halten
       try {
          String setReadonlyCmd=mount().pc().getCmd(
-                  new StringBuilder(Btrfs.PROPERTY_SET).append(getSnapshotMountPath()).append(" ro ").append(readonly));
-         Backsnap.logln(4, setReadonlyCmd);// if (!DRYRUN.get())
+                  new StringBuilder(Btrfs.PROPERTY_SET).append(getSnapshotMountPath()).append(" ro ").append(readonly),
+                  true);
+         Log.logln(setReadonlyCmd, LEVEL.BTRFS);// if (!DRYRUN.get())
          try (CmdStream setReadonlyStream=Commandline.executeCached(setReadonlyCmd, null)) { // not cached
             setReadonlyStream.backgroundErr();
-            setReadonlyStream.erg().forEach(t -> Backsnap.logln(4, t));
+            setReadonlyStream.erg().forEach(t -> Log.logln(t, LEVEL.BTRFS));
             setReadonlyStream.waitFor();
             for (String line:setReadonlyStream.errList())
                if (line.contains("No route to host") || line.contains("Connection closed")
@@ -345,14 +345,14 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          }
       } finally {
          Btrfs.LOCK.unlock();
-         readonlyL().clear(); // nicht weiter im cache
       }
    }
    static public final String DOT_SNAPSHOTS=".snapshots";
    static public final String AT_SNAPSHOTS="@snapshots";
+   @Deprecated
    static public void mkain(String[] args) {
       try {
-         Flag.setArgs(args, Pc.SUDO+":/" + DOT_SNAPSHOTS + " /mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro");// Par. sammeln
+         Flag.setArgs(args, Pc.SUDO + ":/" + DOT_SNAPSHOTS + " /mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro");// Par. sammeln
          String backupDir=Flag.getParameterOrDefault(1, "@BackSnap");
          String source=Flag.getParameter(0);
          String externSsh=source.contains(":") ? source.substring(0, source.indexOf(":")) : "";
@@ -372,13 +372,13 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
             throw new RuntimeException(Backsnap.LF + "Could not find srcDir: " + sourceDir);
          if (srcVolume.btrfsMap().isEmpty())
             throw new RuntimeException(Backsnap.LF + "Ingnoring, because there are no snapshots in: " + sourceDir);
-         Backsnap.logln(1, "backup snapshots from: " + srcVolume.keyM());
+         Log.logln("backup snapshots from: " + srcVolume.keyM(), LEVEL.BASIC);
          subVolumes.pc();
          // BackupVolume ermitteln
-         Mount backupMount=Pc.getBackupMount();
+         Mount backupMount=Pc.getBackupMount(/* true */);
          if (backupMount == null)
             throw new RuntimeException(Backsnap.LF + "Could not find backupDir: " + backupDir);
-         Backsnap.logln(1, "Will try to use backupDir: " + backupMount.keyM());
+         Log.logln("Will try to use backupDir: " + backupMount.keyM(), LEVEL.BASIC);
          // Subdir ermitteln
          Path pathBackupDir=backupMount.mountPath().relativize(Path.of(backupDir));
          System.out.println(pathBackupDir);

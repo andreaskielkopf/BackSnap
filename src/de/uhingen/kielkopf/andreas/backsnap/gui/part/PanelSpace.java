@@ -17,6 +17,8 @@ import org.eclipse.jdt.annotation.NonNull;
 
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
@@ -79,7 +81,7 @@ public class PanelSpace extends JPanel {
    }
    private TxtFeld getTxtDisabled() {
       if (txtDisabled == null) {
-         txtDisabled=new TxtFeld("deleting of backups is disabled while backups are running");
+         txtDisabled=new TxtFeld("deleting of backups is disabled while btrfs is busy ");
       }
       return txtDisabled;
    }
@@ -135,12 +137,13 @@ public class PanelSpace extends JPanel {
    }
    public void flagSpace() {
       boolean s=getChckSpace().isSelected();
-      Backsnap.logln(3, "--------------- getChckSpace() actionPerformed");
+      Log.logln("--------------- getChckSpace() actionPerformed", LEVEL.DEBUG);
       Backsnap.DELETEOLD.set(s);
       getSliderSpace().setEnabled(s);
       getBtnSpace().setEnabled(s & !Btrfs.LOCK.isLocked());
       if (s && !bsGui.getTglPause().isSelected())
          SwingUtilities.invokeLater(() -> bsGui.getTglPause().doClick());
+      SwingUtilities.invokeLater(() -> updateButtons());
    }
    public void updateButtons() {
       getBtnSpace().setEnabled(getChckSpace().isSelected() & !Btrfs.LOCK.isLocked());

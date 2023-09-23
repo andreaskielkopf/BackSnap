@@ -7,17 +7,19 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Stream;
 
+import de.uhingen.kielkopf.andreas.backsnap.config.Log;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 import de.uhingen.kielkopf.andreas.beans.Version;
 
 /**
  * @author Andreas Kielkopf
  */
 public class Commandline {
-   static public final ProcessBuilder processBuilder=new ProcessBuilder();
-   static public final String                                   UTF_8  ="UTF-8";
-   static public final ConcurrentSkipListMap<String, CmdStream> cache  =new ConcurrentSkipListMap<>();
+   static public final ProcessBuilder                           processBuilder=new ProcessBuilder();
+   static public final String                                   UTF_8         ="UTF-8";
+   static public final ConcurrentSkipListMap<String, CmdStream> cache         =new ConcurrentSkipListMap<>();
    /** ExecutorService um den Errorstream im Hintergrund zu lesen */
-   static private final ExecutorService                         virtual=Version.getVx();
+   static private final ExecutorService                         virtual       =Version.getVx();
    /**
     * @param cmd
     * @return
@@ -37,15 +39,17 @@ public class Commandline {
     * 
     * @param cmd
     * @param key
-    *           Unter diesem Schlüssel wird die Antwort im Cache abgelegt. Mit diesem Schlüssel kann sie auch wieder
-    *           gelöscht werden. ist der key null, wird nicht gecached.
+    *           Unter diesem Schlüssel wird die Antwort im Cache abgelegt. Mit diesem Schlüssel kann sie auch wieder gelöscht werden. ist der key
+    *           null, wird nicht gecached.
     * @return 2 x Stream<String>
     * @throws IOException
     */
    @SuppressWarnings("resource")
    static public CmdStream executeCached(String cmd, String key) throws IOException {
+      // System.out.println(processBuilder.environment().get("SSH_ASKPASS_REQUIRE"));
       if ((key != null) && cache.containsKey(key)) // aus dem cache antworten, wenn es im cache ist
          return cache.get(key); // ansonsten den Befehl neu ausführen und im cache ablegen
+      Log.logln(cmd, LEVEL.COMMANDS);
       Process process=processBuilder.command(List.of("/bin/bash", "-c", cmd)).start();
       return new CmdStream(process, new BufferedReader(new InputStreamReader(process.getInputStream(), UTF_8)),
                new BufferedReader(new InputStreamReader(process.getErrorStream(), UTF_8)), new ArrayList<>(),
@@ -78,8 +82,7 @@ public class Commandline {
          } // return this;
       }
       /**
-       * Schließt diesen Stream automatisch wenn alles gelesen wurde. Wenn ein cache-key vergeben wurde, wird der Inhalt
-       * des Streams gecaches
+       * Schließt diesen Stream automatisch wenn alles gelesen wurde. Wenn ein cache-key vergeben wurde, wird der Inhalt des Streams gecaches
        * 
        * @throws IOException
        */
