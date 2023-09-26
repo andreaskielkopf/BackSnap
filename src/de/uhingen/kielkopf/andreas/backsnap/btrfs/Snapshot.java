@@ -3,6 +3,7 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 
+import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
 import static de.uhingen.kielkopf.andreas.beans.RecordParser.*;
 
 import java.io.FileNotFoundException;
@@ -163,7 +164,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    private boolean isReadonly() throws IOException {
       if (readonlyL().get() == null)
          try {
-            Btrfs.READ.lock();
+            BTRFS.readLock().lock();
             String getReadonlyCmd=mount().pc()
                      .getCmd(new StringBuilder(Btrfs.PROPERTY_GET).append(getSnapshotMountPath()).append(" ro"), false);
             Log.logln(getReadonlyCmd, LEVEL.BTRFS);
@@ -185,7 +186,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
                }
             }
          } finally {
-            Btrfs.READ.unlock();
+            BTRFS.readLock().unlock();
          }
       return readonlyL().get();
    }
@@ -297,7 +298,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          gui.getPanelMaintenance().updateButtons();
       String readonlyCmd=snapshot.mount().pc().getCmd(readonlySB, true);
       Log.logln(readonlyCmd, LEVEL.BTRFS);
-      Btrfs.LOCK.lock();
+      BTRFS.writeLock().lock();
       try (CmdStream readonlyStream=Commandline.executeCached(readonlyCmd, null)) { // not cached
          readonlyStream.backgroundErr();
          readonlyStream.erg().forEach(t -> Log.logln(t, LEVEL.BTRFS));
@@ -309,7 +310,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
                break;
             }
       } finally {
-         Btrfs.LOCK.unlock();
+         BTRFS.writeLock().unlock();
       }
       if (Backsnap.bsGui instanceof BacksnapGui gui)
          gui.getPanelMaintenance().updateButtons();
@@ -325,7 +326,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          return;
       if (isReadonly() == readonly)
          return;
-      Btrfs.LOCK.lock();
+      BTRFS.writeLock().lock();
       readonlyL().clear(); // nicht weiter im cache halten
       try {
          String setReadonlyCmd=mount().pc().getCmd(
@@ -344,7 +345,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
                } // ende("");// R
          }
       } finally {
-         Btrfs.LOCK.unlock();
+         BTRFS.writeLock().unlock();
       }
    }
    static public final String DOT_SNAPSHOTS=".snapshots";

@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
@@ -23,23 +23,21 @@ import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotLabel.STATUS;
  */
 public class Btrfs {
    /* Liefert eine Map der verfügbaren Volumes sortiert nach UUID */
-   public static final String        DEVICE_USAGE    ="btrfs device usage ";
-   public static final String        FILESYSTEM_SHOW ="btrfs filesystem show ";
-   public static final String        FILESYSTEM_USAGE="btrfs filesystem usage ";
-   public static final String        SUBVOLUME_LIST_1="btrfs subvolume list -apuqRs ";
-   public static final String        SUBVOLUME_LIST_2="btrfs subvolume list -apuqRcg ";
-   public static final String        SUBVOLUME_SHOW  ="btrfs subvolume show ";
-   public static final String        PROPERTY_SET    ="btrfs property set ";
-   public static final String        PROPERTY_GET    ="btrfs property get ";
-   public static final String        VERSION         ="btrfs version ";
-   public static final String        SEND            ="btrfs send ";
-   public static final String        RECEIVE         ="btrfs receive ";
-   public static final String        SUBVOLUME_DELETE="btrfs subvolume delete -Cv ";
-   public static final String        SUBVOLUME_CREATE="btrfs subvolume create ";
-   public static final String        SUBVOLUME_LIST  ="btrfs subvolume list ";
-   public static final ReentrantLock LOCK            =new ReentrantLock();
-   public static final ReentrantLock READ            =new ReentrantLock();
-   // public static final ReentrantLock WRITE =new ReentrantLock();
+   public static final String                 DEVICE_USAGE    ="btrfs device usage ";
+   public static final String                 FILESYSTEM_SHOW ="btrfs filesystem show ";
+   public static final String                 FILESYSTEM_USAGE="btrfs filesystem usage ";
+   public static final String                 SUBVOLUME_LIST_1="btrfs subvolume list -apuqRs ";
+   public static final String                 SUBVOLUME_LIST_2="btrfs subvolume list -apuqRcg ";
+   public static final String                 SUBVOLUME_SHOW  ="btrfs subvolume show ";
+   public static final String                 PROPERTY_SET    ="btrfs property set ";
+   public static final String                 PROPERTY_GET    ="btrfs property get ";
+   public static final String                 VERSION         ="btrfs version ";
+   public static final String                 SEND            ="btrfs send ";
+   public static final String                 RECEIVE         ="btrfs receive ";
+   public static final String                 SUBVOLUME_DELETE="btrfs subvolume delete -Cv ";
+   public static final String                 SUBVOLUME_CREATE="btrfs subvolume create ";
+   public static final String                 SUBVOLUME_LIST  ="btrfs subvolume list ";
+   public static final ReentrantReadWriteLock BTRFS            =new ReentrantReadWriteLock(true);
    /**
     * löscht eines der Backups im Auftrag der GUI
     * 
@@ -47,7 +45,7 @@ public class Btrfs {
     * @throws IOException
     */
    static public void removeSnapshot(Snapshot s) throws IOException {
-      Path bmp=Pc.getBackupMount(/*false*/).mountPath(); // s.getBackupMountPath();
+      Path bmp=Pc.getBackupMount(/* false */).mountPath(); // s.getBackupMountPath();
       Path rel=s.btrfsPath().getRoot().relativize(s.btrfsPath());
       bmp=bmp.resolve(rel);
       if (!bmp.toString().startsWith(Pc.TMP_BACKUP_ROOT.toString()) || bmp.toString().contains("../"))
@@ -64,7 +62,7 @@ public class Btrfs {
          Backsnap.bsGui.mark(s.received_uuid(), STATUS.INPROGRESS);
       }
       // Pc.mountBackupRoot(true);
-      LOCK.lock();
+      BTRFS.writeLock().lock();
       try (CmdStream removeStream=Commandline.executeCached(removeCmd, null)) {
          removeStream.backgroundErr();
          Log.logln("", LEVEL.DELETE);
@@ -75,7 +73,7 @@ public class Btrfs {
          });
          removeStream.waitFor();
       } finally {
-         LOCK.unlock();
+         BTRFS.writeLock().unlock();
       }
       if (Backsnap.bsGui != null)
          Backsnap.bsGui.getPanelMaintenance().updateButtons();
@@ -86,7 +84,7 @@ public class Btrfs {
       Log.logln(volumeListCmd, LEVEL.BTRFS);
       if (refresh)
          Commandline.removeFromCache(volumeListCmd);
-      READ.lock();
+      BTRFS.readLock().lock();
       try (CmdStream volumeListStream=Commandline.executeCached(volumeListCmd)) {
          volumeListStream.backgroundErr();
          List<String> lines=volumeListStream.erg().toList();
@@ -105,7 +103,7 @@ public class Btrfs {
       } catch (IOException e1) {
          e1.printStackTrace();
       } finally {
-         READ.unlock();
+         BTRFS.readLock().unlock();
       }
       return list;
    }
@@ -113,7 +111,7 @@ public class Btrfs {
       if (p instanceof Path backsnap && backsnap.equals(Pc.TMP_BACKSNAP)) {
          String createCmd=pc.getCmd(new StringBuilder(SUBVOLUME_CREATE).append(backsnap), true);
          Log.log(createCmd, LEVEL.BTRFS);
-         LOCK.lock();
+         BTRFS.writeLock().lock();
          try (CmdStream createStream=Commandline.executeCached(createCmd, null)) {
             createStream.backgroundErr();
             createStream.erg().forEach(line -> {
@@ -121,7 +119,7 @@ public class Btrfs {
             });
             createStream.waitFor();
          } finally {
-            LOCK.unlock();
+            BTRFS.writeLock().unlock();
          }
       }
    }
@@ -129,7 +127,7 @@ public class Btrfs {
       if (p instanceof Path backsnap && backsnap.equals(Pc.TMP_BACKSNAP)) {
          String testCmd=pc.getCmd(new StringBuilder(SUBVOLUME_LIST).append(backsnap), true);
          Log.log(testCmd, LEVEL.BTRFS);
-         READ.lock();
+         BTRFS.readLock().lock();
          try (CmdStream testStream=Commandline.executeCached(testCmd, null)) {
             testStream.backgroundErr();
             long c=testStream.erg().peek(line -> {
@@ -138,7 +136,7 @@ public class Btrfs {
             testStream.waitFor();
             return c != 0;
          } finally {
-            READ.unlock();
+            BTRFS.readLock().unlock();
          }
       }
       return false;

@@ -16,6 +16,8 @@ import javax.swing.SwingUtilities;
 
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
+
+import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
 import static de.uhingen.kielkopf.andreas.backsnap.config.Log.*;
 
 import de.uhingen.kielkopf.andreas.backsnap.config.Log;
@@ -85,7 +87,7 @@ public class Backsnap {
          String[] source=Flag.getParameter(0).split("[:]"); // Parameter sammeln für SOURCE
          String[] backup=Flag.getParameter(1).split("[:]");// BackupVolume ermitteln
          OneBackup.backupPc=(backup.length == 1) ? Pc.getPc(null) : Pc.getPc(backup[0]);
-         // Btrfs.LOCK.lock();
+         // Btrfs.BTRFS.lock();
          OneBackup.backupPc.setBackupLabel(Paths.get(backup[backup.length - 1]).getFileName());
          OneBackup.backupList.add(new OneBackup(Pc.getPc(source[0]),
                   Path.of("/", source[source.length - 1].replace(Snapshot.DOT_SNAPSHOTS, "")),
@@ -94,7 +96,7 @@ public class Backsnap {
       OneBackup lastBackup=null;
       for (OneBackup ob:OneBackup.backupList) {
          actualBackup=ob;
-         Btrfs.LOCK.lock();
+         BTRFS.writeLock().lock();
          try {
             if (actualBackup.flags() instanceof String s) {
                String a=String.join(" ", args).concat(" ").concat(s);
@@ -118,7 +120,7 @@ public class Backsnap {
             Pc.mountBackupRoot(true);
             OneBackup.backupPc.getMountList(false); // eventuell unnötig
             {
-               Mount backupMount=Pc.getBackupMount(/*true*/);
+               Mount backupMount=Pc.getBackupMount(/* true */);
                if (backupMount.devicePath().equals(srcConfig.volumeMount().devicePath()) && actualBackup.isSamePc())
                   throw new RuntimeException(LF + "Backup is not possible onto the same device: "
                            + OneBackup.backupPc.getBackupLabel() + " <= " + actualBackup.srcPath() + LF
@@ -191,7 +193,7 @@ public class Backsnap {
                System.exit(-1);
             }
          } finally {
-            Btrfs.LOCK.unlock();
+            BTRFS.writeLock().unlock();
          }
          if (bsGui instanceof BacksnapGui gui)
             gui.getPanelMaintenance().updateButtons();
@@ -304,7 +306,7 @@ public class Backsnap {
       if (!DRYRUN.get()) {
          if (bsGui != null)
             bsGui.getPanelMaintenance().updateButtons();
-         Btrfs.LOCK.lock();
+         BTRFS.writeLock().lock();
          try (CmdStream btrfsSendStream=Commandline.executeCached(btrfsSendSB, null)) {
             task=virtual.submit(() -> btrfsSendStream.err().forEach(line -> {
                if (line.contains("ERROR: cannot find parent subvolume"))
@@ -344,7 +346,7 @@ public class Backsnap {
                Log.logln("", LEVEL.BTRFS);
             });
          } finally {
-            Btrfs.LOCK.unlock();
+            BTRFS.writeLock().unlock();
             err.println();
          }
          if (bsGui != null)

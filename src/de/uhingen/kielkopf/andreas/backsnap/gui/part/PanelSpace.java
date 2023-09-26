@@ -16,7 +16,7 @@ import javax.swing.border.TitledBorder;
 import org.eclipse.jdt.annotation.NonNull;
 
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
-import de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs;
+
 import de.uhingen.kielkopf.andreas.backsnap.config.Log;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
@@ -140,14 +140,14 @@ public class PanelSpace extends JPanel {
       Log.logln("--------------- getChckSpace() actionPerformed", LEVEL.DEBUG);
       Backsnap.DELETEOLD.set(s);
       getSliderSpace().setEnabled(s);
-      getBtnSpace().setEnabled(s & !Btrfs.LOCK.isLocked());
+      getBtnSpace().setEnabled(PanelMeta.testLock(s));
       if (s && !bsGui.getTglPause().isSelected())
          SwingUtilities.invokeLater(() -> bsGui.getTglPause().doClick());
       SwingUtilities.invokeLater(() -> updateButtons());
    }
    public void updateButtons() {
-      getBtnSpace().setEnabled(getChckSpace().isSelected() & !Btrfs.LOCK.isLocked());
-      getTxtDisabled().setVisible(Btrfs.LOCK.isLocked());
+      getBtnSpace().setEnabled(PanelMeta.testLock(getChckSpace().isSelected()));
+      getTxtDisabled().setVisible(PanelMeta.testLock(true));
       // revalidate();
       repaint(50);
    }

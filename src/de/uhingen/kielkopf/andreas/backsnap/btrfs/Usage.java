@@ -3,6 +3,7 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 
+import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
 import static de.uhingen.kielkopf.andreas.beans.RecordParser.getString;
 
 import java.io.IOException;
@@ -59,7 +60,7 @@ public record Usage(String size, String allocated, String unallcoated, String mi
                new StringBuilder(Btrfs.FILESYSTEM_USAGE).append(dir).append(";").append(Btrfs.DEVICE_USAGE).append(dir),
                false);// TODO This may be wrong, and sometimes sudo may be needed
       Log.logln(usageCmd, LEVEL.BTRFS);
-      Btrfs.READ.lock();
+      BTRFS.readLock().lock();
       try (CmdStream usageStream=Commandline.executeCached(usageCmd, null)) {
          usageStream.backgroundErr();
          StringBuilder usageLine=new StringBuilder();
@@ -73,7 +74,7 @@ public record Usage(String size, String allocated, String unallcoated, String mi
          Log.logln(usageLine.toString(), LEVEL.BTRFS_ANSWER);
          return usageLine.toString();
       } finally {
-         Btrfs.READ.unlock();
+         BTRFS.readLock().unlock();
       }
    }
    static public double getZahl(String s) {

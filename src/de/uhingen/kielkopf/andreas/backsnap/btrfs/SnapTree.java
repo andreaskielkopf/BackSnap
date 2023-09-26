@@ -3,6 +3,8 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 
+import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.TreeMap;
@@ -38,7 +40,7 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
       StringBuilder subvolumeListCommand=new StringBuilder(Btrfs.SUBVOLUME_LIST_2).append(mount.mountPath());
       String subvolumeListCmd=mount.pc().getCmd(subvolumeListCommand, true);
       Log.logln(subvolumeListCmd, LEVEL.BTRFS);
-      Btrfs.READ.lock();
+      BTRFS.readLock().lock();
       try (CmdStream snapshotStream=Commandline.executeCached(subvolumeListCmd, mount.keyD())) {
          snapshotStream.backgroundErr();
          snapshotStream.erg().forEachOrdered(line -> {
@@ -61,7 +63,7 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
                      || line.contains("connection unexpectedly closed"))
                throw new IOException(line);
       } finally {
-         Btrfs.READ.unlock();
+         BTRFS.readLock().unlock();
       }
    }
    /**

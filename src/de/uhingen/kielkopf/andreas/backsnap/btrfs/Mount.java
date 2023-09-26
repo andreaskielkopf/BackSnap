@@ -3,6 +3,7 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 
+import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
 import static de.uhingen.kielkopf.andreas.beans.RecordParser.getPath;
 import static de.uhingen.kielkopf.andreas.beans.RecordParser.getString;
 
@@ -83,7 +84,7 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
       StringBuilder subvolumeShowSB=new StringBuilder(Btrfs.SUBVOLUME_SHOW).append(mountPath);
       String subvolumeSchowCmd=pc.getCmd(subvolumeShowSB, true);
       Log.logln(subvolumeSchowCmd, LEVEL.BTRFS);
-      Btrfs.READ.lock();
+      BTRFS.readLock().lock();
       try (CmdStream snapshotStream=Commandline.executeCached(subvolumeSchowCmd, keyM())) {
          snapshotStream.backgroundErr();
          snapshotStream.erg().forEach(line -> {
@@ -118,7 +119,7 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
                      || line.contains("connection unexpectedly closed"))
                throw new IOException(line);
       } finally {
-         Btrfs.READ.unlock();
+         BTRFS.readLock().unlock();
       }
    }
    public void updateSnapshots() throws IOException {
@@ -127,7 +128,7 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
       StringBuilder subvolumeShowSB=new StringBuilder(Btrfs.SUBVOLUME_SHOW).append(mountPath);
       String subvolumeShowCmd=pc.getCmd(subvolumeShowSB, true);
       Log.logln(subvolumeShowCmd, LEVEL.BTRFS);
-      Btrfs.READ.lock();
+      BTRFS.readLock().lock();
       try (CmdStream snapshotStream=Commandline.executeCached(subvolumeShowCmd, keyM())) {
          snapshotStream.backgroundErr();
          snapshotStream.erg().forEach(line -> {
@@ -162,7 +163,7 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
                      || line.contains("connection unexpectedly closed"))
                throw new IOException(line);
       } finally {
-         Btrfs.READ.unlock();
+         BTRFS.readLock().unlock();
       }
    }
    @Override

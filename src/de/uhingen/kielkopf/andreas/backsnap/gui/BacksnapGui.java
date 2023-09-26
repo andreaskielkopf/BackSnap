@@ -311,7 +311,7 @@ public class BacksnapGui implements MouseListener {
                if (!jCheckBox.isSelected())
                   continue;
                try {
-                  Btrfs.removeSnapshot(snapshot); // LOCK inside
+                  Btrfs.removeSnapshot(snapshot); // BTRFS-Lock inside
                   Thread.sleep(100);
                } catch (IOException | InterruptedException e1) { /* */ }
                refreshGUI();

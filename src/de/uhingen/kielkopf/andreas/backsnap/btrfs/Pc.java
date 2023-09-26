@@ -3,6 +3,8 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 
+import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
+
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
@@ -130,7 +132,7 @@ public record Pc(String extern, // Marker für diesen PC
          ConcurrentSkipListMap<String, Mount> mountList2=new ConcurrentSkipListMap<>();
          String mountCmd=getCmd(new StringBuilder(MOUNT_BTRFS), false);
          Log.logln(mountCmd, LEVEL.BTRFS);// Commandline.removeFromCache(mountCmd);
-         Btrfs.READ.lock();
+         BTRFS.readLock().lock();
          try (CmdStream mountStream=Commandline.executeCached(mountCmd, null)) {
             mountStream.backgroundErr();
             for (String line:mountStream.erg().toList())
@@ -146,7 +148,7 @@ public record Pc(String extern, // Marker für diesen PC
                   throw new IOException(line);
             Log.logln("", LEVEL.BTRFS);
          } finally {
-            Btrfs.READ.unlock();
+            BTRFS.readLock().unlock();
          }
       }
       return mountCache;
@@ -161,7 +163,7 @@ public record Pc(String extern, // Marker für diesen PC
       if (btrfsVersion.get() == null) {
          String versionCmd=getCmd(new StringBuilder(Btrfs.VERSION), false);
          Log.logln(versionCmd, LEVEL.COMMANDS);
-         Btrfs.READ.lock();
+         BTRFS.readLock().lock();
          try (CmdStream versionStream=Commandline.executeCached(versionCmd)) {
             versionStream.backgroundErr();
             for (String line:versionStream.erg().toList())
@@ -172,7 +174,7 @@ public record Pc(String extern, // Marker für diesen PC
                         || line.contains("connection unexpectedly closed"))
                   throw new IOException(line);
          } finally {
-            Btrfs.READ.unlock();
+            BTRFS.readLock().unlock();
          }
          Log.logln(this + " btrfs: " + btrfsVersion.get(), LEVEL.BASIC);
       }
@@ -315,7 +317,7 @@ public record Pc(String extern, // Marker für diesen PC
       String mountCmd=getCmd(mountSB, true);
       System.out.println(mountCmd);
       Log.logln(mountCmd, LEVEL.BTRFS);
-      Btrfs.LOCK.lock();
+      BTRFS.writeLock(). lock();
       try (CmdStream mountStream=Commandline.executeCached(mountCmd, null)) { // not cached
          mountStream.backgroundErr();
          mountStream.erg().forEach(t -> Log.logln(t, LEVEL.BTRFS_ANSWER));
@@ -327,7 +329,7 @@ public record Pc(String extern, // Marker für diesen PC
                break;
             }
       } finally {
-         Btrfs.LOCK.unlock();
+         BTRFS.writeLock(). unlock();
       }
       getMountList(true); // Mountlist neu einlesen und Mounts gegen-prüfen
    }

@@ -3,6 +3,8 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.gui.part;
 
+import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
+
 import java.awt.BorderLayout;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
@@ -14,7 +16,6 @@ import javax.swing.border.TitledBorder;
 import org.eclipse.jdt.annotation.NonNull;
 
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
-import de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
@@ -71,7 +72,7 @@ public class PanelMeta extends JPanel {
       Log.log("-------------- getChckMeta() actionPerformed", LEVEL.DEBUG);
       Backsnap.KEEP_MINIMUM.set(s);
       getSliderMeta().setEnabled(s);
-      getBtnMeta().setEnabled(s & !Btrfs.LOCK.isLocked());
+      getBtnMeta().setEnabled(testLock(s));
       if (s && !bsGui.getTglPause().isSelected())
          SwingUtilities.invokeLater(() -> bsGui.getTglPause().doClick());
       SwingUtilities.invokeLater(() -> updateButtons());
@@ -129,8 +130,8 @@ public class PanelMeta extends JPanel {
       return lblMeta;
    }
    public void updateButtons() {
-      getBtnMeta().setEnabled(getChckMeta().isSelected() & !Btrfs.LOCK.isLocked());
-      getLblDisabled_1().setVisible(Btrfs.LOCK.isLocked());
+      getBtnMeta().setEnabled(testLock(getChckMeta().isSelected()));
+      getLblDisabled_1().setVisible(testLock(true));
       repaint(50);
    }
    private JPanel getPanel_c() {
@@ -147,5 +148,12 @@ public class PanelMeta extends JPanel {
          xtxDisabled=new TxtFeld("deleting of backups is disabled while btrfs is busy ");
       }
       return xtxDisabled;
+   }
+   static public boolean testLock(boolean s) {
+      if (s && BTRFS.readLock().tryLock()) {
+         BTRFS.readLock().unlock();
+         return true;
+      }
+      return false;
    }
 }
