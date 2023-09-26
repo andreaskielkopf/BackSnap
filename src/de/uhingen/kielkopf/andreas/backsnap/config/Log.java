@@ -5,6 +5,8 @@ package de.uhingen.kielkopf.andreas.backsnap.config;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author Andreas Kielkopf
@@ -15,6 +17,7 @@ public class Log {
    static public final int        logMAXLEN=120;
    static public String           lastline ="1234567890";
    static public ArrayList<LEVEL> logLevels=new ArrayList<>(List.of(LEVEL.PROGRESS));
+   static private ReentrantLock   OUT      =new ReentrantLock();
    static public enum LEVEL {
       NOTHING(0),
       ERRORS(1),
@@ -37,34 +40,34 @@ public class Log {
       }
    }
    static public void lnlog(String text, LEVEL... levels) {
-      synchronized (lastline) {
-         if (needsPrinting(levels) && dedup(text) instanceof String s && !s.isBlank()) {
-            System.out.print(System.lineSeparator() + s);
-            Log.logPos=s.length();
-         }
+      boolean l=tryLock();
+      if (needsPrinting(levels) && dedup(text) instanceof String s && !s.isBlank()) {
+         System.out.print(System.lineSeparator() + s);
+         Log.logPos=s.length();
       }
+      tryUnlock(l);
    }
    static public void logln(String text, LEVEL... levels) {
-      synchronized (lastline) {
-         if (needsPrinting(levels) && dedup(text) instanceof String s && !s.isBlank()) {
-            if (Log.logPos + s.length() > Log.logMAXLEN)
-               System.out.print(System.lineSeparator());
-            System.out.print(s + System.lineSeparator());
-            Log.logPos=0;
-         }
+      boolean l=tryLock();
+      if (needsPrinting(levels) && dedup(text) instanceof String s && !s.isBlank()) {
+         if (Log.logPos + s.length() > Log.logMAXLEN)
+            System.out.print(System.lineSeparator());
+         System.out.print(s + System.lineSeparator());
+         Log.logPos=0;
       }
+      tryUnlock(l);
    }
    static public void log(String text, LEVEL... levels) {
-      synchronized (lastline) {
-         if (needsPrinting(levels) && dedup(text) instanceof String s && !s.isBlank()) {
-            if (Log.logPos + s.length() > Log.logMAXLEN) {
-               System.out.print(System.lineSeparator());
-               Log.logPos=0;
-            }
-            System.out.print(s);
-            Log.logPos+=s.length();
+      boolean l=tryLock();
+      if (needsPrinting(levels) && dedup(text) instanceof String s && !s.isBlank()) {
+         if (Log.logPos + s.length() > Log.logMAXLEN) {
+            System.out.print(System.lineSeparator());
+            Log.logPos=0;
          }
+         System.out.print(s);
+         Log.logPos+=s.length();
       }
+      tryUnlock(l);
    }
    /**
     * Verhindere das doppelte logging von gleichen Texten
@@ -106,5 +109,15 @@ public class Log {
             if (level.l <= limit)
                logLevels.add(level);
       }
+   }
+   private static void tryUnlock(boolean l) {
+      if (l && OUT.isHeldByCurrentThread())
+         OUT.unlock();
+   }
+   private static boolean tryLock() {
+      try {
+         return OUT.tryLock(200, TimeUnit.MILLISECONDS);
+      } catch (InterruptedException ignore) {/* */}
+      return false;
    }
 }
