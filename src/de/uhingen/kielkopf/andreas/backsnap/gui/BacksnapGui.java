@@ -154,12 +154,12 @@ public class BacksnapGui implements MouseListener {
     * @throws IOException
     */
    public void setSrc(SnapConfig srcConfig) throws IOException {
-      Log.log("Src:", LEVEL.BASIC);
+      Log.log("Src:", LEVEL.SNAPSHOTS);
       ConcurrentSkipListMap<String, Snapshot> neuList=getPanelSrc()
                .setVolume(srcConfig.volumeMount().otimeKeyMap().values());
       for (Snapshot snap:neuList.values())
-         Log.log(" " + snap.dirName(), LEVEL.BASIC);
-      Log.logln("", LEVEL.BASIC);
+         Log.log(" " + snap.dirName(), LEVEL.SNAPSHOTS);
+      Log.logln("", LEVEL.SNAPSHOTS);
       abgleich();
       getPanelSrc().setInfo(srcConfig.volumeMount());
    }
@@ -747,11 +747,11 @@ public class BacksnapGui implements MouseListener {
       virtual.execute(() -> {
          try {
             if (refreshGUIcKey == null) // refreshBackupPc=backupPc;
-               refreshGUIcKey=OneBackup.backupPc.extern() + ":" + Pc.getBackupMount(/*true*/).devicePath();
+               refreshGUIcKey=OneBackup.backupPc.extern() + ":" + Pc.getBackupMount(/* true */).devicePath();
             Commandline.removeFromCache(refreshGUIcKey); // umgeht den cache
-            setBackup(new SnapTree(Pc.getBackupMount(/*true*/)));
+            setBackup(new SnapTree(Pc.getBackupMount(/* true */)));
             if (Instant.now().isAfter(refreshUsage)) {
-               getPanelMaintenance().setUsage(new Usage(Pc.getBackupMount(/*true*/), false));
+               getPanelMaintenance().setUsage(new Usage(Pc.getBackupMount(/* true */), false));
                refreshUsage=Instant.now().plusSeconds(60);
             }
             if (Backsnap.bsGui != null)

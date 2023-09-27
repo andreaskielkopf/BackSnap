@@ -19,11 +19,13 @@ public class Log {
    static public ArrayList<LEVEL> logLevels=new ArrayList<>(List.of(LEVEL.PROGRESS));
    static private ReentrantLock   OUT      =new ReentrantLock();
    static public enum LEVEL {
-      NOTHING(0),
-      ERRORS(1),
-      BASIC(2),
-      PROGRESS(3),
+      NOTHING(0), // extra quiet
+      ERRORS(1), // quiet
+      MOUNT(2), // mountBackupvolume
+      BASIC(2), // standard
+      CONFIG(3), // Configuration
       SNAPSHOTS(4),
+      PROGRESS(5),
       DELETE(5),
       BTRFS(6),
       RSYNC(7),
@@ -39,10 +41,30 @@ public class Log {
          l=Integer.valueOf(i);
       }
    }
+   static public void log(String text, LEVEL... levels) {
+      boolean l=tryLock();
+      if (needsPrinting(levels) && dedup(text) instanceof String s && !s.isBlank()) {
+         if (Log.logPos + s.length() > Log.logMAXLEN) {
+            System.out.print(System.lineSeparator());
+            Log.logPos=0;
+         }
+         System.out.print(s);
+         Log.logPos+=s.length();
+      }
+      tryUnlock(l);
+   }
    static public void lnlog(String text, LEVEL... levels) {
       boolean l=tryLock();
       if (needsPrinting(levels) && dedup(text) instanceof String s && !s.isBlank()) {
          System.out.print(System.lineSeparator() + s);
+         Log.logPos=s.length();
+      }
+      tryUnlock(l);
+   }
+   static public void Owlog(String text, LEVEL... levels) {
+      boolean l=tryLock();
+      if (needsPrinting(levels) && dedup(text) instanceof String s && !s.isBlank()) {
+         System.out.print("\r" + s);
          Log.logPos=s.length();
       }
       tryUnlock(l);
@@ -57,15 +79,26 @@ public class Log {
       }
       tryUnlock(l);
    }
-   static public void log(String text, LEVEL... levels) {
+   static public void logln(List<String> texts, LEVEL... levels) {
+      boolean l=tryLock();
+      if (needsPrinting(levels)) {
+         for (String line:texts)
+            if (dedup(line) instanceof String s && !s.isBlank()) {
+               if (Log.logPos + s.length() > Log.logMAXLEN)
+                  System.out.print(System.lineSeparator());
+               System.out.print(s + System.lineSeparator());
+               Log.logPos=0;
+            }
+      }
+      tryUnlock(l);
+   }
+   static public void logOw(String text, LEVEL... levels) {
       boolean l=tryLock();
       if (needsPrinting(levels) && dedup(text) instanceof String s && !s.isBlank()) {
-         if (Log.logPos + s.length() > Log.logMAXLEN) {
-            System.out.print(System.lineSeparator());
-            Log.logPos=0;
-         }
-         System.out.print(s);
-         Log.logPos+=s.length();
+         if (Log.logPos + s.length() > Log.logMAXLEN)
+            System.out.print("\r");
+         System.out.print(s + "\r");
+         Log.logPos=0;
       }
       tryUnlock(l);
    }

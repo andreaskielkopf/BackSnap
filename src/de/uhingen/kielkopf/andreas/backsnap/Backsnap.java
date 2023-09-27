@@ -1,7 +1,5 @@
 package de.uhingen.kielkopf.andreas.backsnap;
 
-import static java.lang.System.err;
-
 import java.awt.Frame;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -47,29 +45,31 @@ public class Backsnap {
    static public BacksnapGui           bsGui;
    static public OneBackup             actualBackup   =null;
    static private int                  textPos        =0;
-   static final Flag                   HELP           =new Flag('h', "help");                  // show usage
-   static final Flag                   VERSION        =new Flag('x', "version");               // show date and version
-   static final Flag                   DRYRUN         =new Flag('d', "dryrun");                // do not do anythimg ;-)
+   static final Flag                   HELP           =new Flag('h', "help");                   // show usage
+   static final Flag                   VERSION        =new Flag('x', "version");                // show date and version
+   static final Flag                   DRYRUN         =new Flag('d', "dryrun");                 // do not do anythimg ;-)
    public static final Flag            VERBOSE        =new Flag('v', "verbose");
-   static public final Flag            SINGLESNAPSHOT =new Flag('s', "singlesnapshot");        // backup exactly one snapshot
+   static public final Flag            SINGLESNAPSHOT =new Flag('s', "singlesnapshot");         // backup exactly one snapshot
    // static public final Flag TIMESHIFT =new Flag('t', "timeshift");
-   static public final Flag            GUI            =new Flag('g', "gui");                   // enable gui (only with sudo)
-   static final Flag                   AUTO           =new Flag('a', "auto");                  // auto-close gui when ready
+   static public final Flag            GUI            =new Flag('g', "gui");                    // enable gui (only with sudo)
+   static final Flag                   AUTO           =new Flag('a', "auto");                   // auto-close gui when ready
    // static final Flag NOSYNC =new Flag('n', "nosync"); // no sync after every command
-   static final Flag                   COMPRESSED     =new Flag('c', "compressed");            // use protokoll 2
-   static final Flag                   INIT           =new Flag('i', "init");                  // init /etc/backsnap.d/local.conf
-   static public final Flag            DELETEOLD      =new Flag('o', "deleteold");             // mark old snapshots for deletion
-   static public final Flag            KEEP_MINIMUM   =new Flag('m', "keepminimum");           // mark all but minimum snapshots
+   static final Flag                   COMPRESSED     =new Flag('c', "compressed");             // use protokoll 2
+   static final Flag                   INIT           =new Flag('i', "init");                   // init /etc/backsnap.d/local.conf
+   static public final Flag            DELETEOLD      =new Flag('o', "deleteold");              // mark old snapshots for deletion
+   static public final Flag            KEEP_MINIMUM   =new Flag('m', "keepminimum");            // mark all but minimum snapshots
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
-   static final Flag                   PEXEC          =new Flag('p', "pexec");
+   static final Flag                   PEXEC          =new Flag('p', "pexec");                  // use pexec instead of sudo
    static public final String          SNAPSHOT       ="snapshot";
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.6.10 (2023/09/26)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.6.12 (2023/09/27)";
    static public final String          LF             =System.lineSeparator();
    static public void main(String[] args) {
       Flag.setArgs(args, "");
       Log.setLoglevel(Backsnap.VERBOSE.getParameterOrDefault(LEVEL.PROGRESS.l));
       Log.logln(BS_VERSION, LEVEL.BASIC);
       Log.logln("args > " + Flag.getArgs(), LEVEL.BASIC);
+      Log.logln(Version.getJava().toString(), LEVEL.BASIC);
+      Log.logln(Version.getVxText(), LEVEL.BASIC);
       if (VERSION.get())
          System.exit(0);
       if (DRYRUN.get())
@@ -93,6 +93,7 @@ public class Backsnap {
                   Path.of("/", source[source.length - 1].replace(Snapshot.DOT_SNAPSHOTS, "")),
                   OneBackup.backupPc.getBackupLabel(), null));
       } // Wenn keine 2 Parameter da sind, config verwenden
+      Log.logln(OneBackup.getConfigText(), LEVEL.CONFIG);
       OneBackup lastBackup=null;
       for (OneBackup ob:OneBackup.backupList) {
          actualBackup=ob;
@@ -130,7 +131,7 @@ public class Backsnap {
                backupTree=SnapTree.getSnapTree(backupMount);
             }
             if (disconnectCount > 0) {
-               err.println("no SSH Connection");
+               System.err.println("no SSH Connection");
                ende("X");
                System.exit(0);
             }
@@ -151,13 +152,13 @@ public class Backsnap {
             for (Snapshot sourceSnapshot:srcConfig.volumeMount().otimeKeyMap().values()) {
                counter++;
                if (cantFindParent != null) {
-                  err.println("Please remove " + Pc.TMP_BACKSNAP + "/" + OneBackup.backupPc.getBackupLabel() + "/"
-                           + cantFindParent + "/" + SNAPSHOT + " !");
+                  System.err.println("Please remove " + Pc.TMP_BACKSNAP + "/" + OneBackup.backupPc.getBackupLabel()
+                           + "/" + cantFindParent + "/" + SNAPSHOT + " !");
                   ende("X");
                   System.exit(-9);
                } else
                   if (disconnectCount > 3) {
-                     err.println("SSH Connection lost !");
+                     System.err.println("SSH Connection lost !");
                      ende("X");
                      System.exit(-8);
                   }
@@ -223,7 +224,7 @@ public class Backsnap {
       if (bsGui instanceof BacksnapGui gui)
          gui.setBackupInfo(srcSnapshot, parentSnapshot);
       if (srcSnapshot.isBackup()) {
-         err.println("Überspringe backup vom backup: " + srcSnapshot.dirName());
+         lnlog("Überspringe backup vom backup: " + srcSnapshot.dirName(), LEVEL.CONFIG);
          return false;
       }
       if (backupMap.rUuidMap().containsKey(srcSnapshot.uuid())) {
@@ -315,39 +316,39 @@ public class Backsnap {
                         || line.contains("connection unexpectedly closed"))
                   Backsnap.disconnectCount=10;
                if (line.contains("<=>")) { // from pv
-                  err.print(line);
+                  if (Backsnap.lastLine == 0)
+                     lnlog(line, LEVEL.PROGRESS);
+                  else
+                     logOw(line, LEVEL.PROGRESS);
                   show(line);
-                  String lf=(Backsnap.lastLine == 0) ? "\n" : "\r";
-                  err.print(lf);
                   Backsnap.lastLine=line.length();
                   if (line.contains(":00 ")) {
-                     err.print("\n");
+                     lnlog("", LEVEL.PROGRESS);
                      Backsnap.disconnectCount=0;
                   }
                   if (line.contains("0,00 B/s")) {
-                     err.println();
-                     err.println("HipCup");
+                     lnlog("HipCup\n", LEVEL.PROGRESS);
                      Backsnap.disconnectCount++;
                   }
                } else {
                   if (Backsnap.lastLine != 0) {
                      Backsnap.lastLine=0;
-                     err.println();
+                     lnlog("", LEVEL.PROGRESS);
                   }
-                  err.println(line);
+                  lnlog(line, LEVEL.PROGRESS);
                   show(line);
                }
             }));
             btrfsSendStream.erg().forEach(line -> {
                if (lastLine != 0) {
                   lastLine=0;
-                  Log.logln("", LEVEL.BTRFS);
+                  Log.logln("", LEVEL.SNAPSHOTS);
                }
-               Log.logln("", LEVEL.BTRFS);
+               Log.logln("", LEVEL.SNAPSHOTS);
             });
          } finally {
             BTRFS.writeLock().unlock();
-            err.println();
+            lnlog("", LEVEL.PROGRESS);
          }
          if (bsGui != null)
             bsGui.getPanelMaintenance().updateButtons();

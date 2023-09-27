@@ -66,7 +66,7 @@ public record Pc(String extern, // Marker für diesen PC
       return pcCache.get(x);
    }
    private Pc(String extern)/* throws IOException */ {
-      this(extern, new ConcurrentSkipListMap<>(), new Link<SubVolumeList>("subVolumeList"), new Link<Version>("BTRFS"),
+      this(extern, new ConcurrentSkipListMap<>(), new Link<SubVolumeList>("subVolumeList"), new Link<Version>("Btrfs"),
                new Link<Version>("Kernel"), new Link<Path>("backupLabel"));
    }
    public boolean isExtern() {
@@ -161,13 +161,12 @@ public record Pc(String extern, // Marker für diesen PC
     */
    public final Version getBtrfsVersion() throws IOException {
       if (btrfsVersion.get() == null) {
-         String versionCmd=getCmd(new StringBuilder(Btrfs.VERSION), false);
-         Log.logln(versionCmd, LEVEL.COMMANDS);
+         String versionCmd=getCmd(new StringBuilder(Btrfs.VERSION), false);         
          BTRFS.readLock().lock();
          try (CmdStream versionStream=Commandline.executeCached(versionCmd)) {
             versionStream.backgroundErr();
             for (String line:versionStream.erg().toList())
-               btrfsVersion.set(new Version(line));
+               btrfsVersion.set(new Version("btrfs", line));
             versionStream.waitFor();
             for (String line:versionStream.errList())
                if (line.contains("No route to host") || line.contains("Connection closed")
@@ -176,7 +175,7 @@ public record Pc(String extern, // Marker für diesen PC
          } finally {
             BTRFS.readLock().unlock();
          }
-         Log.logln(this + " btrfs: " + btrfsVersion.get(), LEVEL.BASIC);
+         Log.logln(this + " " + btrfsVersion.get(), LEVEL.CONFIG);
       }
       return btrfsVersion.get();
    }
@@ -193,14 +192,14 @@ public record Pc(String extern, // Marker für diesen PC
          try (CmdStream versionStream=Commandline.executeCached(versionCmd)) {
             versionStream.backgroundErr();
             for (String line:versionStream.erg().toList())
-               kernelVersion.set(new Version(line));
+               kernelVersion.set(new Version("kernel", line));
             versionStream.waitFor();
             for (String line:versionStream.errList())
                if (line.contains("No route to host") || line.contains("Connection closed")
                         || line.contains("connection unexpectedly closed"))
                   throw new IOException(line);
          }
-         Log.logln(this + " kernel: " + kernelVersion.get(), LEVEL.BASIC);
+         Log.logln(this + " " + kernelVersion.get(), LEVEL.CONFIG);
       }
       return kernelVersion.get();
    }
@@ -219,7 +218,7 @@ public record Pc(String extern, // Marker für diesen PC
     * @return
     * @throws IOException
     */
-   static public Mount getBackupMount(/*boolean refresh*/) throws IOException {
+   static public Mount getBackupMount(/* boolean refresh */) throws IOException {
       synchronized (pcCache) {
          Optional<Mount> o=OneBackup.backupPc.getMountList(false).values().stream()
                   .filter(m -> m.mountPath().toString().equals(TMP_BACKUP_ROOT.toString())).findFirst();
@@ -315,9 +314,8 @@ public record Pc(String extern, // Marker für diesen PC
          mountSB.append("rmdir ").append(mountPoint.toString());
       }
       String mountCmd=getCmd(mountSB, true);
-      System.out.println(mountCmd);
-      Log.logln(mountCmd, LEVEL.BTRFS);
-      BTRFS.writeLock(). lock();
+      Log.logln(mountCmd, LEVEL.MOUNT);
+      BTRFS.writeLock().lock();
       try (CmdStream mountStream=Commandline.executeCached(mountCmd, null)) { // not cached
          mountStream.backgroundErr();
          mountStream.erg().forEach(t -> Log.logln(t, LEVEL.BTRFS_ANSWER));
@@ -329,7 +327,7 @@ public record Pc(String extern, // Marker für diesen PC
                break;
             }
       } finally {
-         BTRFS.writeLock(). unlock();
+         BTRFS.writeLock().unlock();
       }
       getMountList(true); // Mountlist neu einlesen und Mounts gegen-prüfen
    }

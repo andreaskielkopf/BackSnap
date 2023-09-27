@@ -51,7 +51,7 @@ public record OneBackup(Pc srcPc, Path srcPath, Path backupLabel, String flags) 
                && (srcPc().getKernelVersion() instanceof Version v1 && (v1.getMayor() >= 6))
                && (backupPc.getBtrfsVersion() instanceof Version v2 && (v2.getMayor() >= 6));
    }
-   static Pattern linePattern=Pattern.compile("^( *[a-zA-Z0-9._]{2,80} *)=(.+)");
+   static Pattern linePattern=Pattern.compile("^( *[a-zA-Z0-9._]{2,80} *)=(.+)"); // Kommentare ausblenden
    /**
     * @param etc
     */
@@ -61,7 +61,6 @@ public record OneBackup(Pc srcPc, Path srcPath, Path backupLabel, String flags) 
             Pc pc=null;
             String flags=null;
             for (String line:file) {
-               // if (line.startsWith("#")) continue; // Kommentare ausblenden
                Matcher m=linePattern.matcher(line);
                if (m.matches()) {
                   String a=m.group(1).strip();
@@ -83,11 +82,8 @@ public record OneBackup(Pc srcPc, Path srcPath, Path backupLabel, String flags) 
                      default:
                         Path label=Path.of(a); // relativ
                         Path pfad=Path.of(b); // absolut
-                        if (pfad.isAbsolute()) {
-                           OneBackup oneBackup=new OneBackup(pc, pfad, label, flags);
-                           System.out.println("Add " + oneBackup);
-                           backupList.add(oneBackup);
-                        }
+                        if (pfad.isAbsolute())
+                           backupList.add(new OneBackup(pc, pfad, label, flags));
                         break;
                   }
                }
@@ -111,5 +107,22 @@ public record OneBackup(Pc srcPc, Path srcPath, Path backupLabel, String flags) 
    public static List<OneBackup> getBackups() {
       // TODO Auto-generated method stub
       return null;
+   }
+   /**
+    * @return
+    */
+   public static String getBasisText() {
+      return new StringBuilder().append((backupPc == null) ? "no Pc" : backupPc.toString())
+               .append((backupId == null) ? " & no Id" : " & Id:" + backupId).toString();
+   }
+   /**
+    * @return
+    */
+   public static List<String> getConfigText() {
+      ArrayList<String> l=new ArrayList<>();
+      l.add(getBasisText());
+      for (OneBackup backup:backupList)
+         l.add(backup.toString());
+      return l;
    }
 }

@@ -60,8 +60,7 @@ public class Btrfs {
          String text="<html>" + s.btrfsPath().toString();
          Log.logln(text, LEVEL.BTRFS);
          Backsnap.bsGui.mark(s.received_uuid(), STATUS.INPROGRESS);
-      }
-      // Pc.mountBackupRoot(true);
+      }   
       BTRFS.writeLock().lock();
       try (CmdStream removeStream=Commandline.executeCached(removeCmd, null)) {
          removeStream.backgroundErr();
