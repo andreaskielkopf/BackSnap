@@ -154,7 +154,7 @@ public class BacksnapGui implements MouseListener {
     * @throws IOException
     */
    public void setSrc(SnapConfig srcConfig) throws IOException {
-      Log.log("Src:", LEVEL.SNAPSHOTS);
+      Log.log("Snap:", LEVEL.SNAPSHOTS);
       ConcurrentSkipListMap<String, Snapshot> neuList=getPanelSrc()
                .setVolume(srcConfig.volumeMount().otimeKeyMap().values());
       for (Snapshot snap:neuList.values())

@@ -24,7 +24,7 @@ public class Log {
       MOUNT(2), // mountBackupvolume
       BASIC(2), // standard
       CONFIG(3), // Configuration
-      SNAPSHOTS(4),
+      SNAPSHOTS(4), // show what Snapshots are considdered
       PROGRESS(5),
       DELETE(5),
       BTRFS(6),
@@ -43,7 +43,7 @@ public class Log {
    }
    static public void log(String text, LEVEL... levels) {
       boolean l=tryLock();
-      if (needsPrinting(levels) && dedup(text) instanceof String s && !s.isBlank()) {
+      if (needsPrinting(levels) && dedup(text) instanceof String s ) {
          if (Log.logPos + s.length() > Log.logMAXLEN) {
             System.out.print(System.lineSeparator());
             Log.logPos=0;
@@ -55,7 +55,7 @@ public class Log {
    }
    static public void lnlog(String text, LEVEL... levels) {
       boolean l=tryLock();
-      if (needsPrinting(levels) && dedup(text) instanceof String s && !s.isBlank()) {
+      if (needsPrinting(levels) && dedup(text) instanceof String s) {
          System.out.print(System.lineSeparator() + s);
          Log.logPos=s.length();
       }
@@ -63,7 +63,7 @@ public class Log {
    }
    static public void Owlog(String text, LEVEL... levels) {
       boolean l=tryLock();
-      if (needsPrinting(levels) && dedup(text) instanceof String s && !s.isBlank()) {
+      if (needsPrinting(levels) && dedup(text) instanceof String s ) {
          System.out.print("\r" + s);
          Log.logPos=s.length();
       }
@@ -71,7 +71,7 @@ public class Log {
    }
    static public void logln(String text, LEVEL... levels) {
       boolean l=tryLock();
-      if (needsPrinting(levels) && dedup(text) instanceof String s && !s.isBlank()) {
+      if (needsPrinting(levels) && dedup(text) instanceof String s ) {
          if (Log.logPos + s.length() > Log.logMAXLEN)
             System.out.print(System.lineSeparator());
          System.out.print(s + System.lineSeparator());
@@ -83,7 +83,7 @@ public class Log {
       boolean l=tryLock();
       if (needsPrinting(levels)) {
          for (String line:texts)
-            if (dedup(line) instanceof String s && !s.isBlank()) {
+            if (dedup(line) instanceof String s ) {
                if (Log.logPos + s.length() > Log.logMAXLEN)
                   System.out.print(System.lineSeparator());
                System.out.print(s + System.lineSeparator());
@@ -94,7 +94,7 @@ public class Log {
    }
    static public void logOw(String text, LEVEL... levels) {
       boolean l=tryLock();
-      if (needsPrinting(levels) && dedup(text) instanceof String s && !s.isBlank()) {
+      if (needsPrinting(levels) && dedup(text) instanceof String s ) {
          if (Log.logPos + s.length() > Log.logMAXLEN)
             System.out.print("\r");
          System.out.print(s + "\r");

@@ -44,7 +44,7 @@ public class Backsnap {
    static Future<?>                    task           =null;
    static public BacksnapGui           bsGui;
    static public OneBackup             actualBackup   =null;
-   static private int                  textPos        =0;
+   static private int                  skipCount      =0;
    static final Flag                   HELP           =new Flag('h', "help");                   // show usage
    static final Flag                   VERSION        =new Flag('x', "version");                // show date and version
    static final Flag                   DRYRUN         =new Flag('d', "dryrun");                 // do not do anythimg ;-)
@@ -61,7 +61,7 @@ public class Backsnap {
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
    static final Flag                   PEXEC          =new Flag('p', "pexec");                  // use pexec instead of sudo
    static public final String          SNAPSHOT       ="snapshot";
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.6.12 (2023/09/27)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.6.13 (2023/09/28)";
    static public final String          LF             =System.lineSeparator();
    static public void main(String[] args) {
       Flag.setArgs(args, "");
@@ -104,32 +104,27 @@ public class Backsnap {
                Flag.setArgs(a.split(" "), "");
             } else
                Flag.setArgs(args, "");
-            // TIMESHIFT.set(true);
-            // if (TIMESHIFT.get()) {
             if (lastBackup != null)
                if (actualBackup.srcPc() != lastBackup.srcPc())
                   try {
                      lastBackup.srcPc().mountBtrfsRoot(lastBackup.srcPath(), false);
-                  } catch (IOException e) {/* */ } // umount
+                  } catch (IOException e) {/*  */ } // umount
             actualBackup.mountBtrfsRoot();
             lastBackup=actualBackup;
-            // }
             // Start collecting information
             SnapConfig srcConfig=SnapConfig.getConfig(actualBackup);
             srcConfig.volumeMount().populate();
             Log.logln("Backup snapshots from " + srcConfig.volumeMount().keyM(), LEVEL.SNAPSHOTS);
             Pc.mountBackupRoot(true);
             OneBackup.backupPc.getMountList(false); // eventuell unnötig
-            {
-               Mount backupMount=Pc.getBackupMount(/* true */);
-               if (backupMount.devicePath().equals(srcConfig.volumeMount().devicePath()) && actualBackup.isSamePc())
-                  throw new RuntimeException(LF + "Backup is not possible onto the same device: "
-                           + OneBackup.backupPc.getBackupLabel() + " <= " + actualBackup.srcPath() + LF
-                           + "Please select another partition for the backup");
-               Log.logln("Try to use backupDir  " + backupMount.keyM(), LEVEL.SNAPSHOTS);
-               usage=new Usage(backupMount, false);
-               backupTree=SnapTree.getSnapTree(backupMount);
-            }
+            Mount backupMount=Pc.getBackupMount(/* true */);
+            if (backupMount.devicePath().equals(srcConfig.volumeMount().devicePath()) && actualBackup.isSamePc())
+               throw new RuntimeException(LF + "Backup is not possible onto the same device: "
+                        + OneBackup.backupPc.getBackupLabel() + " <= " + actualBackup.srcPath() + LF
+                        + "Please select another partition for the backup");
+            Log.logln("Try to use backupDir  " + backupMount.keyM(), LEVEL.SNAPSHOTS);
+            usage=new Usage(backupMount, false);
+            backupTree=SnapTree.getSnapTree(backupMount);
             if (disconnectCount > 0) {
                System.err.println("no SSH Connection");
                ende("X");
@@ -177,6 +172,7 @@ public class Backsnap {
                   break;
                }
             }
+            Log.logln("", LEVEL.SNAPSHOTS);
          } catch (IOException e) {
             if ((e.getMessage().startsWith("ssh: connect to host"))
                      || (e.getMessage().startsWith("Could not find snapshot:")))
@@ -184,7 +180,6 @@ public class Backsnap {
             else
                e.printStackTrace();
             if (OneBackup.backupList.size() <= 1) {
-               // if (TIMESHIFT.get())
                try {
                   if (lastBackup != null)
                      lastBackup.srcPc().mountBtrfsRoot(lastBackup.srcPath(), false);
@@ -200,7 +195,6 @@ public class Backsnap {
             gui.getPanelMaintenance().updateButtons();
          pause();
       }
-      // if (TIMESHIFT.get())
       try {
          if (lastBackup != null)
             lastBackup.srcPc().mountBtrfsRoot(lastBackup.srcPath(), false);
@@ -214,45 +208,39 @@ public class Backsnap {
     * Versuchen genau diesen einzelnen Snapshot zu sichern
     * 
     * @param snapConfigs
-    * 
     * @param sourceKey
     * @param sMap
     * @param dMap
     * @throws IOException
+    * @return false bei Misserfolg
     */
    static private boolean backup(OneBackup oneBackup, Snapshot srcSnapshot, SnapTree backupMap) throws IOException {
       if (bsGui instanceof BacksnapGui gui)
          gui.setBackupInfo(srcSnapshot, parentSnapshot);
       if (srcSnapshot.isBackup()) {
-         lnlog("Überspringe backup vom backup: " + srcSnapshot.dirName(), LEVEL.CONFIG);
+         lnlog("Ignore:" + srcSnapshot.dirName(), LEVEL.CONFIG);
          return false;
       }
       if (backupMap.rUuidMap().containsKey(srcSnapshot.uuid())) {
-         if (textPos == 0) {
-            Log.lnlog("Überspringe bereits vorhandene Snapshots:", LEVEL.SNAPSHOTS);
-            textPos=42;
-         }
+         if (skipCount == 0)
+            Log.lnlog("Skip:", LEVEL.SNAPSHOTS);
          Log.log(" " + srcSnapshot.dirName(), LEVEL.SNAPSHOTS);
-         textPos+=srcSnapshot.dirName().length() + 1;
+         skipCount++;
          parentSnapshot=srcSnapshot;
          return false;
       }
-      if (textPos > 0) {
-         textPos=0;
-         // lnlog(5, "");
+      if (skipCount > 0) {
+         skipCount=0;
+         Log.logln("", LEVEL.SNAPSHOTS);
       }
-      // Backsnap.logln(7, srcSnapshot.getSnapshotMountPath().toString());
-      Log.logln("Paths.get(backupDir=" + oneBackup.backupLabel() + " dirName=" + srcSnapshot.dirName() + ")",
-               LEVEL.SNAPSHOTS);
       Path bDir=Pc.TMP_BACKSNAP.resolve(oneBackup.backupLabel()).resolve(srcSnapshot.dirName());
       Path bSnapDir=backupMap.mount().btrfsPath().resolve(backupMap.mount().mountPath().relativize(bDir))
                .resolve(SNAPSHOT);
-      Log.lnlog(bSnapDir.toString(), LEVEL.SNAPSHOTS);
       if (backupMap.btrfsPathMap().containsKey(bSnapDir)) {
          Log.logln("Der Snapshot scheint schon da zu sein ????", LEVEL.SNAPSHOTS);
          return true;
       }
-      Log.log("Backup of " + srcSnapshot.dirName()
+      Log.logln(oneBackup.backupLabel() + ": Backup of " + srcSnapshot.dirName()
                + (parentSnapshot instanceof Snapshot ps ? " based on " + ps.dirName() : ""), LEVEL.SNAPSHOTS);
       mkDirs(bDir);
       rsyncFiles(oneBackup, srcSnapshot.getSnapshotMountPath(), bDir);
@@ -279,7 +267,7 @@ public class Backsnap {
          btrfsSendSB.append("-p ").append(p.getSnapshotMountPath()).append(" ");
       if (s.btrfsPath().toString().contains("timeshift-btrfs"))
          Snapshot.setReadonly(parentSnapshot, s, true);
-      Log.logln(" ", LEVEL.BASIC);
+//      Log.logln(" ", LEVEL.BASIC);
       btrfsSendSB.append(s.getSnapshotMountPath());
       if (!oneBackup.isSameSsh())
          if (oneBackup.isExtern())
@@ -342,9 +330,9 @@ public class Backsnap {
             btrfsSendStream.erg().forEach(line -> {
                if (lastLine != 0) {
                   lastLine=0;
-                  Log.logln("", LEVEL.SNAPSHOTS);
+                  Log.logln("", LEVEL.PROGRESS);
                }
-               Log.logln("", LEVEL.SNAPSHOTS);
+               Log.logln("", LEVEL.PROGRESS);
             });
          } finally {
             BTRFS.writeLock().unlock();
