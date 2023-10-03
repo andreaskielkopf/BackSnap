@@ -3,7 +3,13 @@
 
 
 #### per CLI
-`backsnap / /mnt/BackSnap/manjaro21`
+`backsnap / manjaro21`
+`backsnap /home manjaro21.home`
+
+oder
+
+`sudo java -jar backsnap.jar / manjaro21`
+`sudo java -jar backsnap.jar /home manjaro21.home`
 
 1. starte BackSnap (aus /usr/local/bin)
 4. Pfad zu Quell-Snapshots (sourcedir)
@@ -13,6 +19,10 @@
 #### per /etc/backsnap.d/local.conf
 
 `sudo backsnap -gi`
+
+oder 
+
+`sudo java -jar backsnap.jar -gi`
 
 1. starte BackSnap (aus /usr/local/bin)
 4. option -gi ==> unterstützt durch GUI und automatische Initialisierung nach /etc/backsnap.d/local.conf
@@ -37,5 +47,7 @@
 
 #### Führe dabei fortlaufend eine Fehlerprüfung durch
 * Unterbrechen, wenn ein Fehler auftritt
+
+#### Nebenher wird grafisch angezeigt was vorgeht
 
 Genaueres zur Installation [hier](gallery/gallery.md)
