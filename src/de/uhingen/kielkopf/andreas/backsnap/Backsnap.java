@@ -24,6 +24,7 @@ import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotLabel.STATUS;
 import de.uhingen.kielkopf.andreas.beans.Version;
 import de.uhingen.kielkopf.andreas.beans.cli.Flag;
 import de.uhingen.kielkopf.andreas.beans.minijson.Etc;
+import de.uhingen.kielkopf.andreas.beans.shell.DirectCmdStream;
 
 /**
  * License: 'GNU General Public License v3.0'
@@ -60,7 +61,7 @@ public class Backsnap {
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
    static final Flag                   PEXEC          =new Flag('p', "pexec");                  // use pexec instead of sudo
    static public final String          SNAPSHOT       ="snapshot";
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.6.17 (2023/09/28)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.6.20 (2023/10/03)";
    static public final String          LF             =System.lineSeparator();
    static public void main(String[] args) {
       Flag.setArgs(args, "");
@@ -298,9 +299,10 @@ public class Backsnap {
          if (bsGui != null)
             bsGui.getPanelMaintenance().updateButtons();
          BTRFS.writeLock().lock();
-         try (CmdStream btrfsSendStream=Commandline.executeCached(btrfsSendSB)) {
-            Log.logln("########1#########", LEVEL.PROGRESS);
-            task=virtual.submit(() -> btrfsSendStream.err().forEach(line -> {
+         try (DirectCmdStream btrfsSendStream=DirectCmdStream.getCmdStream(btrfsSendSB)) {
+//            Log.logln("########1#########", LEVEL.PROGRESS);
+//            virtual.execute(() -> //
+            btrfsSendStream.errBgOut().forEach(line -> {
                try {
                   // System.err.println(line);
                   lnlog(line, LEVEL.PROGRESS);
@@ -337,9 +339,12 @@ public class Backsnap {
                } catch (Exception e) {
                   e.printStackTrace();
                }
-            }));
-            Log.logln("#########2########", LEVEL.PROGRESS);
-            btrfsSendStream.erg().forEach(line -> {
+            })//
+//            )//
+            ;
+//            btrfsSendStream.waitFor();
+//            Log.logln("#########2########", LEVEL.PROGRESS);
+            btrfsSendStream.out().forEach(line -> {
                try {
                   if (lastLine != 0) {
                      lastLine=0;
@@ -350,20 +355,20 @@ public class Backsnap {
                   e.printStackTrace();
                }
             });
-            Log.logln("########3##########", LEVEL.PROGRESS);
-            task.get();
-            Log.logln("########4##########", LEVEL.PROGRESS);
+//            Log.logln("########3##########", LEVEL.PROGRESS);
             // task.get();
-            Log.logln("########5##########", LEVEL.PROGRESS);
-            btrfsSendStream.waitFor();
-            Log.logln("########6##########", LEVEL.PROGRESS);
-            ConcurrentLinkedQueue<String> l=btrfsSendStream.errList();
+//            Log.logln("########4##########", LEVEL.PROGRESS);
+            // task.get();
+//            Log.logln("########5##########", LEVEL.PROGRESS);
+            // btrfsSendStream.waitFor();
+//            Log.logln("########6##########", LEVEL.PROGRESS);
+//            ConcurrentLinkedQueue<String> l=btrfsSendStream.errQueue();
             // ArrayList<String> m=new ArrayList<>(l);
-            logln(l, LEVEL.PROGRESS);
-         } catch (InterruptedException e) {
-            e.printStackTrace();
-         } catch (ExecutionException e) {
-            e.printStackTrace();
+//            logln(l, LEVEL.PROGRESS);
+            // } catch (InterruptedException e) {
+            // e.printStackTrace();
+            // } catch (ExecutionException e) {
+            // e.printStackTrace();
          } finally {
             BTRFS.writeLock().unlock();
             lnlog("", LEVEL.PROGRESS);
