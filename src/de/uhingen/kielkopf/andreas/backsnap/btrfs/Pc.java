@@ -2,9 +2,6 @@
  * 
  */
 package de.uhingen.kielkopf.andreas.backsnap.btrfs;
-
-import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
-
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
@@ -12,6 +9,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
+
 
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;

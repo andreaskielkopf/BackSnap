@@ -3,12 +3,11 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.gui.part;
 
-import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
-
 import java.awt.BorderLayout;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
+import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;

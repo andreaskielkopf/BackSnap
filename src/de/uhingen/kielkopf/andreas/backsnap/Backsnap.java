@@ -8,17 +8,16 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.regex.Pattern;
+import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
+import static de.uhingen.kielkopf.andreas.backsnap.config.Log.*;
 
 import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
 
 import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
-
-import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
-import static de.uhingen.kielkopf.andreas.backsnap.config.Log.*;
-
 import de.uhingen.kielkopf.andreas.backsnap.config.Log;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 import de.uhingen.kielkopf.andreas.backsnap.config.OnTheFly;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
 import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotLabel.STATUS;
@@ -61,7 +60,7 @@ public class Backsnap {
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
    static final Flag                   PEXEC          =new Flag('p', "pexec");                  // use pexec instead of sudo
    static public final String          SNAPSHOT       ="snapshot";
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.6.13 (2023/09/28)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.6.17 (2023/09/28)";
    static public final String          LF             =System.lineSeparator();
    static public void main(String[] args) {
       Flag.setArgs(args, "");
@@ -87,8 +86,11 @@ public class Backsnap {
          String[] source=Flag.getParameter(0).split("[:]"); // Parameter sammeln für SOURCE
          String[] backup=Flag.getParameter(1).split("[:]");// BackupVolume ermitteln
          OneBackup.backupPc=(backup.length == 1) ? Pc.getPc(null) : Pc.getPc(backup[0]);
-         // Btrfs.BTRFS.lock();
-         OneBackup.backupPc.setBackupLabel(Paths.get(backup[backup.length - 1]).getFileName());
+         if (OneBackup.backupPc instanceof Pc bPc)
+            // Btrfs.BTRFS.lock();
+            bPc.setBackupLabel(Paths.get(backup[backup.length - 1]).getFileName());
+         else
+            throw new RuntimeException(LF + "Could not find Backuplabel " + String.join(" : ", backup));
          OneBackup.backupList.add(new OneBackup(Pc.getPc(source[0]),
                   Path.of("/", source[source.length - 1].replace(Snapshot.DOT_SNAPSHOTS, "")),
                   OneBackup.backupPc.getBackupLabel(), null));
@@ -223,7 +225,7 @@ public class Backsnap {
       }
       if (backupMap.rUuidMap().containsKey(srcSnapshot.uuid())) {
          if (skipCount == 0)
-            Log.lnlog("Skip:", LEVEL.SNAPSHOTS);
+            lnlog("Skip:", LEVEL.SNAPSHOTS);
          Log.log(" " + srcSnapshot.dirName(), LEVEL.SNAPSHOTS);
          skipCount++;
          parentSnapshot=srcSnapshot;
@@ -267,7 +269,7 @@ public class Backsnap {
          btrfsSendSB.append("-p ").append(p.getSnapshotMountPath()).append(" ");
       if (s.btrfsPath().toString().contains("timeshift-btrfs"))
          Snapshot.setReadonly(parentSnapshot, s, true);
-//      Log.logln(" ", LEVEL.BASIC);
+      // Log.logln(" ", LEVEL.BASIC);
       btrfsSendSB.append(s.getSnapshotMountPath());
       if (!oneBackup.isSameSsh())
          if (oneBackup.isExtern())
@@ -296,44 +298,72 @@ public class Backsnap {
          if (bsGui != null)
             bsGui.getPanelMaintenance().updateButtons();
          BTRFS.writeLock().lock();
-         try (CmdStream btrfsSendStream=Commandline.executeCached(btrfsSendSB, null)) {
+         try (CmdStream btrfsSendStream=Commandline.executeCached(btrfsSendSB)) {
+            Log.logln("########1#########", LEVEL.PROGRESS);
             task=virtual.submit(() -> btrfsSendStream.err().forEach(line -> {
-               if (line.contains("ERROR: cannot find parent subvolume"))
-                  Backsnap.cantFindParent=line;
-               if (line.contains("No route to host") || line.contains("Connection closed")
-                        || line.contains("connection unexpectedly closed"))
-                  Backsnap.disconnectCount=10;
-               if (line.contains("<=>")) { // from pv
-                  if (Backsnap.lastLine == 0)
-                     lnlog(line, LEVEL.PROGRESS);
-                  else
-                     logOw(line, LEVEL.PROGRESS);
-                  show(line);
-                  Backsnap.lastLine=line.length();
-                  if (line.contains(":00 ")) {
-                     lnlog("", LEVEL.PROGRESS);
-                     Backsnap.disconnectCount=0;
-                  }
-                  if (line.contains("0,00 B/s")) {
-                     lnlog("HipCup\n", LEVEL.PROGRESS);
-                     Backsnap.disconnectCount++;
-                  }
-               } else {
-                  if (Backsnap.lastLine != 0) {
-                     Backsnap.lastLine=0;
-                     lnlog("", LEVEL.PROGRESS);
-                  }
+               try {
+                  // System.err.println(line);
                   lnlog(line, LEVEL.PROGRESS);
-                  show(line);
+                  if (line.contains("ERROR: cannot find parent subvolume"))
+                     Backsnap.cantFindParent=line;
+                  if (line.contains("No route to host") || line.contains("Connection closed")
+                           || line.contains("connection unexpectedly closed"))
+                     Backsnap.disconnectCount=10;
+                  if (line.contains("<=>")) { // from pv
+                     log(line, LEVEL.PROGRESS);
+                     if (Backsnap.lastLine == 0)
+                        lnlog("", LEVEL.PROGRESS);
+                     else
+                        Owlog("", LEVEL.PROGRESS);
+                     show(line);
+                     Backsnap.lastLine++;
+                     if (line.contains(":00 ")) {
+                        logln("", LEVEL.PROGRESS);
+                        Backsnap.disconnectCount=0;
+                     }
+                     if (line.contains("0,00 B/s")) {
+                        lnlog("HipCup", LEVEL.PROGRESS);
+                        logln("", LEVEL.PROGRESS);
+                        Backsnap.disconnectCount++;
+                     }
+                  } else {
+                     if (Backsnap.lastLine != 0) {
+                        Backsnap.lastLine=0;
+                        logln("", LEVEL.PROGRESS);
+                     }
+                     logln(line, LEVEL.PROGRESS);
+                     show(line);
+                  }
+               } catch (Exception e) {
+                  e.printStackTrace();
                }
             }));
+            Log.logln("#########2########", LEVEL.PROGRESS);
             btrfsSendStream.erg().forEach(line -> {
-               if (lastLine != 0) {
-                  lastLine=0;
-                  Log.logln("", LEVEL.PROGRESS);
+               try {
+                  if (lastLine != 0) {
+                     lastLine=0;
+                     logln("", LEVEL.PROGRESS);
+                  }
+                  logln("", LEVEL.PROGRESS);
+               } catch (Exception e) {
+                  e.printStackTrace();
                }
-               Log.logln("", LEVEL.PROGRESS);
             });
+            Log.logln("########3##########", LEVEL.PROGRESS);
+            task.get();
+            Log.logln("########4##########", LEVEL.PROGRESS);
+            // task.get();
+            Log.logln("########5##########", LEVEL.PROGRESS);
+            btrfsSendStream.waitFor();
+            Log.logln("########6##########", LEVEL.PROGRESS);
+            ConcurrentLinkedQueue<String> l=btrfsSendStream.errList();
+            // ArrayList<String> m=new ArrayList<>(l);
+            logln(l, LEVEL.PROGRESS);
+         } catch (InterruptedException e) {
+            e.printStackTrace();
+         } catch (ExecutionException e) {
+            e.printStackTrace();
          } finally {
             BTRFS.writeLock().unlock();
             lnlog("", LEVEL.PROGRESS);

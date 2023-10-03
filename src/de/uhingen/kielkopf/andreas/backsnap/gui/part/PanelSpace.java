@@ -16,7 +16,6 @@ import javax.swing.border.TitledBorder;
 import org.eclipse.jdt.annotation.NonNull;
 
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
-
 import de.uhingen.kielkopf.andreas.backsnap.config.Log;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;

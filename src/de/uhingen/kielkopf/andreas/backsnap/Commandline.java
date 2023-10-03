@@ -1,10 +1,8 @@
 package de.uhingen.kielkopf.andreas.backsnap;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.*;
 import java.util.stream.Stream;
 
 import de.uhingen.kielkopf.andreas.backsnap.config.Log;
@@ -52,8 +50,8 @@ public class Commandline {
       Log.logln(cmd, LEVEL.COMMANDS);
       Process process=processBuilder.command(List.of("/bin/bash", "-c", cmd)).start();
       return new CmdStream(process, new BufferedReader(new InputStreamReader(process.getInputStream(), UTF_8)),
-               new BufferedReader(new InputStreamReader(process.getErrorStream(), UTF_8)), new ArrayList<>(),
-               new ArrayList<>(), key);
+               new BufferedReader(new InputStreamReader(process.getErrorStream(), UTF_8)),
+               new ConcurrentLinkedQueue<String>(), new ConcurrentLinkedQueue<String>(), key);
    }
    // static public CmdStream execute(String cmd) throws IOException {
    // Process process=processBuilder.command(List.of("/bin/bash", "-c", cmd)).start();
@@ -66,8 +64,9 @@ public class Commandline {
     * 
     * @author Andreas Kielkopf
     */
-   public record CmdStream(Process process, BufferedReader brErg, BufferedReader brErr, List<String> errList,
-            List<String> ergList, String key) implements Closeable {
+   public record CmdStream(Process process, BufferedReader brErg, BufferedReader brErr,
+            ConcurrentLinkedQueue<String> errList, ConcurrentLinkedQueue<String> ergList, String key)
+            implements Closeable {
       public void backgroundErr() { // Fehler im Hintergrund ausgeben und ablegen // System.out.print("0");
          if ((key == null) || !cache.containsKey(key)) {// ist nicht schon im cache
             virtual.submit(() -> {
@@ -88,7 +87,8 @@ public class Commandline {
        */
       @SuppressWarnings("resource")
       @Override
-      public void close() throws IOException { // waitFor();
+      public void close() throws IOException {
+         waitFor();
          brErr.close(); // errlist ist komplett jetzt
          brErg.close(); // erg wurde gelesen
          process.destroy();
@@ -109,7 +109,7 @@ public class Commandline {
          if (key == null) // den cache ignorieren
             return brErr.lines();
          if (errList.isEmpty())
-            return brErr.lines().peek(ergList::add); // legt alle Zeilen im cache-Array ab
+            return brErr.lines().peek(errList::add); // legt alle Zeilen im cache-Array ab
          return errList.stream(); // eigene Konserve
       }
       /**
@@ -130,13 +130,18 @@ public class Commandline {
          // System.err.println("reuse " + key + " from cache");
          return ergList.stream(); // Konserve
       }
-      /** warte auf den Abschluß des Befehls */
-      public void waitFor() {
+      /**
+       * warte auf den Abschluß des Befehls
+       * 
+       * @return
+       */
+      public int waitFor() {
          try {
-            process.waitFor();
+            return process.waitFor();
          } catch (InterruptedException ignore) {
             System.err.println(ignore.toString());
-         } // return this;
+         }
+         return -1;
       }
    }
    /**
