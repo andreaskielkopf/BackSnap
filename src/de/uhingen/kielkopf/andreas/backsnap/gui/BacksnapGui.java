@@ -32,6 +32,7 @@ import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotLabel.STATUS;
 import de.uhingen.kielkopf.andreas.beans.Version;
 import de.uhingen.kielkopf.andreas.beans.cli.Flag;
 import de.uhingen.kielkopf.andreas.beans.gui.Prefs;
+import de.uhingen.kielkopf.andreas.beans.gui.Rotator;
 
 /**
  * @author Andreas Kielkopf
@@ -567,6 +568,8 @@ public class BacksnapGui implements MouseListener {
    private TxtFeld         txtSize;
    public String           refreshGUIcKey  =null;
    public Instant          refreshUsage    =Instant.now();
+   private Rotator rotator;
+   private JPanel panel;
    private JPanel getPanelUnten() {
       if (panelUnten == null) {
          panelUnten=new JPanel();
@@ -592,10 +595,10 @@ public class BacksnapGui implements MouseListener {
    private JPanel getPanelProgress() {
       if (panelProgress == null) {
          panelProgress=new JPanel();
-         panelProgress.setLayout(new BorderLayout(10, 0));
-         panelProgress.add(getProgressBar(), BorderLayout.WEST);
+         panelProgress.setLayout(new BorderLayout(5, 0));
          panelProgress.add(getPanelWork(), BorderLayout.CENTER);
          panelProgress.add(getPanelLive(), BorderLayout.EAST);
+         panelProgress.add(getPanel(), BorderLayout.WEST);
       }
       return panelProgress;
    }
@@ -772,5 +775,25 @@ public class BacksnapGui implements MouseListener {
          getProgressBar().setString(counter + "/" + size);
          // getProgressBar().repaint(50);
       });
+   }
+   private Rotator getRotator() {
+      if (rotator == null) {
+      	rotator = new Rotator();
+      	rotator.setForeground(Color.GREEN);
+      	rotator.setBackground(Color.ORANGE);
+      	rotator.setPreferredSize(new Dimension(25, 25));
+      	rotator.setMinimumSize(new Dimension(40, 40));
+      	rotator.setText("_");
+      }
+      return rotator;
+   }
+   private JPanel getPanel() {
+      if (panel == null) {
+      	panel = new JPanel();
+      	panel.setLayout(new BorderLayout(5, 0));
+      	panel.add(getProgressBar(), BorderLayout.CENTER);
+      	panel.add(getRotator(), BorderLayout.EAST);
+      }
+      return panel;
    }
 }
