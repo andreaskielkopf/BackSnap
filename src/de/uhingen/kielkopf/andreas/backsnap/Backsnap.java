@@ -1,5 +1,8 @@
 package de.uhingen.kielkopf.andreas.backsnap;
 
+import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
+import static de.uhingen.kielkopf.andreas.backsnap.config.Log.lnlog;
+
 import java.awt.Frame;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -8,8 +11,6 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.regex.Pattern;
-import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
-import static de.uhingen.kielkopf.andreas.backsnap.config.Log.*;
 
 import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
@@ -24,7 +25,6 @@ import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotLabel.STATUS;
 import de.uhingen.kielkopf.andreas.beans.Version;
 import de.uhingen.kielkopf.andreas.beans.cli.Flag;
 import de.uhingen.kielkopf.andreas.beans.minijson.Etc;
-import de.uhingen.kielkopf.andreas.beans.shell.DirectCmdStream;
 
 /**
  * License: 'GNU General Public License v3.0'
@@ -39,7 +39,7 @@ import de.uhingen.kielkopf.andreas.beans.shell.DirectCmdStream;
 public class Backsnap {
    static public final ExecutorService virtual        =Version.getVx();
    static int                          lastLine       =0;
-   static String                       cantFindParent;
+   public static String                cantFindParent;
    static public int                   disconnectCount=0;
    static Future<?>                    task           =null;
    static public BacksnapGui           bsGui;
@@ -61,7 +61,7 @@ public class Backsnap {
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
    static final Flag                   PEXEC          =new Flag('p', "pexec");                  // use pexec instead of sudo
    static public final String          SNAPSHOT       ="snapshot";
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.6.25 (2023/10/07)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.6.26 (2023/10/07)";
    static public final String          LF             =System.lineSeparator();
    static public void main(String[] args) {
       Flag.setArgs(args, "");
@@ -249,150 +249,13 @@ public class Backsnap {
       rsyncFiles(oneBackup, srcSnapshot.getSnapshotMountPath(), bDir);
       if (GUI.get())
          bsGui.mark(srcSnapshot.uuid(), STATUS.INPROGRESS); // Pc backupPc=backupMap.mount().pc();
-      if (sendBtrfs(oneBackup, srcSnapshot, bDir))
+      if (Btrfs.send_pv_receive(oneBackup, srcSnapshot, parentSnapshot, bDir, bsGui, DRYRUN.get(), COMPRESSED.get()))
          parentSnapshot=srcSnapshot;
-      return true;
-   }
-   static Boolean usePv=null;
-   static private boolean sendBtrfs(OneBackup oneBackup, Snapshot s, Path bDir) throws IOException {
-      if (usePv == null)
-         try { // teste ob pv da ist
-            usePv=Paths.get("/bin/pv").toFile().canExecute();
-         } catch (Exception e1) {/* */}
-      StringBuilder btrfsSendSB=new StringBuilder(Btrfs.SEND);
-      if (bsGui instanceof BacksnapGui gui)
-         gui.setBackupInfo(s, parentSnapshot);
-      if (COMPRESSED.get() && !oneBackup.compressionPossible())
-         COMPRESSED.set(false);
-      if (COMPRESSED.get())
-         btrfsSendSB.append("--compressed-data ");
-      if (parentSnapshot instanceof Snapshot p)
-         btrfsSendSB.append("-p ").append(p.getSnapshotMountPath()).append(" ");
-      if (s.btrfsPath().toString().contains("timeshift-btrfs"))
-         Snapshot.setReadonly(parentSnapshot, s, true);
-      // Log.logln(" ", LEVEL.BASIC);
-      btrfsSendSB.append(s.getSnapshotMountPath());
-      if (!oneBackup.isSameSsh())
-         if (oneBackup.isExtern())
-            btrfsSendSB.insert(0, "ssh " + oneBackup.extern() + " '").append("'");
-         else
-            btrfsSendSB.insert(0, oneBackup.extern());
-      if (usePv)
-         btrfsSendSB.append("|pv -f");
-      btrfsSendSB.append("|");
-      if (!oneBackup.isSameSsh())
-         if (OneBackup.isBackupExtern())
-            btrfsSendSB.append("ssh " + OneBackup.backupPc.extern() + " '");
-         else
-            btrfsSendSB.append(OneBackup.backupPc.extern());
-      btrfsSendSB.append(Btrfs.RECEIVE).append(bDir);
-      // if (NOSYNC.get())
-      // btrfsSendSB.append(";sync");
-      if (oneBackup.isSameSsh())
-         if (oneBackup.isExtern())
-            btrfsSendSB.insert(0, "ssh " + oneBackup.extern() + " '");
-      // send_cmd.insert(0, srcSsh); // @todo für einzelnes sudo anpassen ?
-      if (OneBackup.isBackupExtern())
-         btrfsSendSB.append("'");
-      Log.logln(btrfsSendSB.toString(), LEVEL.BTRFS);
-      if (!DRYRUN.get()) {
-         if (bsGui != null)
-            bsGui.getPanelMaintenance().updateButtons();
-         BTRFS.writeLock().lock();
-         try (DirectCmdStream btrfsSendStream=DirectCmdStream.getCmdStream(btrfsSendSB)) {
-//            Log.logln("########1#########", LEVEL.PROGRESS);
-//            virtual.execute(() -> //
-            btrfsSendStream.errBgOut().forEach(line -> {
-               try {
-                  // System.err.println(line);
-                  lnlog(line, LEVEL.PROGRESS);
-                  if (line.contains("ERROR: cannot find parent subvolume"))
-                     Backsnap.cantFindParent=line;
-                  if (line.contains("No route to host") || line.contains("Connection closed")
-                           || line.contains("connection unexpectedly closed"))
-                     Backsnap.disconnectCount=10;
-                  if (line.contains("<=>")) { // from pv
-                     log(line, LEVEL.PROGRESS);
-                     if (Backsnap.lastLine == 0)
-                        lnlog("", LEVEL.PROGRESS);
-                     else
-                        Owlog("", LEVEL.PROGRESS);
-                     show(line);
-                     Backsnap.lastLine++;
-                     if (line.contains(":00 ")) {
-                        logln("", LEVEL.PROGRESS);
-                        Backsnap.disconnectCount=0;
-                     }
-                     if (line.contains("0,00 B/s")) {
-                        lnlog("HipCup", LEVEL.PROGRESS);
-                        logln("", LEVEL.PROGRESS);
-                        Backsnap.disconnectCount++;
-                     }
-                  } else {
-                     if (Backsnap.lastLine != 0) {
-                        Backsnap.lastLine=0;
-                        logln("", LEVEL.PROGRESS);
-                     }
-                     logln(line, LEVEL.PROGRESS);
-                     show(line);
-                  }
-               } catch (Exception e) {
-                  e.printStackTrace();
-               }
-            })//
-//            )//
-            ;
-//            btrfsSendStream.waitFor();
-//            Log.logln("#########2########", LEVEL.PROGRESS);
-            btrfsSendStream.out().forEach(line -> {
-               try {
-                  if (lastLine != 0) {
-                     lastLine=0;
-                     logln("", LEVEL.PROGRESS);
-                  }
-                  logln("", LEVEL.PROGRESS);
-               } catch (Exception e) {
-                  e.printStackTrace();
-               }
-            });
-//            Log.logln("########3##########", LEVEL.PROGRESS);
-            // task.get();
-//            Log.logln("########4##########", LEVEL.PROGRESS);
-            // task.get();
-//            Log.logln("########5##########", LEVEL.PROGRESS);
-            // btrfsSendStream.waitFor();
-//            Log.logln("########6##########", LEVEL.PROGRESS);
-//            ConcurrentLinkedQueue<String> l=btrfsSendStream.errQueue();
-            // ArrayList<String> m=new ArrayList<>(l);
-//            logln(l, LEVEL.PROGRESS);
-            // } catch (InterruptedException e) {
-            // e.printStackTrace();
-            // } catch (ExecutionException e) {
-            // e.printStackTrace();
-         } finally {
-            BTRFS.writeLock().unlock();
-            lnlog("", LEVEL.PROGRESS);
-         }
-         if (bsGui != null)
-            bsGui.getPanelMaintenance().updateButtons();
-      }
-      if (s.btrfsPath().toString().contains("timeshift-btrfs"))
-         Snapshot.setReadonly(parentSnapshot, s, false);
       return true;
    }
    static StringBuilder    pv=new StringBuilder("- Info -");
    private static Usage    usage;
    private static SnapTree backupTree;
-   /**
-    * @param line
-    */
-   static private final void show(String line) {
-      if (bsGui == null)
-         return;
-      line.replaceAll("[\n\r]?", " "); // if (line.equals("\n") || line.equals("\r")) return;
-      if (!line.isBlank())
-         bsGui.lblPvSetText(line);
-   }
    static private void rsyncFiles(OneBackup oneBackup, Path sDir, Path bDir) throws IOException {
       StringBuilder rsyncSB=new StringBuilder("rsync -vdcptgo --exclude \"@*\" --exclude \"" + SNAPSHOT + "\" ");
       if (DRYRUN.get())
