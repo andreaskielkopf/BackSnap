@@ -69,15 +69,13 @@ public class Btrfs {
          Backsnap.bsGui.mark(s.received_uuid(), STATUS.INPROGRESS);
       }
       BTRFS.writeLock().lock();
-      try (CmdStream removeStream=Commandline.executeCached(removeCmd, null)) {
-         removeStream.backgroundErr();
-         Log.logln("", LEVEL.DELETE);
-         removeStream.erg().forEach(line -> {
+      try (DirectCmdStream removeStream=DirectCmdStream.getCmdStream(removeCmd)) {
+         removeStream.outBgErr().forEach(line -> {
             Log.log(line, LEVEL.DELETE);
             if (Backsnap.GUI.get())
                Backsnap.bsGui.lblPvSetText(line);
          });
-         removeStream.waitFor();
+         removeStream.err().forEach(System.err::println);
       } finally {
          BTRFS.writeLock().unlock();
       }
@@ -118,12 +116,11 @@ public class Btrfs {
          String createCmd=pc.getCmd(new StringBuilder(SUBVOLUME_CREATE).append(backsnap), true);
          Log.log(createCmd, LEVEL.BTRFS);
          BTRFS.writeLock().lock();
-         try (CmdStream createStream=Commandline.executeCached(createCmd, null)) {
-            createStream.backgroundErr();
-            createStream.erg().forEach(line -> {
+         try (DirectCmdStream createStream=DirectCmdStream.getCmdStream(createCmd)) {
+            createStream.outBgErr().forEach(line -> {
                Log.log(line, LEVEL.BTRFS);
             });
-            createStream.waitFor();
+            createStream.err().forEach(System.err::println);
          } finally {
             BTRFS.writeLock().unlock();
          }
@@ -147,6 +144,18 @@ public class Btrfs {
       }
       return false;
    }
+   /**
+    * 
+    * @param oneBackup
+    * @param s
+    * @param parent
+    * @param bDir
+    * @param bsGui
+    * @param dryrun
+    * @param compressed
+    * @return
+    * @throws IOException
+    */
    static public boolean send_pv_receive(OneBackup oneBackup, Snapshot s, Snapshot parent, Path bDir, //
             BacksnapGui bsGui, boolean dryrun, boolean compressed) throws IOException {
       if (bsGui instanceof BacksnapGui gui)
