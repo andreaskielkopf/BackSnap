@@ -9,18 +9,16 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.List;
+
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
-import de.uhingen.kielkopf.andreas.backsnap.Commandline;
-import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
 import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotLabel.STATUS;
-import de.uhingen.kielkopf.andreas.beans.shell.DirectCmdStream;
+import de.uhingen.kielkopf.andreas.beans.shell.CmdStreams;
 
 /**
  * @author Andreas Kielkopf
@@ -52,25 +50,22 @@ public class Btrfs {
     * @throws IOException
     */
    static public void removeSnapshot(Snapshot s) throws IOException {
-      Path bmp=Pc.getBackupMount().mountPath(); // s.getBackupMountPath();
+      Path bmp=Pc.getBackupMount().mountPath();
       Path rel=s.btrfsPath().getRoot().relativize(s.btrfsPath());
       bmp=bmp.resolve(rel);
       if (!bmp.toString().startsWith(Pc.TMP_BACKUP_ROOT.toString()) || bmp.toString().contains("../"))
          throw new SecurityException("I am not allowed to delete " + bmp.toString());
       StringBuilder removeSB=new StringBuilder(SUBVOLUME_DELETE).append(bmp);
       String removeCmd=s.mount().pc().getCmd(removeSB, true);
-      if (Backsnap.bsGui != null)
-         Backsnap.bsGui.setDeleteInfo(s);
       Log.log(removeCmd, LEVEL.BTRFS);
-      if (Backsnap.bsGui != null) {
-         Backsnap.bsGui.getPanelMaintenance().updateButtons();
-         String text="<html>" + s.btrfsPath().toString();
-         Log.logln(text, LEVEL.BTRFS);
-         Backsnap.bsGui.mark(s.received_uuid(), STATUS.INPROGRESS);
+      if (Backsnap.bsGui instanceof BacksnapGui gui) {
+         gui.setDeleteInfo(s);
+         gui.getPanelMaintenance().updateButtons();
+         gui.mark(s.received_uuid(), STATUS.INPROGRESS);
       }
       BTRFS.writeLock().lock();
-      try (DirectCmdStream removeStream=DirectCmdStream.getCmdStream(removeCmd)) {
-         removeStream.outBgErr().forEach(line -> {
+      try (CmdStreams removeStream=CmdStreams.getDirectStream(removeCmd)) {
+         removeStream.outBGerr().forEach(line -> {
             Log.log(line, LEVEL.DELETE);
             if (Backsnap.GUI.get())
                Backsnap.bsGui.lblPvSetText(line);
@@ -79,31 +74,29 @@ public class Btrfs {
       } finally {
          BTRFS.writeLock().unlock();
       }
-      if (Backsnap.bsGui != null)
-         Backsnap.bsGui.getPanelMaintenance().updateButtons();
+      if (Backsnap.bsGui instanceof BacksnapGui gui)
+         gui.getPanelMaintenance().updateButtons();
    }
    public static ConcurrentSkipListMap<String, Volume> show(Pc pc, boolean onlyMounted, boolean refresh) {
       ConcurrentSkipListMap<String, Volume> list=new ConcurrentSkipListMap<>();
       String volumeListCmd=pc.getCmd(new StringBuilder(FILESYSTEM_SHOW).append(onlyMounted ? " -m" : " -d"), true);
       Log.logln(volumeListCmd, LEVEL.BTRFS);
       if (refresh)
-         Commandline.removeFromCache(volumeListCmd);
+         CmdStreams.removeFromCache(volumeListCmd);
       BTRFS.readLock().lock();
-      try (CmdStream volumeListStream=Commandline.executeCached(volumeListCmd)) {
-         volumeListStream.backgroundErr();
-         List<String> lines=volumeListStream.erg().toList();
-         volumeListStream.waitFor();
+      try (CmdStreams volumeListStream=CmdStreams.getCachedStream(volumeListCmd)) {
          ArrayList<String> tmpList=new ArrayList<>();
-         for (String line:lines)
+         volumeListStream.outBGerr().forEachOrdered(line -> {
             if (!line.isBlank())
                tmpList.add(line);
             else
                if (!tmpList.isEmpty()) {
                   Volume v=Volume.getVolume(pc, tmpList);
-                  String uuid=v.uuid();
-                  list.put(uuid, v);
+                  list.put(v.uuid(), v);
                   tmpList.clear();
                }
+         });
+         volumeListStream.err().forEach(System.err::println);
       } catch (IOException e1) {
          e1.printStackTrace();
       } finally {
@@ -116,10 +109,8 @@ public class Btrfs {
          String createCmd=pc.getCmd(new StringBuilder(SUBVOLUME_CREATE).append(backsnap), true);
          Log.log(createCmd, LEVEL.BTRFS);
          BTRFS.writeLock().lock();
-         try (DirectCmdStream createStream=DirectCmdStream.getCmdStream(createCmd)) {
-            createStream.outBgErr().forEach(line -> {
-               Log.log(line, LEVEL.BTRFS);
-            });
+         try (CmdStreams createStream=CmdStreams.getCachedStream(createCmd)) {
+            createStream.outBGerr().forEach(line -> Log.log(line, LEVEL.BTRFS));
             createStream.err().forEach(System.err::println);
          } finally {
             BTRFS.writeLock().unlock();
@@ -131,13 +122,9 @@ public class Btrfs {
          String testCmd=pc.getCmd(new StringBuilder(SUBVOLUME_LIST).append(backsnap), true);
          Log.log(testCmd, LEVEL.BTRFS);
          BTRFS.readLock().lock();
-         try (CmdStream testStream=Commandline.executeCached(testCmd, null)) {
-            testStream.backgroundErr();
-            long c=testStream.erg().peek(line -> {
-               Log.log(line, LEVEL.ALLES);
-            }).filter(line -> line.endsWith(Pc.TMP_BACKSNAP.getFileName().toString())).count();
-            testStream.waitFor();
-            return c != 0;
+         try (CmdStreams testStream=CmdStreams.getDirectStream(testCmd)) {
+            return testStream.outBGerr().peek(line -> Log.log(line, LEVEL.ALLES))
+                     .anyMatch(line -> line.endsWith(Pc.TMP_BACKSNAP.getFileName().toString()));
          } finally {
             BTRFS.readLock().unlock();
          }
@@ -192,9 +179,9 @@ public class Btrfs {
          if (bsGui != null)
             bsGui.getPanelMaintenance().updateButtons();
          BTRFS.writeLock().lock();
-         try (DirectCmdStream btrfsSendStream=DirectCmdStream.getCmdStream(btrfsSendSB)) {
-            btrfsSendStream.errBgOut().forEach(line -> extractPv(bsGui, line));
-            btrfsSendStream.out().forEach(line -> extractOuput());
+         try (CmdStreams btrfsSendStream=CmdStreams.getDirectStream(btrfsSendSB.toString())) {
+            Thread.ofVirtual().name(SEND).start(() -> btrfsSendStream.out().forEach(line -> extractOuput(line)));
+            btrfsSendStream.err().forEach(line -> extractPv(bsGui, line));
          } finally {
             BTRFS.writeLock().unlock();
             lnlog("", LEVEL.PROGRESS);
@@ -219,13 +206,13 @@ public class Btrfs {
          } catch (Exception ignore) {/* */}
       return pvUsable;
    }
-   private static void extractOuput() {
+   private static void extractOuput(String s) {
       try {
          if (lastLine != 0) {
             lastLine=0;
             logln("", LEVEL.PROGRESS);
          }
-         logln("", LEVEL.PROGRESS);
+         logln(s, LEVEL.PROGRESS); // TODO
       } catch (Exception e) {
          e.printStackTrace();
       }
