@@ -39,8 +39,8 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
     *           um den Zugriff über ssh zu ermöglichen
     * @throws IOException
     */
-   protected Mount(Pc pc, String line) throws IOException {
-      this(pc, /* svList, */ getPath(DEVICE.matcher(line)), getPath(MOUNTPOINT.matcher(line)),
+   protected Mount(Pc pc, String line) {
+      this(pc,  getPath(DEVICE.matcher(line)), getPath(MOUNTPOINT.matcher(line)),
                getPath(SUBVOLUME.matcher(line)), getString(OPTIONS.matcher(line)), new ConcurrentSkipListMap<>(),
                new ConcurrentSkipListMap<>(), new ConcurrentSkipListSet<>());
       // populate(); erstmal unvollständig erzeugen

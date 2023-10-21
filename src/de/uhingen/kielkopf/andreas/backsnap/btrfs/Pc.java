@@ -2,6 +2,7 @@
  * 
  */
 package de.uhingen.kielkopf.andreas.backsnap.btrfs;
+
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
@@ -11,14 +12,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
 
-
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
-import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 import de.uhingen.kielkopf.andreas.beans.Version;
 import de.uhingen.kielkopf.andreas.beans.data.Link;
+import de.uhingen.kielkopf.andreas.beans.shell.CmdStreams;
 
 /**
  * @author Andreas Kielkopf Repräsentation eines kompletten PC
@@ -130,22 +130,18 @@ public record Pc(String extern, // Marker für diesen PC
       if (mountCache.isEmpty() || refresh) {
          ConcurrentSkipListMap<String, Mount> mountList2=new ConcurrentSkipListMap<>();
          String mountCmd=getCmd(new StringBuilder(MOUNT_BTRFS), false);
-         Log.logln(mountCmd, LEVEL.BTRFS);// Commandline.removeFromCache(mountCmd);
+         Log.logln(mountCmd, LEVEL.BTRFS);
          BTRFS.readLock().lock();
-         try (CmdStream mountStream=Commandline.executeCached(mountCmd, null)) {
-            mountStream.backgroundErr();
-            for (String line:mountStream.erg().toList())
-               mountList2.put(line, mountCache.containsKey(line) //
-                        ? mountCache.get(line) // reuse existing
-                        : new Mount(this, line)); // create new
+         try (CmdStreams mountStream=CmdStreams.getDirectStream(mountCmd)) {
+            mountStream.outBGerr().forEachOrdered(line -> mountList2.put(line, mountCache.containsKey(line)//
+                     ? mountCache.get(line) // reuse existing
+                     : new Mount(this, line))); // create new
+            Optional<String> ex=mountStream.err().filter(l -> (l.contains("No route to host")
+                     || l.contains("Connection closed") || l.contains("connection unexpectedly closed"))).findAny();
+            if (ex.isPresent())
+               throw new IOException(ex.get());
             mountCache.clear();
-            mountCache.putAll(mountList2);
-            mountStream.waitFor();
-            for (String line:mountStream.errList())
-               if (line.contains("No route to host") || line.contains("Connection closed")
-                        || line.contains("connection unexpectedly closed"))
-                  throw new IOException(line);
-            Log.logln("", LEVEL.BTRFS);
+            mountCache.putAll(mountList2);// Log.logln("", LEVEL.BTRFS);
          } finally {
             BTRFS.readLock().unlock();
          }
@@ -160,17 +156,15 @@ public record Pc(String extern, // Marker für diesen PC
     */
    public final Version getBtrfsVersion() throws IOException {
       if (btrfsVersion.get() == null) {
-         String versionCmd=getCmd(new StringBuilder(Btrfs.VERSION), false);         
+         String versionCmd=getCmd(new StringBuilder(Btrfs.VERSION), false);
+         Log.logln(versionCmd, LEVEL.COMMANDS);
          BTRFS.readLock().lock();
-         try (CmdStream versionStream=Commandline.executeCached(versionCmd)) {
-            versionStream.backgroundErr();
-            for (String line:versionStream.erg().toList())
-               btrfsVersion.set(new Version("btrfs", line));
-            versionStream.waitFor();
-            for (String line:versionStream.errList())
-               if (line.contains("No route to host") || line.contains("Connection closed")
-                        || line.contains("connection unexpectedly closed"))
-                  throw new IOException(line);
+         try (CmdStreams versionStream=CmdStreams.getDirectStream(versionCmd)) {
+            versionStream.outBGerr().forEach(line -> btrfsVersion.set(new Version("btrfs", line)));
+            Optional<String> ex=versionStream.err().filter(l -> (l.contains("No route to host")
+                     || l.contains("Connection closed") || l.contains("connection unexpectedly closed"))).findAny();
+            if (ex.isPresent())
+               throw new IOException(ex.get());
          } finally {
             BTRFS.readLock().unlock();
          }
@@ -188,15 +182,12 @@ public record Pc(String extern, // Marker für diesen PC
       if (kernelVersion.get() == null) {
          String versionCmd=getCmd(new StringBuilder("uname -rs"), false);
          Log.logln(versionCmd, LEVEL.COMMANDS);
-         try (CmdStream versionStream=Commandline.executeCached(versionCmd)) {
-            versionStream.backgroundErr();
-            for (String line:versionStream.erg().toList())
-               kernelVersion.set(new Version("kernel", line));
-            versionStream.waitFor();
-            for (String line:versionStream.errList())
-               if (line.contains("No route to host") || line.contains("Connection closed")
-                        || line.contains("connection unexpectedly closed"))
-                  throw new IOException(line);
+         try (CmdStreams versionStream=CmdStreams.getDirectStream(versionCmd)) {
+            versionStream.outBGerr().forEach(line -> kernelVersion.set(new Version("kernel", line)));
+            Optional<String> ex=versionStream.err().filter(l -> (l.contains("No route to host")
+                     || l.contains("Connection closed") || l.contains("connection unexpectedly closed"))).findAny();
+            if (ex.isPresent())
+               throw new IOException(ex.get());
          }
          Log.logln(this + " " + kernelVersion.get(), LEVEL.CONFIG);
       }
@@ -305,26 +296,19 @@ public record Pc(String extern, // Marker für diesen PC
          return;
       StringBuilder mountSB=new StringBuilder();
       if (doMount) {
-         mountSB.append("mkdir --mode=000 -p ").append(mountPoint.toString()).append(";");
-         mountSB.append(MOUNT_BTRFS).append("-o subvol=/").append(options).append(" ").append(device.toString())
-                  .append(" ").append(mountPoint.toString());
-      } else { // mountSB.append("sync;");
-         mountSB.append("umount -v ").append(mountPoint.toString()).append(";"); // mountSB.append("sync;");
-         mountSB.append("rmdir ").append(mountPoint.toString());
+         mountSB.append("mkdir --mode=000 -p ").append(mountPoint).append(";").append(MOUNT_BTRFS).append("-o subvol=/")
+                  .append(options).append(" ").append(device).append(" ").append(mountPoint);
+      } else {
+         mountSB.append("umount -v ").append(mountPoint).append(";rmdir ").append(mountPoint);
       }
       String mountCmd=getCmd(mountSB, true);
       Log.logln(mountCmd, LEVEL.MOUNT);
       BTRFS.writeLock().lock();
-      try (CmdStream mountStream=Commandline.executeCached(mountCmd, null)) { // not cached
-         mountStream.backgroundErr();
-         mountStream.erg().forEach(t -> Log.logln(t, LEVEL.BTRFS_ANSWER));
-         mountStream.waitFor();
-         for (String line:mountStream.errList())
-            if (line.contains("No route to host") || line.contains("Connection closed")
-                     || line.contains("connection unexpectedly closed")) {
-               Backsnap.disconnectCount=10;
-               break;
-            }
+      try (CmdStreams mountStream=CmdStreams.getDirectStream(mountCmd)) {
+         mountStream.outBGerr().forEach(t -> Log.logln(t, LEVEL.BTRFS_ANSWER));
+         if (mountStream.err().anyMatch(l -> (l.contains("No route to host") || l.contains("Connection closed")
+                  || l.contains("connection unexpectedly closed"))))
+            Backsnap.disconnectCount=10;
       } finally {
          BTRFS.writeLock().unlock();
       }
