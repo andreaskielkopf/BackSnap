@@ -7,12 +7,13 @@ import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
 import static de.uhingen.kielkopf.andreas.beans.RecordParser.getString;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
-import de.uhingen.kielkopf.andreas.backsnap.Commandline;
-import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
+import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
+import de.uhingen.kielkopf.andreas.beans.shell.CmdStreams;
 
 /**
  * @author Andreas Kielkopf
@@ -61,16 +62,15 @@ public record Usage(String size, String allocated, String unallcoated, String mi
                false);// TODO This may be wrong, and sometimes sudo may be needed
       Log.logln(usageCmd, LEVEL.BTRFS);
       BTRFS.readLock().lock();
-      try (CmdStream usageStream=Commandline.executeCached(usageCmd, null)) {
-         usageStream.backgroundErr();
+      try (CmdStreams usageStream=CmdStreams.getDirectStream(usageCmd)) {
          StringBuilder usageLine=new StringBuilder();
-         for (String line:usageStream.erg().toList())
-            usageLine.append(line).append('\n');
-         usageStream.waitFor();
-         for (String line:usageStream.errList())
-            if (line.contains("No route to host") || line.contains("Connection closed")
-                     || line.contains("connection unexpectedly closed"))
-               throw new IOException(line);
+         usageStream.outBGerr().forEach(line -> usageLine.append(line).append('\n'));
+         Optional<String> erg=usageStream.err().filter(line -> (line.contains("No route to host")
+                  || line.contains("Connection closed") || line.contains("connection unexpectedly closed"))).findAny();
+         if (erg.isPresent()) {
+            Backsnap.disconnectCount=10;
+            throw new IOException(erg.get());
+         }
          Log.logln(usageLine.toString(), LEVEL.BTRFS_ANSWER);
          return usageLine.toString();
       } finally {

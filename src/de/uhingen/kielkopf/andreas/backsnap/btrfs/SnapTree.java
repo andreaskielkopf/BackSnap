@@ -7,13 +7,14 @@ import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
-import de.uhingen.kielkopf.andreas.backsnap.Commandline;
-import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
+import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
+import de.uhingen.kielkopf.andreas.beans.shell.CmdStreams;
 
 /**
  * For one Subvolume that is mounted,
@@ -41,9 +42,8 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
       String subvolumeListCmd=mount.pc().getCmd(subvolumeListCommand, true);
       Log.logln(subvolumeListCmd, LEVEL.BTRFS);
       BTRFS.readLock().lock();
-      try (CmdStream snapshotStream=Commandline.executeCached(subvolumeListCmd, mount.keyD())) {
-         snapshotStream.backgroundErr();
-         snapshotStream.erg().forEachOrdered(line -> {
+      try (CmdStreams snapshotStream=CmdStreams.getCachedStream(subvolumeListCmd, mount.keyD())) {
+         snapshotStream.outBGerr().forEachOrdered(line -> {
             try {
                if (line.contains("timeshift"))
                   Log.logln(line, LEVEL.BTRFS_ANSWER);
@@ -57,11 +57,12 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
                e.printStackTrace();
             }
          });
-         snapshotStream.waitFor();
-         for (String line:snapshotStream.errList())
-            if (line.contains("No route to host") || line.contains("Connection closed")
-                     || line.contains("connection unexpectedly closed"))
-               throw new IOException(line);
+         Optional<String> erg=snapshotStream.err().filter(line -> (line.contains("No route to host")
+                  || line.contains("Connection closed") || line.contains("connection unexpectedly closed"))).findAny();
+         if (erg.isPresent()) {
+            Backsnap.disconnectCount=10;
+            throw new IOException(erg.get());
+         }
       } finally {
          BTRFS.readLock().unlock();
       }

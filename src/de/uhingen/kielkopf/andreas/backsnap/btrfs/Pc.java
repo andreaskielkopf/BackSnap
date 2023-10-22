@@ -8,6 +8,7 @@ import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
@@ -28,7 +29,8 @@ public record Pc(String extern, // Marker für diesen PC
          Link<SubVolumeList> subVolumeList, // Liste der Subvolumes
          Link<Version> btrfsVersion, // BTRFS-Version
          Link<Version> kernelVersion, // Kernel-Version
-         Link<Path> backupLabel) {// BackupLabel am BackupPC
+         Link<Path> backupLabel, //
+         AtomicBoolean notReachable) {// BackupLabel am BackupPC
    static final ConcurrentSkipListMap<String, Pc> pcCache=new ConcurrentSkipListMap<String, Pc>();
    /* In /tmp werden die Snapshots vorübergehend eingehängt */
    static public final Path TMP_BTRFS_ROOT=Path.of("/tmp/BtrfsRoot");
@@ -66,7 +68,10 @@ public record Pc(String extern, // Marker für diesen PC
    }
    private Pc(String extern)/* throws IOException */ {
       this(extern, new ConcurrentSkipListMap<>(), new Link<SubVolumeList>("subVolumeList"), new Link<Version>("Btrfs"),
-               new Link<Version>("Kernel"), new Link<Path>("backupLabel"));
+               new Link<Version>("Kernel"), new Link<Path>("backupLabel"), new AtomicBoolean(false));
+   }
+   public boolean isReachable() {
+      return !notReachable.get();
    }
    public boolean isExtern() {
       return extern.contains("@");
@@ -136,10 +141,10 @@ public record Pc(String extern, // Marker für diesen PC
             mountStream.outBGerr().forEachOrdered(line -> mountList2.put(line, mountCache.containsKey(line)//
                      ? mountCache.get(line) // reuse existing
                      : new Mount(this, line))); // create new
-            Optional<String> ex=mountStream.err().filter(l -> (l.contains("No route to host")
+            Optional<String> x=mountStream.err().filter(l -> (l.contains("No route to host")
                      || l.contains("Connection closed") || l.contains("connection unexpectedly closed"))).findAny();
-            if (ex.isPresent())
-               throw new IOException(ex.get());
+            if (x.isPresent())
+               throw new IOException(x.get());
             mountCache.clear();
             mountCache.putAll(mountList2);// Log.logln("", LEVEL.BTRFS);
          } finally {
@@ -156,15 +161,15 @@ public record Pc(String extern, // Marker für diesen PC
     */
    public final Version getBtrfsVersion() throws IOException {
       if (btrfsVersion.get() == null) {
-         String versionCmd=getCmd(new StringBuilder(Btrfs.VERSION), false);
-         Log.logln(versionCmd, LEVEL.COMMANDS);
+         String btrfsVersionCmd=getCmd(new StringBuilder(Btrfs.VERSION), false);
+         Log.logln(btrfsVersionCmd, LEVEL.COMMANDS);
          BTRFS.readLock().lock();
-         try (CmdStreams versionStream=CmdStreams.getDirectStream(versionCmd)) {
-            versionStream.outBGerr().forEach(line -> btrfsVersion.set(new Version("btrfs", line)));
-            Optional<String> ex=versionStream.err().filter(l -> (l.contains("No route to host")
+         try (CmdStreams btrfsVersionStream=CmdStreams.getDirectStream(btrfsVersionCmd)) {
+            btrfsVersionStream.outBGerr().forEach(line -> btrfsVersion.set(new Version("btrfs", line)));
+            Optional<String> x=btrfsVersionStream.err().filter(l -> (l.contains("No route to host")
                      || l.contains("Connection closed") || l.contains("connection unexpectedly closed"))).findAny();
-            if (ex.isPresent())
-               throw new IOException(ex.get());
+            if (x.isPresent())
+               throw new IOException(x.get());
          } finally {
             BTRFS.readLock().unlock();
          }
@@ -184,10 +189,10 @@ public record Pc(String extern, // Marker für diesen PC
          Log.logln(versionCmd, LEVEL.COMMANDS);
          try (CmdStreams versionStream=CmdStreams.getDirectStream(versionCmd)) {
             versionStream.outBGerr().forEach(line -> kernelVersion.set(new Version("kernel", line)));
-            Optional<String> ex=versionStream.err().filter(l -> (l.contains("No route to host")
+            Optional<String> x=versionStream.err().filter(l -> (l.contains("No route to host")
                      || l.contains("Connection closed") || l.contains("connection unexpectedly closed"))).findAny();
-            if (ex.isPresent())
-               throw new IOException(ex.get());
+            if (x.isPresent())
+               throw new IOException(x.get());
          }
          Log.logln(this + " " + kernelVersion.get(), LEVEL.CONFIG);
       }
@@ -240,9 +245,11 @@ public record Pc(String extern, // Marker für diesen PC
          return; // mount hat schon den gewünschten Status
       Optional<Mount> mount=ml.stream().filter(m -> m.mountPath() != null)
                .filter(m -> m.mountPath().toString().equals(srcDir1.toString())).findAny();
-      if (mount.isEmpty())
+      if (mount.isEmpty()) {
+         notReachable.set(true);
          throw new UnknownHostException(
                   Backsnap.LF + "Not able to find the right device for: " + this + ":" + srcDir1.toString());
+      }
       mount(TMP_BTRFS_ROOT, mount.get().devicePath(), doMount, "");
       getMountList(true);// liest erneut ein !
    }

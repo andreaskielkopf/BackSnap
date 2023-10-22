@@ -14,8 +14,6 @@ import java.util.regex.Pattern;
 
 import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
-
-import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
@@ -25,6 +23,7 @@ import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotLabel.STATUS;
 import de.uhingen.kielkopf.andreas.beans.Version;
 import de.uhingen.kielkopf.andreas.beans.cli.Flag;
 import de.uhingen.kielkopf.andreas.beans.minijson.Etc;
+import de.uhingen.kielkopf.andreas.beans.shell.CmdStreams;
 
 /**
  * License: 'GNU General Public License v3.0'
@@ -61,7 +60,7 @@ public class Backsnap {
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
    static final Flag                   PEXEC          =new Flag('p', "pexec");                  // use pexec instead of sudo
    static public final String          SNAPSHOT       ="snapshot";
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.6.29 (2023/10/20)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.6.34 (2023/10/22)";
    static public final String          LF             =System.lineSeparator();
    static public void main(String[] args) {
       Flag.setArgs(args, "");
@@ -100,6 +99,8 @@ public class Backsnap {
       OneBackup lastBackup=null;
       for (OneBackup ob:OneBackup.backupList) {
          actualBackup=ob;
+         if (!actualBackup.srcPc().isReachable())
+            continue;
          BTRFS.writeLock().lock();
          try {
             if (actualBackup.flags() instanceof String s) {
@@ -110,9 +111,11 @@ public class Backsnap {
             if (lastBackup != null)
                if (actualBackup.srcPc() != lastBackup.srcPc())
                   try {
-                     lastBackup.srcPc().mountBtrfsRoot(lastBackup.srcPath(), false);
+                     lastBackup.srcPc().mountBtrfsRoot(lastBackup.srcPath(), false);// umount
                   } catch (IOException e) {/*  */ } // umount
             actualBackup.mountBtrfsRoot();
+            if (!actualBackup.srcPc().isReachable())
+               continue;
             lastBackup=actualBackup;
             // Start collecting information
             SnapConfig srcConfig=SnapConfig.getConfig(actualBackup);
@@ -273,16 +276,12 @@ public class Backsnap {
             rsyncSB.insert(0, oneBackup.extern()); // nur sudo, kein quoting !
       String rsyncCmd=rsyncSB.toString();
       Log.logln(rsyncCmd, LEVEL.RSYNC);// if (!DRYRUN.get())
-      try (CmdStream rsyncStream=Commandline.executeCached(rsyncCmd, null)) { // not cached
-         rsyncStream.backgroundErr();
-         rsyncStream.erg().forEach(t -> Log.logln(t, LEVEL.RSYNC));
-         rsyncStream.waitFor();
-         for (String line:rsyncStream.errList())
-            if (line.contains("No route to host") || line.contains("Connection closed")
-                     || line.contains("connection unexpectedly closed")) {
-               Backsnap.disconnectCount=10;
-               break;
-            } // ende("");// R
+      try (CmdStreams rsyncStream=CmdStreams.getDirectStream(rsyncCmd)) {
+         rsyncStream.outBGerr().forEach(t -> Log.logln(t, LEVEL.RSYNC));
+         if (rsyncStream.err().anyMatch(line -> (line.contains("No route to host") || line.contains("Connection closed")
+                  || line.contains("connection unexpectedly closed")))) {
+            Backsnap.disconnectCount=10;
+         }
       }
    }
    /**
@@ -300,13 +299,13 @@ public class Backsnap {
          if (!OneBackup.isBackupExtern())
             if (bdir.toFile().mkdirs())
                return; // erst mit sudo, dann noch mal mit localhost probieren
-         try (CmdStream mkdirStream=Commandline.executeCached(mkdirCmd, null)) {
-            mkdirStream.backgroundErr();
-            mkdirStream.waitFor();
-            if (mkdirStream.erg().peek(t -> Log.logln(t, LEVEL.RSYNC)).anyMatch(Pattern.compile("mkdir").asPredicate()))
+         try (CmdStreams mkdirStream=CmdStreams.getDirectStream(mkdirCmd)) {
+            if (mkdirStream.outBGerr().peek(t -> Log.logln(t, LEVEL.RSYNC))
+                     .anyMatch(Pattern.compile("mkdir").asPredicate()))
                return;
-            if (mkdirStream.errList().isEmpty())
-               return;
+//            if (mkdirStream.errBuffer().queue(). isEmpty())
+//               return;
+            mkdirStream.err().forEach(System.err::println);
          }
       }
       throw new FileNotFoundException("Could not create dir: " + bdir);

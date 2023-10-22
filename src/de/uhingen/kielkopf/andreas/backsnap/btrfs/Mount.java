@@ -9,15 +9,14 @@ import static de.uhingen.kielkopf.andreas.beans.RecordParser.getString;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import de.uhingen.kielkopf.andreas.backsnap.Commandline;
-import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
+import de.uhingen.kielkopf.andreas.beans.shell.CmdStreams;
 
 /**
  * @author Andreas Kielkopf results of mount | grep -E 'btrfs' as records
@@ -40,9 +39,9 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
     * @throws IOException
     */
    protected Mount(Pc pc, String line) {
-      this(pc,  getPath(DEVICE.matcher(line)), getPath(MOUNTPOINT.matcher(line)),
-               getPath(SUBVOLUME.matcher(line)), getString(OPTIONS.matcher(line)), new ConcurrentSkipListMap<>(),
-               new ConcurrentSkipListMap<>(), new ConcurrentSkipListSet<>());
+      this(pc, getPath(DEVICE.matcher(line)), getPath(MOUNTPOINT.matcher(line)), getPath(SUBVOLUME.matcher(line)),
+               getString(OPTIONS.matcher(line)), new ConcurrentSkipListMap<>(), new ConcurrentSkipListMap<>(),
+               new ConcurrentSkipListSet<>());
       // populate(); erstmal unvollständig erzeugen
    }
    /**
@@ -85,9 +84,8 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
       String subvolumeSchowCmd=pc.getCmd(subvolumeShowSB, true);
       Log.logln(subvolumeSchowCmd, LEVEL.BTRFS);
       BTRFS.readLock().lock();
-      try (CmdStream snapshotStream=Commandline.executeCached(subvolumeSchowCmd, keyM())) {
-         snapshotStream.backgroundErr();
-         snapshotStream.erg().forEach(line -> {
+      try (CmdStreams snapshotStream=CmdStreams.getCachedStream(subvolumeSchowCmd, keyM())) {
+         snapshotStream.outBGerr().forEach(line -> {
             Log.logln(line, LEVEL.BTRFS_ANSWER);
             Matcher mn=NAME.matcher(line);
             if (mn.find())
@@ -113,11 +111,10 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
          });
          if (name.isEmpty())
             name.add("/");
-         snapshotStream.waitFor();
-         for (String line:snapshotStream.errList())
-            if (line.contains("No route to host") || line.contains("Connection closed")
-                     || line.contains("connection unexpectedly closed"))
-               throw new IOException(line);
+         Optional<String> x=snapshotStream.err().filter(line -> (line.contains("No route to host")
+                  || line.contains("Connection closed") || line.contains("connection unexpectedly closed"))).findAny();
+         if (x.isPresent())
+            throw new IOException(x.get());
       } finally {
          BTRFS.readLock().unlock();
       }
@@ -129,9 +126,8 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
       String subvolumeShowCmd=pc.getCmd(subvolumeShowSB, true);
       Log.logln(subvolumeShowCmd, LEVEL.BTRFS);
       BTRFS.readLock().lock();
-      try (CmdStream snapshotStream=Commandline.executeCached(subvolumeShowCmd, keyM())) {
-         snapshotStream.backgroundErr();
-         snapshotStream.erg().forEach(line -> {
+      try (CmdStreams snapshotStream=CmdStreams.getCachedStream(subvolumeShowCmd, keyM())) {
+         snapshotStream.outBGerr().forEach(line -> {
             Log.logln(line, LEVEL.BTRFS_ANSWER);
             Matcher mn=NAME.matcher(line);
             if (mn.find())
@@ -157,11 +153,10 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
          });
          if (name.isEmpty())
             name.add("/");
-         snapshotStream.waitFor();
-         for (String line:snapshotStream.errList())
-            if (line.contains("No route to host") || line.contains("Connection closed")
-                     || line.contains("connection unexpectedly closed"))
-               throw new IOException(line);
+         Optional<String> x=snapshotStream.err().filter(line -> (line.contains("No route to host")
+                  || line.contains("Connection closed") || line.contains("connection unexpectedly closed"))).findAny();
+         if (x.isPresent())
+            throw new IOException(x.get());
       } finally {
          BTRFS.readLock().unlock();
       }

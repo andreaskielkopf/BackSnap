@@ -53,10 +53,10 @@ public class BacksnapGui implements MouseListener {
    private JPanel                                      panelEnde;
    private JProgressBar                                progressBar;
    private TxtFeld                                     textPv;
-   static public final String                          BLUE        ="<font size=+1 color=\"3333ff\">";
-   static public final String                          NORMAL      ="</font>";
-   static public final String                          IGEL1       ="<=>";
-   static public final String                          IGEL2       =BLUE + "=O=" + NORMAL;
+//   static public final String                          BLUE        ="<font size=+1 color=\"3333ff\">";
+//   static public final String                          NORMAL      ="</font>";
+//   static public final String                          IGEL1       ="<=>";
+//   static public final String                          IGEL2       =BLUE + "=O=" + NORMAL;
    private MaintenancePanel                            panelMaintenance;
    private JSplitPane                                  splitPaneMaintenance;
    private JPanel                                      panelParameter;
@@ -410,16 +410,18 @@ public class BacksnapGui implements MouseListener {
       SwingUtilities.invokeLater(() -> {
          final PvInfo pv=new PvInfo(s0);
          if (!pv.progress().isEmpty()) {
+            System.err.print(" pv");
             getTxtSize().setText(pv.size());
             getTxtTime().setText(pv.time());
             getTxtSpeed().setText(pv.speed());
             getTxtWork().setText(pv.progress());
             getPanelWork().revalidate();
-            getTxtWork().repaint(50);
-            getPanelWork().repaint(50);
+            getTxtWork().repaint(5);
+            getPanelWork().repaint(5);
             return;
          }
-         if (s0.contains("<")) {
+         System.err.println(" pv2:"+s0);
+         if (s0.contains("<")) {            
             String[] s1=s0.trim().split("\\] \\[");
             if (s1.length == 2) {
                String[] s3=s1[0].replace(" B", "_B").replace("[ ", "[_").split(" ");

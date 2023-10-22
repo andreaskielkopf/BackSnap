@@ -161,7 +161,7 @@ public class Btrfs {
          else
             btrfsSendSB.insert(0, oneBackup.extern());
       if (usePv())
-         btrfsSendSB.append("|pv -f");
+         btrfsSendSB.append("|pv -pteabfW -i 0.2");
       btrfsSendSB.append("|");
       if (!oneBackup.isSameSsh())
          if (OneBackup.isBackupExtern())
@@ -217,7 +217,7 @@ public class Btrfs {
          e.printStackTrace();
       }
    }
-   private static void extractPv(BacksnapGui bsGui, String line) {
+   private static void extractPv(final BacksnapGui bsGui, String line) {
       try {
          lnlog(line, LEVEL.PROGRESS);
          if (line.contains("ERROR: cannot find parent subvolume"))

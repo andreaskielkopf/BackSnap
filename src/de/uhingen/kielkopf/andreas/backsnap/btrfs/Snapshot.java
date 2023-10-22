@@ -20,12 +20,13 @@ import org.eclipse.jdt.annotation.Nullable;
 
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.Commandline;
-import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
+
 import de.uhingen.kielkopf.andreas.backsnap.config.Log;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
 import de.uhingen.kielkopf.andreas.beans.cli.Flag;
 import de.uhingen.kielkopf.andreas.beans.data.Link;
+import de.uhingen.kielkopf.andreas.beans.shell.CmdStreams;
 
 /**
  * @author Andreas Kielkopf
@@ -162,32 +163,23 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
     * @throws IOException
     */
    private boolean isReadonly() throws IOException {
-      if (readonlyL().get() == null)
-         try {
-            BTRFS.readLock().lock();
-            String getReadonlyCmd=mount().pc()
-                     .getCmd(new StringBuilder(Btrfs.PROPERTY_GET).append(getSnapshotMountPath()).append(" ro"), false);
-            Log.logln(getReadonlyCmd, LEVEL.BTRFS);
-            try (CmdStream getReadonlyStream=Commandline.executeCached(getReadonlyCmd, null)) { // not cached
-               getReadonlyStream.backgroundErr();
-               Optional<String> erg=getReadonlyStream.erg().peek(t -> Log.logln(t, LEVEL.BTRFS))
-                        .filter(t -> t.startsWith("ro=")).findAny();
-               getReadonlyStream.waitFor();
-               for (String line:getReadonlyStream.errList())
-                  if (line.contains("No route to host") || line.contains("Connection closed")
-                           || line.contains("connection unexpectedly closed")) {
-                     Backsnap.disconnectCount=10;
-                     break;
-                  }
-               if (erg.isPresent()) {
-                  String u=erg.get().split("=")[1];
-                  boolean b=Boolean.parseBoolean(u);
-                  return readonlyL().set(b);
-               }
-            }
+      if (readonlyL().get() == null) {
+         String getReadonlyCmd=mount().pc()
+                  .getCmd(new StringBuilder(Btrfs.PROPERTY_GET).append(getSnapshotMountPath()).append(" ro"), false);
+         Log.logln(getReadonlyCmd, LEVEL.BTRFS);
+         BTRFS.readLock().lock();
+         try (CmdStreams getReadonlyStream=CmdStreams.getDirectStream(getReadonlyCmd)) {
+            Optional<String> readonly=getReadonlyStream.outBGerr().peek(t -> Log.logln(t, LEVEL.BTRFS))
+                     .filter(t -> t.startsWith("ro=")).findAny();
+            if (getReadonlyStream.err().anyMatch(line -> line.contains("No route to host")
+                     || line.contains("Connection closed") || line.contains("connection unexpectedly closed")))
+               Backsnap.disconnectCount=10;
+            if (readonly.isPresent())
+               return readonlyL().set(Boolean.parseBoolean(readonly.get().split("=")[1]));
          } finally {
             BTRFS.readLock().unlock();
-         }
+         } // return false;
+      }
       return readonlyL().get();
    }
    public boolean isBackup() {
@@ -299,16 +291,11 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       String readonlyCmd=snapshot.mount().pc().getCmd(readonlySB, true);
       Log.logln(readonlyCmd, LEVEL.BTRFS);
       BTRFS.writeLock().lock();
-      try (CmdStream readonlyStream=Commandline.executeCached(readonlyCmd, null)) { // not cached
-         readonlyStream.backgroundErr();
-         readonlyStream.erg().forEach(t -> Log.logln(t, LEVEL.BTRFS));
-         readonlyStream.waitFor();
-         for (String line:readonlyStream.errList())
-            if (line.contains("No route to host") || line.contains("Connection closed")
-                     || line.contains("connection unexpectedly closed")) {
-               Backsnap.disconnectCount=10;
-               break;
-            }
+      try (CmdStreams readonlyStream=CmdStreams.getDirectStream(readonlyCmd)) {
+         readonlyStream.outBGerr().forEach(t -> Log.logln(t, LEVEL.BTRFS));
+         if (readonlyStream.err().anyMatch(line -> line.contains("No route to host")
+                  || line.contains("Connection closed") || line.contains("connection unexpectedly closed")))
+            Backsnap.disconnectCount=10;
       } finally {
          BTRFS.writeLock().unlock();
       }
@@ -333,16 +320,11 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
                   new StringBuilder(Btrfs.PROPERTY_SET).append(getSnapshotMountPath()).append(" ro ").append(readonly),
                   true);
          Log.logln(setReadonlyCmd, LEVEL.BTRFS);// if (!DRYRUN.get())
-         try (CmdStream setReadonlyStream=Commandline.executeCached(setReadonlyCmd, null)) { // not cached
-            setReadonlyStream.backgroundErr();
-            setReadonlyStream.erg().forEach(t -> Log.logln(t, LEVEL.BTRFS));
-            setReadonlyStream.waitFor();
-            for (String line:setReadonlyStream.errList())
-               if (line.contains("No route to host") || line.contains("Connection closed")
-                        || line.contains("connection unexpectedly closed")) {
-                  Backsnap.disconnectCount=10;
-                  break;
-               } // ende("");// R
+         try (CmdStreams setReadonlyStream=CmdStreams.getDirectStream(setReadonlyCmd)) {
+            setReadonlyStream.outBGerr().forEach(t -> Log.logln(t, LEVEL.BTRFS));
+            if (setReadonlyStream.err().anyMatch(line -> line.contains("No route to host")
+                     || line.contains("Connection closed") || line.contains("connection unexpectedly closed")))
+               Backsnap.disconnectCount=10;
          }
       } finally {
          BTRFS.writeLock().unlock();
@@ -408,16 +390,14 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
             else
                subvolumeListCmd.insert(0, "ssh " + x + " '").append("'");
          System.out.println(subvolumeListCmd);
-         try (CmdStream std=Commandline.executeCached(subvolumeListCmd, null)) {
-            std.backgroundErr();
-            std.erg().forEach(line -> {
+         try (CmdStreams std=CmdStreams.getDirectStream(subvolumeListCmd.toString())) {
+            std.errBGout().forEach(line -> {
                try {
-                  System.out.println(line); // snapshots.add(new Snapshot(" " + line));
+                  System.out.println(line);
                } catch (Exception e) {
                   System.err.println(e);
                }
             });
-            std.waitFor();
          } catch (IOException e) {
             throw e;
          } catch (Exception e) {

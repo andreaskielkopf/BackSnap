@@ -13,11 +13,9 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import de.uhingen.kielkopf.andreas.backsnap.Commandline;
-import de.uhingen.kielkopf.andreas.backsnap.Commandline.CmdStream;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
+import de.uhingen.kielkopf.andreas.beans.shell.CmdStreams;
 
 /**
  * @author Andreas Kielkopf
@@ -73,12 +71,9 @@ public record Volume(Pc pc, ArrayList<String> lines, ConcurrentSkipListMap<Strin
    public boolean isUSB() {
       String isUSBCmd=pc.getCmd(new StringBuilder(UDEVADM).append(devices().sequencedValues().getFirst()), false);
       Log.logln(isUSBCmd, LEVEL.BTRFS);
-      boolean treffer=false; // if (refresh) Commandline.removeFromCache(isUSBCmd);
-      try (CmdStream isUSBCmdStream=Commandline.executeCached(isUSBCmd)) {
-         isUSBCmdStream.backgroundErr();
-         treffer=isUSBCmdStream.erg()
-                  /* .peek(l -> System.out.println(l)) */.anyMatch(line -> line.contains("ID_BUS=usb"));
-         isUSBCmdStream.waitFor();
+      boolean treffer=false;
+      try (CmdStreams isUSBStream=CmdStreams.getCachedStream(isUSBCmd)) {
+         treffer=isUSBStream.outBGerr().anyMatch(line -> line.contains("ID_BUS=usb"));
       } catch (IOException e1) {
          e1.printStackTrace();
       }
