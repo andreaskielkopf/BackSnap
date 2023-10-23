@@ -4,18 +4,19 @@
 package de.uhingen.kielkopf.andreas.backsnap.config;
 
 import java.util.*;
-//import java.util.concurrent.locks.ReentrantLock;
+// import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author Andreas Kielkopf
  *
  */
 public class Log {
-   static public int              logPos   =0;
+   static private int             logPos   =0;
+   static private int             errPos   =0;
    static public final int        logMAXLEN=120;
    static public String           lastline ="1234567890";
    static public ArrayList<LEVEL> logLevels=new ArrayList<>(List.of(LEVEL.PROGRESS));
-//   static private ReentrantLock   OUT      =new ReentrantLock(true);
+   // static private ReentrantLock OUT =new ReentrantLock(true);
    static public enum LEVEL {
       NOTHING(0), // extra quiet
       ERRORS(1), // quiet
@@ -62,8 +63,7 @@ public class Log {
    static public void Owlog(String text, LEVEL... levels) {
       boolean l=tryLock();
       if (needsPrinting(levels) && dedup(text) instanceof String s) {
-         System.out.print("\r");
-         System.out.print(s);
+         System.out.print("\r" + s);
          Log.logPos=s.length();
       }
       tryUnlock(l);
@@ -144,13 +144,27 @@ public class Log {
       }
    }
    private static void tryUnlock(boolean l) {
-//      if (l && OUT.isHeldByCurrentThread())
-//         OUT.unlock();
+      // if (l && OUT.isHeldByCurrentThread())
+      // OUT.unlock();
    }
    private static boolean tryLock() {
-//      try {
-//         return OUT.tryLock(5, TimeUnit.MILLISECONDS);
-//      } catch (InterruptedException ignore) {/* */}
+      // try {
+      // return OUT.tryLock(5, TimeUnit.MILLISECONDS);
+      // } catch (InterruptedException ignore) {/* */}
       return false;
+   }
+   /**
+    * @param string
+    * @param errors
+    */
+   public static void errln(String text, LEVEL levels) {
+      boolean l=tryLock();
+      if (needsPrinting(levels) && dedup(text) instanceof String s) {
+         if (Log.errPos + s.length() > Log.logMAXLEN)
+            System.err.print(System.lineSeparator());
+         System.err.print(s + System.lineSeparator());
+         Log.errPos=0;
+      }
+      tryUnlock(l);
    }
 }

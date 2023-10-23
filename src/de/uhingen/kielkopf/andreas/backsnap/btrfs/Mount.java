@@ -98,7 +98,7 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
                      Snapshot snapshot=snapTree.btrfsPathMap().get(btrfsPath1);
                      if ((snapshot != null) && (snapshot.mount() != null)) {
                         if (!snapshot.mount().mountPath.startsWith(this.mountPath))
-                           System.err.println("Mount passt nicht für: " + this + " -> " + snapshot);
+                           Log.errln("Mount passt nicht für: " + this + " -> " + snapshot, LEVEL.ERRORS);
                         btrfsMap.put(btrfsPath1, snapshot);
                         otimeKeyMap.put(snapshot.keyO(), snapshot);
                      } else {
@@ -140,7 +140,7 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
                      Snapshot snapshot=snapTree.btrfsPathMap().get(btrfsPath1);
                      if ((snapshot != null) && (snapshot.mount() != null)) {
                         if (!snapshot.mount().mountPath.startsWith(this.mountPath))
-                           System.err.println("Mount passt nicht für: " + this + " -> " + snapshot);
+                           Log.errln("Mount passt nicht für: " + this + " -> " + snapshot, LEVEL.ERRORS);
                         btrfsMap.put(btrfsPath1, snapshot);
                         otimeKeyMap.put(snapshot.keyO(), snapshot);
                      } else {

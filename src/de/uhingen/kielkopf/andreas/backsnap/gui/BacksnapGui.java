@@ -410,7 +410,7 @@ public class BacksnapGui implements MouseListener {
       SwingUtilities.invokeLater(() -> {
          final PvInfo pv=new PvInfo(s0);
          if (!pv.progress().isEmpty()) {
-            System.err.print(" pv");
+//            System.err.print(" pv");
             getTxtSize().setText(pv.size());
             getTxtTime().setText(pv.time());
             getTxtSpeed().setText(pv.speed());
@@ -420,7 +420,7 @@ public class BacksnapGui implements MouseListener {
             getPanelWork().repaint(5);
             return;
          }
-         System.err.println(" pv2:"+s0);
+//         System.err.println(" pv2:"+s0);
          if (s0.contains("<")) {            
             String[] s1=s0.trim().split("\\] \\[");
             if (s1.length == 2) {
@@ -434,9 +434,9 @@ public class BacksnapGui implements MouseListener {
                   getPanelWork().repaint(50);
                   return;
                }
-               System.out.println("s3=" + s3.length + ":" + s3);
+               Log.errln("s3=" + s3.length + ":" + s3,LEVEL.ERRORS);
             }
-            System.out.println("s1=" + s1.length + ":" + s1);
+            Log.errln("s1=" + s1.length + ":" + s1,LEVEL.ERRORS);
          }
          getTextPv().setText("");
          getTextPv().repaint(50);

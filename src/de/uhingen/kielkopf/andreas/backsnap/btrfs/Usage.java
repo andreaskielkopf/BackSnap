@@ -48,7 +48,7 @@ public record Usage(String size, String allocated, String unallcoated, String mi
    public Usage(Mount m, boolean b) throws IOException {
       this(getMString(m, b));
       if (needsBalance())
-         System.err.println("It seems urgently advisable to balance the backup volume");
+         Log.errln("It seems urgently advisable to balance the backup volume",LEVEL.ERRORS);
    }
    /**
     * @param m

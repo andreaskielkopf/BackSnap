@@ -43,6 +43,7 @@ public class Btrfs {
    public static final ReentrantReadWriteLock BTRFS           =new ReentrantReadWriteLock(true);
    private static Boolean                     pvUsable        =null;
    static int                                 lastLine        =0;
+   static boolean                             skip            =false;
    /**
     * löscht eines der Backups im Auftrag der GUI
     * 
@@ -66,11 +67,11 @@ public class Btrfs {
       BTRFS.writeLock().lock();
       try (CmdStreams removeStream=CmdStreams.getDirectStream(removeCmd)) {
          removeStream.outBGerr().forEach(line -> {
-            Log.log(line, LEVEL.DELETE);
+            Log.logln(line, LEVEL.DELETE);
             if (Backsnap.GUI.get())
                Backsnap.bsGui.lblPvSetText(line);
          });
-         removeStream.err().forEach(System.err::println);
+         removeStream.errPrintln();
       } finally {
          BTRFS.writeLock().unlock();
       }
@@ -96,7 +97,7 @@ public class Btrfs {
                   tmpList.clear();
                }
          });
-         volumeListStream.err().forEach(System.err::println);
+         volumeListStream.errPrintln();
       } catch (IOException e1) {
          e1.printStackTrace();
       } finally {
@@ -111,7 +112,7 @@ public class Btrfs {
          BTRFS.writeLock().lock();
          try (CmdStreams createStream=CmdStreams.getCachedStream(createCmd)) {
             createStream.outBGerr().forEach(line -> Log.log(line, LEVEL.BTRFS));
-            createStream.err().forEach(System.err::println);
+            createStream.errPrintln();
          } finally {
             BTRFS.writeLock().unlock();
          }
@@ -219,35 +220,37 @@ public class Btrfs {
    }
    private static void extractPv(final BacksnapGui bsGui, String line) {
       try {
-         lnlog(line, LEVEL.PROGRESS);
+         // lnlog(line, LEVEL.PROGRESS);
          if (line.contains("ERROR: cannot find parent subvolume"))
             Backsnap.cantFindParent=line;
          if (line.contains("No route to host") || line.contains("Connection closed")
                   || line.contains("connection unexpectedly closed"))
             Backsnap.disconnectCount=10;
-         if (line.contains("<=>")) { // from pv
-            log(line, LEVEL.PROGRESS);
+         if (line.contains("<=>")) { // from pv // log(line, LEVEL.PROGRESS);
             if (lastLine == 0)
-               lnlog("", LEVEL.PROGRESS);
-            else
-               Owlog("", LEVEL.PROGRESS);
+               logln("l: " + line, LEVEL.PROGRESS);
+            else {
+               if (line.contains(":00 ")) {
+                  if (skip) {
+                     skip=false;
+                     logln("m: " + line, LEVEL.PROGRESS);
+                     Backsnap.disconnectCount=0;
+                  } else {
+                     Owlog(">: " + line, LEVEL.PROGRESS);
+                  }
+               } else {
+                  skip=true;
+                  Owlog("o: " + line, LEVEL.PROGRESS);
+               }
+            }
             show(line, bsGui);
             lastLine++;
-            if (line.contains(":00 ")) {
-               logln("", LEVEL.PROGRESS);
-               Backsnap.disconnectCount=0;
-            }
-            if (line.contains("0,00 B/s")) {
-               lnlog("HipCup", LEVEL.PROGRESS);
-               logln("", LEVEL.PROGRESS);
-               Backsnap.disconnectCount++;
-            }
          } else {
             if (lastLine != 0) {
                lastLine=0;
-               logln("", LEVEL.PROGRESS);
+               logln(" ", LEVEL.PROGRESS);
             }
-            logln(line, LEVEL.PROGRESS);
+            logln("x: " + line, LEVEL.PROGRESS);
             show(line, bsGui);
          }
       } catch (Exception e) {

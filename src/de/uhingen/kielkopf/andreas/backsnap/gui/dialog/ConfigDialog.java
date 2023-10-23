@@ -15,6 +15,8 @@ import javax.swing.border.EmptyBorder;
 import org.eclipse.jdt.annotation.NonNull;
 
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 
 /**
  * @author Andreas Kielkopf Ein ConfigDialog um das Volume für Backups festzulegen
@@ -238,9 +240,9 @@ public class ConfigDialog extends JDialog {
       try {
          if (getBackupVolume(Pc.getPc(null)) instanceof Volume volume) {
             prepareBackupVolume(volume, false);
-            System.out.println(volume.uuid());
+            Log.logln(volume.uuid(),LEVEL.CONFIG);
          } else
-            System.out.println("null");
+            Log.logln("null",LEVEL.CONFIG);
       } catch (Exception e) {
          e.printStackTrace();
       }

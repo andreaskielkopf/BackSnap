@@ -23,7 +23,7 @@ public record SnapConfig(Mount volumeMount, Mount snapshotMount) {
             return snapConfig;
          }
          if (snapConfig.snapshotMount.mountPath().equals(oneBackup.srcPath())) {
-            System.err.println("Treffer: snapshotMount " + oneBackup.srcPath());
+            Log.errln("Treffer: snapshotMount " + oneBackup.srcPath(),LEVEL.ERRORS);
             return snapConfig;
          }
       }

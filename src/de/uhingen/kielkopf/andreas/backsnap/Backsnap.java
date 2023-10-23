@@ -60,7 +60,7 @@ public class Backsnap {
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
    static final Flag                   PEXEC          =new Flag('p', "pexec");                  // use pexec instead of sudo
    static public final String          SNAPSHOT       ="snapshot";
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.6.34 (2023/10/22)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.6.40 (2023/10/23)";
    static public final String          LF             =System.lineSeparator();
    static public void main(String[] args) {
       Flag.setArgs(args, "");
@@ -132,7 +132,7 @@ public class Backsnap {
             usage=new Usage(backupMount, false);
             backupTree=SnapTree.getSnapTree(backupMount);
             if (disconnectCount > 0) {
-               System.err.println("no SSH Connection");
+               Log.errln("no SSH Connection", LEVEL.ERRORS);
                ende("X");
                System.exit(0);
             }
@@ -153,13 +153,13 @@ public class Backsnap {
             for (Snapshot sourceSnapshot:srcConfig.volumeMount().otimeKeyMap().values()) {
                counter++;
                if (cantFindParent != null) {
-                  System.err.println("Please remove " + Pc.TMP_BACKSNAP + "/" + OneBackup.backupPc.getBackupLabel()
-                           + "/" + cantFindParent + "/" + SNAPSHOT + " !");
+                  Log.errln("Please remove " + Pc.TMP_BACKSNAP + "/" + OneBackup.backupPc.getBackupLabel() + "/"
+                           + cantFindParent + "/" + SNAPSHOT + " !", LEVEL.ERRORS);
                   ende("X");
                   System.exit(-9);
                } else
                   if (disconnectCount > 3) {
-                     System.err.println("SSH Connection lost !");
+                     Log.errln("SSH Connection lost !", LEVEL.ERRORS);
                      ende("X");
                      System.exit(-8);
                   }
@@ -182,7 +182,7 @@ public class Backsnap {
          } catch (IOException e) {
             if ((e.getMessage().startsWith("ssh: connect to host"))
                      || (e.getMessage().startsWith("Could not find snapshot:")))
-               System.err.println(e.getMessage());
+               Log.errln(e.getMessage(),LEVEL.ERRORS);
             else
                e.printStackTrace();
             if (OneBackup.backupList.size() <= 1) {
@@ -208,7 +208,7 @@ public class Backsnap {
       } catch (IOException ignore) {/* */ } // umount
       ende("X");
       System.exit(-2);
-   }
+   }// filaized
    static private Snapshot parentSnapshot=null;
    /**
     * Versuchen genau diesen einzelnen Snapshot zu sichern
@@ -303,9 +303,9 @@ public class Backsnap {
             if (mkdirStream.outBGerr().peek(t -> Log.logln(t, LEVEL.RSYNC))
                      .anyMatch(Pattern.compile("mkdir").asPredicate()))
                return;
-//            if (mkdirStream.errBuffer().queue(). isEmpty())
-//               return;
-            mkdirStream.err().forEach(System.err::println);
+            // if (mkdirStream.errBuffer().queue(). isEmpty())
+            // return;
+            mkdirStream.errPrintln();
          }
       }
       throw new FileNotFoundException("Could not create dir: " + bdir);
