@@ -60,7 +60,7 @@ public class Backsnap {
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
    static final Flag                   PEXEC          =new Flag('p', "pexec");                  // use pexec instead of sudo
    static public final String          SNAPSHOT       ="snapshot";
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.6.40 (2023/10/23)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.6.41 (2023/10/24)";
    static public final String          LF             =System.lineSeparator();
    static public void main(String[] args) {
       Flag.setArgs(args, "");
@@ -278,7 +278,7 @@ public class Backsnap {
       Log.logln(rsyncCmd, LEVEL.RSYNC);// if (!DRYRUN.get())
       try (CmdStreams rsyncStream=CmdStreams.getDirectStream(rsyncCmd)) {
          rsyncStream.outBGerr().forEach(t -> Log.logln(t, LEVEL.RSYNC));
-         if (rsyncStream.err().anyMatch(line -> (line.contains("No route to host") || line.contains("Connection closed")
+         if (rsyncStream.errLines().anyMatch(line -> (line.contains("No route to host") || line.contains("Connection closed")
                   || line.contains("connection unexpectedly closed")))) {
             Backsnap.disconnectCount=10;
          }

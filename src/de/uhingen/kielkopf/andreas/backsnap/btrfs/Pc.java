@@ -141,7 +141,7 @@ public record Pc(String extern, // Marker für diesen PC
             mountStream.outBGerr().forEachOrdered(line -> mountList2.put(line, mountCache.containsKey(line)//
                      ? mountCache.get(line) // reuse existing
                      : new Mount(this, line))); // create new
-            Optional<String> x=mountStream.err().filter(l -> (l.contains("No route to host")
+            Optional<String> x=mountStream.errLines().filter(l -> (l.contains("No route to host")
                      || l.contains("Connection closed") || l.contains("connection unexpectedly closed"))).findAny();
             if (x.isPresent())
                throw new IOException(x.get());
@@ -166,7 +166,7 @@ public record Pc(String extern, // Marker für diesen PC
          BTRFS.readLock().lock();
          try (CmdStreams btrfsVersionStream=CmdStreams.getDirectStream(btrfsVersionCmd)) {
             btrfsVersionStream.outBGerr().forEach(line -> btrfsVersion.set(new Version("btrfs", line)));
-            Optional<String> x=btrfsVersionStream.err().filter(l -> (l.contains("No route to host")
+            Optional<String> x=btrfsVersionStream.errLines().filter(l -> (l.contains("No route to host")
                      || l.contains("Connection closed") || l.contains("connection unexpectedly closed"))).findAny();
             if (x.isPresent())
                throw new IOException(x.get());
@@ -189,7 +189,7 @@ public record Pc(String extern, // Marker für diesen PC
          Log.logln(versionCmd, LEVEL.COMMANDS);
          try (CmdStreams versionStream=CmdStreams.getDirectStream(versionCmd)) {
             versionStream.outBGerr().forEach(line -> kernelVersion.set(new Version("kernel", line)));
-            Optional<String> x=versionStream.err().filter(l -> (l.contains("No route to host")
+            Optional<String> x=versionStream.errLines().filter(l -> (l.contains("No route to host")
                      || l.contains("Connection closed") || l.contains("connection unexpectedly closed"))).findAny();
             if (x.isPresent())
                throw new IOException(x.get());
@@ -313,7 +313,7 @@ public record Pc(String extern, // Marker für diesen PC
       BTRFS.writeLock().lock();
       try (CmdStreams mountStream=CmdStreams.getDirectStream(mountCmd)) {
          mountStream.outBGerr().forEach(t -> Log.logln(t, LEVEL.BTRFS_ANSWER));
-         if (mountStream.err().anyMatch(l -> (l.contains("No route to host") || l.contains("Connection closed")
+         if (mountStream.errLines().anyMatch(l -> (l.contains("No route to host") || l.contains("Connection closed")
                   || l.contains("connection unexpectedly closed"))))
             Backsnap.disconnectCount=10;
       } finally {

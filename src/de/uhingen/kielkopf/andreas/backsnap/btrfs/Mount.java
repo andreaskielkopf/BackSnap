@@ -111,7 +111,7 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
          });
          if (name.isEmpty())
             name.add("/");
-         Optional<String> x=snapshotStream.err().filter(line -> (line.contains("No route to host")
+         Optional<String> x=snapshotStream.errLines().filter(line -> (line.contains("No route to host")
                   || line.contains("Connection closed") || line.contains("connection unexpectedly closed"))).findAny();
          if (x.isPresent())
             throw new IOException(x.get());
@@ -153,7 +153,7 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
          });
          if (name.isEmpty())
             name.add("/");
-         Optional<String> x=snapshotStream.err().filter(line -> (line.contains("No route to host")
+         Optional<String> x=snapshotStream.errLines().filter(line -> (line.contains("No route to host")
                   || line.contains("Connection closed") || line.contains("connection unexpectedly closed"))).findAny();
          if (x.isPresent())
             throw new IOException(x.get());

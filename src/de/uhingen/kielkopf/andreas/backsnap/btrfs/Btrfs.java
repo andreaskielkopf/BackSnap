@@ -181,8 +181,8 @@ public class Btrfs {
             bsGui.getPanelMaintenance().updateButtons();
          BTRFS.writeLock().lock();
          try (CmdStreams btrfsSendStream=CmdStreams.getDirectStream(btrfsSendSB.toString())) {
-            Thread.ofVirtual().name(SEND).start(() -> btrfsSendStream.out().forEach(line -> extractOuput(line)));
-            btrfsSendStream.err().forEach(line -> extractPv(bsGui, line));
+            Thread.ofVirtual().name(SEND).start(() -> btrfsSendStream.outLines().forEach(line -> extractOuput(line)));
+            btrfsSendStream.errLines().forEach(line -> extractPv(bsGui, line));
          } finally {
             BTRFS.writeLock().unlock();
             lnlog("", LEVEL.PROGRESS);

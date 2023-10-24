@@ -65,7 +65,7 @@ public record Usage(String size, String allocated, String unallcoated, String mi
       try (CmdStreams usageStream=CmdStreams.getDirectStream(usageCmd)) {
          StringBuilder usageLine=new StringBuilder();
          usageStream.outBGerr().forEach(line -> usageLine.append(line).append('\n'));
-         Optional<String> erg=usageStream.err().filter(line -> (line.contains("No route to host")
+         Optional<String> erg=usageStream.errLines().filter(line -> (line.contains("No route to host")
                   || line.contains("Connection closed") || line.contains("connection unexpectedly closed"))).findAny();
          if (erg.isPresent()) {
             Backsnap.disconnectCount=10;

@@ -171,7 +171,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          try (CmdStreams getReadonlyStream=CmdStreams.getDirectStream(getReadonlyCmd)) {
             Optional<String> readonly=getReadonlyStream.outBGerr().peek(t -> Log.logln(t, LEVEL.BTRFS))
                      .filter(t -> t.startsWith("ro=")).findAny();
-            if (getReadonlyStream.err().anyMatch(line -> line.contains("No route to host")
+            if (getReadonlyStream.errLines().anyMatch(line -> line.contains("No route to host")
                      || line.contains("Connection closed") || line.contains("connection unexpectedly closed")))
                Backsnap.disconnectCount=10;
             if (readonly.isPresent())
@@ -293,7 +293,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       BTRFS.writeLock().lock();
       try (CmdStreams readonlyStream=CmdStreams.getDirectStream(readonlyCmd)) {
          readonlyStream.outBGerr().forEach(t -> Log.logln(t, LEVEL.BTRFS));
-         if (readonlyStream.err().anyMatch(line -> line.contains("No route to host")
+         if (readonlyStream.errLines().anyMatch(line -> line.contains("No route to host")
                   || line.contains("Connection closed") || line.contains("connection unexpectedly closed")))
             Backsnap.disconnectCount=10;
       } finally {
@@ -322,7 +322,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          Log.logln(setReadonlyCmd, LEVEL.BTRFS);// if (!DRYRUN.get())
          try (CmdStreams setReadonlyStream=CmdStreams.getDirectStream(setReadonlyCmd)) {
             setReadonlyStream.outBGerr().forEach(t -> Log.logln(t, LEVEL.BTRFS));
-            if (setReadonlyStream.err().anyMatch(line -> line.contains("No route to host")
+            if (setReadonlyStream.errLines().anyMatch(line -> line.contains("No route to host")
                      || line.contains("Connection closed") || line.contains("connection unexpectedly closed")))
                Backsnap.disconnectCount=10;
          }

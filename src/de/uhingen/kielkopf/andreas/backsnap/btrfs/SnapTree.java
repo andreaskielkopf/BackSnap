@@ -57,7 +57,7 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
                e.printStackTrace();
             }
          });
-         Optional<String> erg=snapshotStream.err().filter(line -> (line.contains("No route to host")
+         Optional<String> erg=snapshotStream.errLines().filter(line -> (line.contains("No route to host")
                   || line.contains("Connection closed") || line.contains("connection unexpectedly closed"))).findAny();
          if (erg.isPresent()) {
             Backsnap.disconnectCount=10;
