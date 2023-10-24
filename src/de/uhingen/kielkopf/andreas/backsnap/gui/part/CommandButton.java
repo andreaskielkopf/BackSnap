@@ -3,13 +3,9 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.gui.part;
 
-import javax.swing.JPanel;
 import java.awt.BorderLayout;
-import javax.swing.JLabel;
-import javax.swing.JTextArea;
-import javax.swing.JScrollPane;
-import javax.swing.JButton;
-import javax.swing.ScrollPaneConstants;
+
+import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
 /**
@@ -17,7 +13,7 @@ import javax.swing.border.TitledBorder;
  *
  */
 public class CommandButton extends JPanel {
-   private static final long serialVersionUID=-917266146931312618L;
+   static private final long serialVersionUID=-917266146931312618L;
    private JPanel            panel;
    private JLabel            lblOk;
    private JTextArea         textArea;

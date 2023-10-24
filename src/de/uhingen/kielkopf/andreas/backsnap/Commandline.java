@@ -1,32 +1,36 @@
 package de.uhingen.kielkopf.andreas.backsnap;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.stream.Stream;
+
+import de.uhingen.kielkopf.andreas.backsnap.config.Log;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
+import de.uhingen.kielkopf.andreas.beans.Version;
 
 /**
  * @author Andreas Kielkopf
  */
 public class Commandline {
-   final static ProcessBuilder                                  processBuilder=new ProcessBuilder();
-   public final static String                                   UTF_8         ="UTF-8";
-   public final static ConcurrentSkipListMap<String, CmdStream> cache         =new ConcurrentSkipListMap<>();
+   static public final ProcessBuilder                           processBuilder=new ProcessBuilder();
+   static public final String                                   UTF_8         ="UTF-8";
+   static public final ConcurrentSkipListMap<String, CmdStream> cache         =new ConcurrentSkipListMap<>();
    /** ExecutorService um den Errorstream im Hintergrund zu lesen */
-   final public static ExecutorService                          background    =Executors.newCachedThreadPool();
+   static private final ExecutorService                         virtual       =Version.getVx();
    /**
     * @param cmd
     * @return
     * @throws IOException
     */
-   
-   public static CmdStream executeCached(StringBuilder cmd, String key) throws IOException {
+   static public CmdStream executeCached(StringBuilder cmd, String key) throws IOException {
       return executeCached(cmd.toString(), key);
    }
-   public static CmdStream executeCached(StringBuilder cmd1) throws IOException {
-      String cmd=cmd1.toString();
-      return executeCached(cmd, cmd);
+   static public CmdStream executeCached(StringBuilder cmd1) throws IOException {
+      return executeCached(cmd1.toString());
+   }
+   static public CmdStream executeCached(String cmd1) throws IOException {
+      return executeCached(cmd1, cmd1);
    }
    
    /**
@@ -34,33 +38,39 @@ public class Commandline {
     * 
     * @param cmd
     * @param key
-    *           Unter diesem Schlüssel wird die Antwort im Cache abgelegt. Mit diesem Schlüssel kann sie auch wieder
-    *           gelöscht werden. ist der key null, wird nicht gecached.
+    *           Unter diesem Schlüssel wird die Antwort im Cache abgelegt. Mit diesem Schlüssel kann sie auch wieder gelöscht werden. ist der key
+    *           null, wird nicht gecached.
     * @return 2 x Stream<String>
     * @throws IOException
     */
    @SuppressWarnings("resource")
-   public static CmdStream executeCached(String cmd, String key) throws IOException {
+   static public CmdStream executeCached(String cmd, String key) throws IOException {
+      // System.out.println(processBuilder.environment().get("SSH_ASKPASS_REQUIRE"));
       if ((key != null) && cache.containsKey(key)) // aus dem cache antworten, wenn es im cache ist
          return cache.get(key); // ansonsten den Befehl neu ausführen und im cache ablegen
+      Log.logln(cmd, LEVEL.COMMANDS);
       Process process=processBuilder.command(List.of("/bin/bash", "-c", cmd)).start();
       return new CmdStream(process, new BufferedReader(new InputStreamReader(process.getInputStream(), UTF_8)),
-               new BufferedReader(new InputStreamReader(process.getErrorStream(), UTF_8)), new ArrayList<>(),
-               new ArrayList<>(), key);
+               new BufferedReader(new InputStreamReader(process.getErrorStream(), UTF_8)),
+               new ConcurrentLinkedQueue<String>(), new ConcurrentLinkedQueue<String>(), key);
    }
+   // static public CmdStream execute(String cmd) throws IOException {
+   // Process process=processBuilder.command(List.of("/bin/bash", "-c", cmd)).start();
+   // return new CmdStream(process, new BufferedReader(new InputStreamReader(process.getInputStream(), UTF_8)),
+   // new BufferedReader(new InputStreamReader(process.getErrorStream(), UTF_8)), new ArrayList<>(),
+   // new ArrayList<>(), key);
+   // }
    /**
     * Zusammenfassung von beiden Streams (Ergebnis und Error) zu einem Objekt
     * 
     * @author Andreas Kielkopf
     */
-   public record CmdStream(Process process, BufferedReader brErg, BufferedReader brErr, List<String> errList,
-            List<String> ergList, String key) implements Closeable {
+   public record CmdStream(Process process, BufferedReader brErg, BufferedReader brErr,
+            ConcurrentLinkedQueue<String> errList, ConcurrentLinkedQueue<String> ergList, String key)
+            implements Closeable {
       public void backgroundErr() { // Fehler im Hintergrund ausgeben und ablegen // System.out.print("0");
-         if ((key != null) && cache.containsKey(key))
-            return; // ist schon im cache
-         background.submit(new Runnable() {
-            @Override
-            public void run() {
+         if ((key == null) || !cache.containsKey(key)) {// ist nicht schon im cache
+            virtual.submit(() -> {
                try { // System.out.print("1");
                   try (BufferedReader q=brErr()) {
                      errList.addAll(q.lines()/* .peek(System.err::println) */.toList());
@@ -68,18 +78,18 @@ public class Commandline {
                } catch (IOException e) {
                   e.printStackTrace();
                }
-            }
          }); // System.out.print("4");
+         } // return this;
       }
       /**
-       * Schließt diesen Stream automatisch wenn alles gelesen wurde. Wenn ein cache-key vergeben wurde, wird der Inhalt
-       * des Streams gecaches
+       * Schließt diesen Stream automatisch wenn alles gelesen wurde. Wenn ein cache-key vergeben wurde, wird der Inhalt des Streams gecaches
        * 
        * @throws IOException
        */
       @SuppressWarnings("resource")
       @Override
-      public void close() throws IOException { // waitFor();
+      public void close() throws IOException {
+         waitFor();
          brErr.close(); // errlist ist komplett jetzt
          brErg.close(); // erg wurde gelesen
          process.destroy();
@@ -100,7 +110,7 @@ public class Commandline {
          if (key == null) // den cache ignorieren
             return brErr.lines();
          if (errList.isEmpty())
-            return brErr.lines().peek(ergList::add); // legt alle Zeilen im cache-Array ab
+            return brErr.lines().peek(errList::add); // legt alle Zeilen im cache-Array ab
          return errList.stream(); // eigene Konserve
       }
       /**
@@ -122,24 +132,27 @@ public class Commandline {
          return ergList.stream(); // Konserve
       }
       /**
+       * warte auf den Abschluß des Befehls
        * 
+       * @return
        */
-      public void waitFor() {
+      public int waitFor() {
          try {
-            process.waitFor();
+            return process.waitFor();
          } catch (InterruptedException ignore) {
             System.err.println(ignore.toString());
          }
+         return -1;
       }
    }
    /**
     * Wenn die Errorstreams nicht mehr gebraucht werden, aufräumen
     */
-   public static void cleanup() {
-      background.shutdownNow();
+   static public void cleanup() {
+      virtual.shutdownNow();
    }
    @SuppressWarnings("resource")
-   public static void removeFromCache(String cacheKey) {
+   static public void removeFromCache(String cacheKey) {
       if (!cache.containsKey(cacheKey))
          return;
       try {

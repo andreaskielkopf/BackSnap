@@ -3,63 +3,38 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 
+import java.io.IOException;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.List;
 
-import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 
 /**
  * @author Andreas Kielkopf
  *
  */
 public record SnapConfig(Mount volumeMount, Mount snapshotMount) {
-   /**
-    * Ermittle die Paare von volumeMount subvolume und subvolume mit den snapshotMount
-    * 
-    * @param srcSubVolumes
-    * @return
-    */
-   public static List<SnapConfig> getList(SubVolumeList srcSubVolumes) {
-      ArrayList<SnapConfig> l=new ArrayList<>();
-      for (Mount volumeMount:srcSubVolumes.mountTree().values()) { // über alle subvolumes laufen
-         if (volumeMount.otimeKeyMap().isEmpty())
-            continue;
-         o: for (Snapshot o:volumeMount.otimeKeyMap().values()) {
-            Path btrfsPath=o.btrfsPath();
-            for (Mount snapshotMount:srcSubVolumes.mountTree().values()) { // über alle subvolumes laufen
-               if (!volumeMount.devicePath().equals(snapshotMount.devicePath())) // nur auf diesem device kann es snapshotMount geben
-                  continue;
-               Path sdir=snapshotMount.btrfsPath();
-               int  le2 =snapshotMount.btrfsMap().size();
-               if (le2 > 1) {// von der snapshotMount darf es keine eigenen snapshotMount geben
-                  // sdir+="/";
-                  if (!btrfsPath.startsWith(sdir + "/"))
-                     continue;
-                  l.add(new SnapConfig(volumeMount, snapshotMount));
-                  break o;
+   static public SnapConfig getConfig(OneBackup oneBackup) throws IOException {
+      List<SnapConfig> l=oneBackup.srcPc().getSnapConfigs();
+      for (SnapConfig snapConfig:l) {
+         if (snapConfig.volumeMount.mountPath().equals(oneBackup.srcPath())) {
+            Log.logln(snapConfig.toString(), LEVEL.BTRFS);
+            return snapConfig;
                }
-               if (sdir.equals(volumeMount.btrfsPath())) // das darf nicht das selbe sein
-                  continue;
-               if (!btrfsPath.startsWith(sdir))
-                  continue;
-               l.add(new SnapConfig(volumeMount, snapshotMount));
-               break o;
+         if (snapConfig.snapshotMount.mountPath().equals(oneBackup.srcPath())) {
+            Log.errln("Treffer: snapshotMount " + oneBackup.srcPath(),LEVEL.ERRORS);
+            return snapConfig;
             }
-            System.out.println("nix gefunden");
-            break;
          }
+      throw new RuntimeException(
+               System.lineSeparator() + "Could not find any snapshots for srcDir: " + oneBackup.srcPath());
       }
-      return l;
+   public Pc pc() {
+      return snapshotMount.pc();
    }
-   public static SnapConfig getConfig(List<SnapConfig> list, Path srcDir) {
-      for (SnapConfig snapConfig:list) {
-         Backsnap.logln(9, snapConfig.toString());
-         if (snapConfig.volumeMount.mountPath().equals(srcDir))
-            return snapConfig;
-         if (snapConfig.snapshotMount.mountPath().equals(srcDir))
-            return snapConfig;
-      }
-      return null;
+   public Path mountPath() {
+      return snapshotMount.mountPath();
    }
    @Override
    public String toString() {

@@ -3,29 +3,33 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.gui.part;
 
-import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
-import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
-import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
-import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
-
-import java.beans.Beans;
+import java.awt.BorderLayout;
 import java.io.IOException;
 import java.util.Dictionary;
 import java.util.Hashtable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
-import java.awt.BorderLayout;
+import org.eclipse.jdt.annotation.NonNull;
+
+import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
+import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
+import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
+import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
+import de.uhingen.kielkopf.andreas.beans.Version;
 
 /**
  * @author Andreas Kielkopf
  *
  */
 public class PanelSpace extends JPanel {
-   private static final long serialVersionUID=-8473404478127990644L;
+   static private ExecutorService     virtual         =Version.getVx();
+   static private final long          serialVersionUID=-8473404478127990644L;
    private JPanel            panel;
    private JPanel            panel_c;
    private Lbl               lblSpace;
@@ -33,19 +37,13 @@ public class PanelSpace extends JPanel {
    private JSlider           sliderSpace;
    private JCheckBox         chckSpace;
    private JButton           btnSpace;
-   public static int         DEFAULT_SPACE   =1999;
-   final private BacksnapGui bsGui;
-   /**
-    * Create the panel.
-    */
-   @SuppressWarnings("unused")
-   private PanelSpace() {
-      this(null);
-   }
-   public PanelSpace(BacksnapGui b) {
-      if (!Beans.isDesignTime())
-         if (b == null)
-            throw new NullPointerException("BacksnapGui ist null");
+   static public int                  DEFAULT_SPACE   =1999;
+   AtomicBoolean                      needsAbgleich   =new AtomicBoolean(false);
+   @NonNull final private BacksnapGui bsGui;
+   public PanelSpace(@NonNull BacksnapGui b) {
+      // if (!Beans.isDesignTime())
+      // if (b == null)
+      // throw new NullPointerException("BacksnapGui ist null");
       bsGui=b;
       initialize();
    }
@@ -82,23 +80,16 @@ public class PanelSpace extends JPanel {
    }
    private TxtFeld getTxtDisabled() {
       if (txtDisabled == null) {
-         txtDisabled=new TxtFeld("deleting of backups is disabled while backups are running");
+         txtDisabled=new TxtFeld("deleting of backups is disabled while btrfs is busy ");
       }
       return txtDisabled;
    }
    public JButton getBtnSpace() {
       if (btnSpace == null) {
          btnSpace=new JButton("Delete some old snapshots");
-         if (bsGui != null)
-            btnSpace.addActionListener(e -> {
-               try {
-                  bsGui.delete(getBtnSpace(), SnapshotLabel.deleteOldColor);
-               } catch (IOException e1) {
-                  e1.printStackTrace();
-               }
-            });
+         btnSpace.addActionListener(e -> bsGui.delete(getBtnSpace(), getChckSpace(), SnapshotLabel.STATUS.ALT));
          btnSpace.setEnabled(false);
-         btnSpace.setBackground(SnapshotLabel.deleteOldColor);
+         btnSpace.setBackground(SnapshotLabel.STATUS.ALT.color);
       }
       return btnSpace;
    }
@@ -116,22 +107,21 @@ public class PanelSpace extends JPanel {
          for (int i=0; i <= 5; i++)
             labelTable.put(Integer.valueOf(i * 1000), new JLabel((i == 0) ? "0" : Integer.toString(i) + "T"));
          sliderSpace.setLabelTable(labelTable);
-         if (bsGui != null)
-            sliderSpace.addChangeListener(new ChangeListener() {
-               @Override
-               public void stateChanged(final ChangeEvent e) {
+         sliderSpace.addChangeListener(e -> {
                   String text=Integer.toString(getSliderSpace().getValue());
                   getLblSpace().setText(text);
-                  if (!getSliderSpace().getValueIsAdjusting()) {
                      Backsnap.DELETEOLD.setParameter(text);
+            if (needsAbgleich.compareAndSet(false, true))
+               virtual.execute(() -> {
                      try {
+                     Thread.sleep(50);
+                     if (needsAbgleich.compareAndSet(true, false))
                         bsGui.abgleich();
-                     } catch (IOException e1) {
-                        e1.printStackTrace();
+                  } catch (IOException | InterruptedException ignore) {
+                     ignore.printStackTrace();
                      }
-                  }
-               }
             });
+         });
       }
       return sliderSpace;
    }
@@ -146,16 +136,17 @@ public class PanelSpace extends JPanel {
    }
    public void flagSpace() {
       boolean s=getChckSpace().isSelected();
-      Backsnap.logln(3, "--------------- getChckSpace() actionPerformed");
+      Log.logln("--------------- getChckSpace() actionPerformed", LEVEL.DEBUG);
       Backsnap.DELETEOLD.set(s);
       getSliderSpace().setEnabled(s);
-      getBtnSpace().setEnabled(s & !Backsnap.BTRFS_LOCK.isLocked());
-      if (s && bsGui != null && !bsGui.getTglPause().isSelected())
+      getBtnSpace().setEnabled(PanelMeta.testLock(s));
+      if (s && !bsGui.getTglPause().isSelected())
          SwingUtilities.invokeLater(() -> bsGui.getTglPause().doClick());
+      SwingUtilities.invokeLater(() -> updateButtons());
    }
    public void updateButtons() {
-      getBtnSpace().setEnabled(getChckSpace().isSelected() & !Backsnap.BTRFS_LOCK.isLocked());
-      getTxtDisabled().setVisible(Backsnap.BTRFS_LOCK.isLocked());
+      getBtnSpace().setEnabled(PanelMeta.testLock(getChckSpace().isSelected()));
+      getTxtDisabled().setVisible(PanelMeta.testLock(true));
       // revalidate();
       repaint(50);
    }

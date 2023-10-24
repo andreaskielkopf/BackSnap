@@ -7,31 +7,33 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 
-import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
+import de.uhingen.kielkopf.andreas.backsnap.btrfs.Mount;
+import de.uhingen.kielkopf.andreas.backsnap.btrfs.Snapshot;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
-
-import javax.swing.border.TitledBorder;
 
 /**
  * @author Andreas Kielkopf
  */
 public class SnapshotPanel extends JPanel implements ComponentListener, MouseListener {
-   private static final long                           serialVersionUID    =-3405881652038164771L;
-   public static final Font                            FONT_INFO           =new Font("Noto Sans", Font.PLAIN, 16);
-   public static final Font                            FONT_INFO_B         =new Font("Noto Sans", Font.BOLD, 16);
+   static private final long                           serialVersionUID    =-3405881652038164771L;
+   static public final Font                            FONT_INFO           =new Font("Noto Sans", Font.PLAIN, 16);
+   static public final Font                            FONT_INFO_B         =new Font("Noto Sans", Font.BOLD, 16);
    private JPanel                                      panelView;
    private SnapshotDetail                              panelDetail;
    private JPanel                                      panelSnapshots;
    private JScrollPane                                 scrollPane;
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_UUID      =new ConcurrentSkipListMap<>();
+   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_R_UUID    =new ConcurrentSkipListMap<>();
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_ParentUuid=new ConcurrentSkipListMap<>();
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_KeyO      =new ConcurrentSkipListMap<>();
-   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_DirName   =new ConcurrentSkipListMap<>();
+   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_DirNameS  =new ConcurrentSkipListMap<>();
    public ArrayList<SnapshotLabel>                     mixedList           =new ArrayList<>();
    private TitledBorder                                tBorder             =new TitledBorder(null, "Snapshots of ...",
             TitledBorder.LEADING, TitledBorder.TOP, null, null);
@@ -52,7 +54,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    private void initialize() throws IOException {
       setLayout(new BorderLayout(0, 0));
       add(getPanelInfo(), BorderLayout.NORTH);
-      getPanelView().add(new SnapshotLabel(null));
+      getPanelView().add(SnapshotLabel.getSnapshotLabel(null));
       add(getSplitPane(), BorderLayout.CENTER);
    }
    public JPanel getPanelView() {
@@ -60,7 +62,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
          panelView=new JPanel() {
             BasicStroke               stroke          =new BasicStroke(1.5f, BasicStroke.CAP_ROUND,
                      BasicStroke.JOIN_ROUND);
-            private static final long serialVersionUID=-8623737829256524456L;
+            static private final long serialVersionUID=-8623737829256524456L;
             @Override
             public void paint(Graphics g) {
                final int bolla2=6;
@@ -97,7 +99,8 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
                            } else {
                               g2d.setColor(Color.BLUE);
                               g2d.fillOval(px + pw - bolla2-2, py + ph - bolla2-2, bolla2, bolla2);
-                              g2d.drawLine(px + pw-bolla1-2, py + ph - bolla1-2, sx+bolla1+2, sy + bolla1+2);
+                              g2d.drawLine(px + pw - bolla1 - 2, py + ph - bolla1 - 2, sx + bolla1 + 2,
+                                       sy + bolla1 + 2);
                               g2d.drawOval(sx+2, sy+2, bolla2, bolla2);
                            }
                      }
@@ -123,37 +126,50 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
     * @return
     * @throws IOException
     */
-   public ConcurrentSkipListMap<String, Snapshot> setVolume(/*Mount subVolume,*/ Collection<Snapshot> list)
-            throws IOException {
+   public ConcurrentSkipListMap<String, Snapshot> setVolume(Collection<Snapshot> list) throws IOException {
       ConcurrentSkipListMap<String, Snapshot> neuList=new ConcurrentSkipListMap<>();
       for (Snapshot snap:list)
          if (!labelTree_UUID.containsKey(snap.uuid()))
-            neuList.put(snap.keyB(), snap);
+            neuList.put(snap.keyB(), snap); // mit sortierter Reihenfolge für die Labels
       labelTree_UUID.clear();
       labelTree_ParentUuid.clear();
       labelTree_KeyO.clear();
-      labelTree_DirName.clear();
+      labelTree_DirNameS.clear();
+      final ArrayList<SnapshotLabel> pvList=new ArrayList<>();
+      List<Component> aktuell;
+      final JPanel pv=getPanelView();
       synchronized (mixedList) {
          boolean doShuffle=(mixedList.size() < list.size() / 2);
-         JPanel  pv       =getPanelView();
-         pv.removeAll(); // alle Labels entfernen
+         aktuell=Arrays.asList(pv.getComponents());
          for (Snapshot snapshot:list) {
             SnapshotLabel snapshotLabel=SnapshotLabel.getSnapshotLabel(snapshot);// gespeichertes Label holen
             snapshotLabel.addMouseListener(this);
             labelTree_UUID.put(snapshot.uuid(), snapshotLabel);// nach UUID sortiert
+            if (snapshot.isBackup())
+               labelTree_R_UUID.put(snapshot.received_uuid(), snapshotLabel);
             labelTree_ParentUuid.put(snapshot.parent_uuid(), snapshotLabel);// parent sortiert (keine doppelten !)
             labelTree_KeyO.put(snapshot.keyO(), snapshotLabel);// nach Key sortiert (keine doppelten !)
-            labelTree_DirName.put(snapshot.dirName(), snapshotLabel);// nach Key sortiert (keine doppelten !)
+            labelTree_DirNameS.put(snapshot.sortableDirname(), snapshotLabel);// nach Key sortiert (keine doppelten !)
             if (!mixedList.contains(snapshotLabel))
                mixedList.add(snapshotLabel);
-            pv.add(snapshotLabel);
+            pvList.add(snapshotLabel);
          }
-         pv.revalidate();
          if (doShuffle)
             Collections.shuffle(mixedList);
       }
+      for (Component c:aktuell) // nur entfernen, was weg muss
+         if (c instanceof SnapshotLabel sl)
+            if (!pvList.contains(sl))
+               SwingUtilities.invokeLater(() -> pv.remove(sl));
+      for (SnapshotLabel sl:pvList) // neue hinzufügen
+         if (!aktuell.contains(sl))
+            SwingUtilities.invokeLater(() -> pv.add(sl));
+      SwingUtilities.invokeLater(() -> {
+         pv.revalidate();
+         pv.repaint(100);
       componentResized(null);
       repaint(100);
+      });
       return neuList;
    }
    private JPanel getPanelSnapshots() {
@@ -182,12 +198,9 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
       final JPanel pv=getPanelView();
       long         v =pv.getComponentCount() * 2000L;
       final int    c =(int) (v / w);
-      SwingUtilities.invokeLater(new Runnable() {
-         @Override
-         public void run() {
+      SwingUtilities.invokeLater(() -> {
             pv.setPreferredSize(new Dimension(w, c));
             pv.revalidate();
-         }
       });
    }
    /**
@@ -255,19 +268,19 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    }
    private Lbl getLblVolume() {
       if (lblVolume == null) {
-         lblVolume=new Lbl("Volume:");
+         lblVolume=new Lbl("Vol:");
       }
       return lblVolume;
    }
    private Lbl getLblSubvolume() {
       if (lblSubvolume == null) {
-         lblSubvolume=new Lbl("Subvolume:");
+         lblSubvolume=new Lbl("Subvol:");
       }
       return lblSubvolume;
    }
    private Lbl getLblMountPoint() {
       if (lblMountPoint == null) {
-         lblMountPoint=new Lbl("mounted as: ");
+         lblMountPoint=new Lbl("at:");
       }
       return lblMountPoint;
    }
@@ -299,11 +312,14 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
     * @param srcConfig
     */
    public void setInfo(Mount mount) {
+      SwingUtilities.invokeLater(() -> {
       getInfoPc().setText(mount.pc().extern());
       getInfoVolume().setText(mount.devicePath().toString());
       getInfoSubvolume().setText(mount.btrfsPath().toString());
       getInfoMountPoint().setText(mount.mountPath().toString());
-      repaint(100);
+         getPanelInfo().revalidate();
+         getPanelInfo().repaint(100);
+      });
    }
    private JSplitPane getSplitPane() {
       if (splitPane == null) {

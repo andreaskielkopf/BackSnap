@@ -1,8 +1,13 @@
 # Beispielscripte zum Backup mit backsnap
 Ein Beispielscript für den lokalen Rechner
 Das Script muss in einem **grafischen Terminal** mit **sudo** gestartet werden !
+
+#### Alternative Konfiguration in /etc/backsnap.d
+Die inzwischen bessere Alternative ist eine Konfigurationsdatei /etc/backsnap.d/local.conf. Muster dafür sind hier im Projekt abgelegt. Wenn das Programm mit `sudo backsnap -gi` gestartet wird, kann das menügeführt vorbereitet werden.
+
 #### Anpassen nicht vergessen!
-Die Scripte müssen an die lokalen Gegebenheiten angepasst werden. Insbesondere folgende Punkte:
+Falls sie doch die Scripte verwenden, müssen diese an die lokalen Gegebenheiten angepasst werden. Insbesondere folgende Punkte:
+
 `BS_ID=03417033`
  Das muß ein erkennbarer Teil der UUID der Backup-Partition sein
 `backup /     manjaro18`

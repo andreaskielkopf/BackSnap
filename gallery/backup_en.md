@@ -1,8 +1,12 @@
 # Example scripts for backup with backsnap
 #### An example script for the local computer
 The script must be started in a **graphical terminal** with **sudo** !
-#### Don't forget to adapt!
-The scripts must be adapted to the local conditions. In particular the following points:
+
+#### Alternative configuration in /etc/backsnap.d
+The now better alternative is a configuration file /etc/backsnap.d/local.conf . Samples for this are stored here in the project. If the program is started with `sudo backsnap -gi`, the config can be initialised.
+
+#### Don't forget to customize!
+If you do use the scripts, they must be adapted to local conditions. In particular the following points:
 
 `BS_ID=03417033`
 

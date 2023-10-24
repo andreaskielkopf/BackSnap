@@ -3,13 +3,10 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.gui;
 
-import java.awt.EventQueue;
-import java.awt.BorderLayout;
+import java.awt.*;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
-
-import java.awt.Color;
 
 /**
  * @author Andreas Kielkopf
@@ -24,7 +21,7 @@ public class Config {
    /**
     * Launch the application.
     */
-   public static void main(String[] args) {
+   static public void main(String[] args) {
       EventQueue.invokeLater(new Runnable() {
          @Override
          public void run() {

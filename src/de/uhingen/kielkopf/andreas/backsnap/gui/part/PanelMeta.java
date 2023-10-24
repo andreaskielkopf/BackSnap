@@ -3,48 +3,49 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.gui.part;
 
+import java.awt.BorderLayout;
+import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
+import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
+
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
+
+import org.eclipse.jdt.annotation.NonNull;
 
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
-
-import java.beans.Beans;
-import java.io.IOException;
-import java.awt.BorderLayout;
+import de.uhingen.kielkopf.andreas.beans.Version;
 
 /**
  * @author Andreas Kielkopf
  *
  */
 public class PanelMeta extends JPanel {
-   private static final long serialVersionUID=-8829953253542936677L;
+   static private ExecutorService     virtual         =Version.getVx();
+   static private final long          serialVersionUID=-8829953253542936677L;
    private JCheckBox   chckMeta;
    private JButton     btnMeta;
-   public static int   DEFAULT_META=499;
+   static public int                  DEFAULT_META    =499;
    private JSlider     sliderMeta;
    private Lbl         lblMeta;
    private JPanel      panel;
    private JPanel      panel_c;
    private TxtFeld     xtxDisabled;
-   private BacksnapGui bsGui;
-   /**
-    * Create the panel.
-    */
-   public PanelMeta() {
-      this(null);
-   }
+   AtomicBoolean                      needsAbgleich   =new AtomicBoolean(false);
+   @NonNull private final BacksnapGui bsGui;
    /**
     * @param bsGui
     */
-   public PanelMeta(BacksnapGui b) {
-      if (!Beans.isDesignTime())
-         if (b == null)
-            throw new NullPointerException("BacksnapGui ist null");
+   public PanelMeta(@NonNull BacksnapGui b) {
+      // if (!Beans.isDesignTime())
+      // if (b == null)
+      // throw new NullPointerException("BacksnapGui ist null");
       bsGui=b;
       initialize();
    }
@@ -67,26 +68,20 @@ public class PanelMeta extends JPanel {
    }
    public void flagMeta() {
       boolean s=getChckMeta().isSelected();
-      Backsnap.log(3, "-------------- getChckMeta() actionPerformed");
+      Log.log("-------------- getChckMeta() actionPerformed", LEVEL.DEBUG);
       Backsnap.KEEP_MINIMUM.set(s);
       getSliderMeta().setEnabled(s);
-      getBtnMeta().setEnabled(s & !Backsnap.BTRFS_LOCK.isLocked());
-      if (s && bsGui != null && !bsGui.getTglPause().isSelected())
+      getBtnMeta().setEnabled(testLock(s));
+      if (s && !bsGui.getTglPause().isSelected())
          SwingUtilities.invokeLater(() -> bsGui.getTglPause().doClick());
+      SwingUtilities.invokeLater(() -> updateButtons());
    }
    public JButton getBtnMeta() {
       if (btnMeta == null) {
          btnMeta=new JButton("Delete some unneeded snapshots");
-         if (bsGui != null)
-            btnMeta.addActionListener(e -> {
-               try {
-                  bsGui.delete(getBtnMeta(), SnapshotLabel.delete2Color);
-               } catch (IOException e1) {
-                  e1.printStackTrace();
-               }
-            });
+         btnMeta.addActionListener(e -> bsGui.delete(getBtnMeta(), getChckMeta(), SnapshotLabel.STATUS.SPAM));
          btnMeta.setEnabled(false);
-         btnMeta.setBackground(SnapshotLabel.delete2Color);
+         btnMeta.setBackground(SnapshotLabel.STATUS.SPAM.color);
       }
       return btnMeta;
    }
@@ -109,22 +104,21 @@ public class PanelMeta extends JPanel {
          sliderMeta.setPaintLabels(true);
          sliderMeta.setPaintTicks(true);
          sliderMeta.setValue(DEFAULT_META - 1);
-         if (bsGui != null)
-            sliderMeta.addChangeListener(new ChangeListener() {
-               @Override
-               public void stateChanged(final ChangeEvent e) {
+         sliderMeta.addChangeListener(e -> {
                   String text=Integer.toString(getSliderMeta().getValue());
                   getLblMeta().setText(text);
-                  if (!getSliderMeta().getValueIsAdjusting()) {
                      Backsnap.KEEP_MINIMUM.setParameter(text);
+            if (needsAbgleich.compareAndSet(false, true))
+               virtual.execute(() -> {
                      try {
+                     Thread.sleep(50);
+                     if (needsAbgleich.compareAndSet(true, false))
                         bsGui.abgleich();
-                     } catch (IOException e1) {
-                        e1.printStackTrace();
+                  } catch (IOException | InterruptedException ignore) {
+                     ignore.printStackTrace();
                      }
-                  }
-               }
             });
+         });
       }
       return sliderMeta;
    }
@@ -135,8 +129,8 @@ public class PanelMeta extends JPanel {
       return lblMeta;
    }
    public void updateButtons() {
-      getBtnMeta().setEnabled(getChckMeta().isSelected() & !Backsnap.BTRFS_LOCK.isLocked());
-      getLblDisabled_1().setVisible(Backsnap.BTRFS_LOCK.isLocked());
+      getBtnMeta().setEnabled(testLock(getChckMeta().isSelected()));
+      getLblDisabled_1().setVisible(testLock(true));
       repaint(50);
    }
    private JPanel getPanel_c() {
@@ -150,8 +144,15 @@ public class PanelMeta extends JPanel {
    }
    private TxtFeld getLblDisabled_1() {
       if (xtxDisabled == null) {
-         xtxDisabled=new TxtFeld("deleting of backups is disabled while backups are running");
+         xtxDisabled=new TxtFeld("deleting of backups is disabled while btrfs is busy ");
       }
       return xtxDisabled;
+   }
+   static public boolean testLock(boolean s) {
+      if (s && BTRFS.readLock().tryLock()) {
+         BTRFS.readLock().unlock();
+         return true;
+      }
+      return false;
    }
 }

@@ -24,10 +24,10 @@ mount | grep -E " $BS_MOUNT " ||
     { echo "error: could not mount $BS_UUID to $BS_MOUNT" && exit }
 
 function backup {
-# This script has to be run in a terminal with sudo to get the grapical version !
-    backsnap -gt -v=1 -a=12 $1 $BS_MOUNT/$2 || exit
+# This script needs to run in a terminal with sudo to get the grapical version !
+    backsnap -gtc -v=1 -a=12 $1 $BS_MOUNT/$2 || exit
 # alternative cli-version is called:    
-#   backsnap -v3 $1 $BS_MOUNT/$2 || exit    
+#   backsnap -tc -v=3 $1 $BS_MOUNT/$2 || exit    
     echo  "OK"
 }
 

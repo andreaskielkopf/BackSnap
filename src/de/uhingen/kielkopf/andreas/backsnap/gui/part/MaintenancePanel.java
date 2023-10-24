@@ -4,43 +4,43 @@
 package de.uhingen.kielkopf.andreas.backsnap.gui.part;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 
 import javax.swing.*;
 
+import org.eclipse.jdt.annotation.NonNull;
+
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.Usage;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
-
-import java.awt.Dimension;
-import java.beans.Beans;
 
 /**
  * @author Andreas Kielkopf
  *
  */
 public class MaintenancePanel extends JPanel {
-   private static final long serialVersionUID=-6113424454048132514L;
+   static private final long          serialVersionUID=-6113424454048132514L;
    private JPanel            panelWartung;
    private JTabbedPane       tabbedPane;
    private PanelSpace        panelSpace;
    private PanelScrub        panelScrub;
    private PanelBalance      panelBalance;
    private PanelInfo         panelInfo;
-   private BacksnapGui       bsGui;
+   @NonNull private final BacksnapGui bsGui;
    private PanelMeta         panelMeta;
    /**
     * Create the panel.
     */
-   @SuppressWarnings("unused")
-   private MaintenancePanel() {
-      this(null);
-   }
+   // @SuppressWarnings("unused")
+   // private MaintenancePanel() {
+   // this(null);
+   // }
    /**
     * @param backsnapGui
     */
-   public MaintenancePanel(BacksnapGui b) {
-      if (!Beans.isDesignTime())
-         if (b == null)
-            throw new NullPointerException("BacksnapGui ist null");
+   public MaintenancePanel(@NonNull BacksnapGui b) {
+      // if (!Beans.isDesignTime())
+      // if (b == null)
+      // throw new NullPointerException("BacksnapGui ist null");
       bsGui=b;
       initialize();
    }
@@ -104,8 +104,10 @@ public class MaintenancePanel extends JPanel {
       return panelInfo;
    }
    public void updateButtons() {
+      SwingUtilities.invokeLater(() -> {
       getPanelSpace().updateButtons();
       getPanelMeta().updateButtons();
+      });
    }
    /**
     * @param usage

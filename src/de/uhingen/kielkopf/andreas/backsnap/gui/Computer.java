@@ -3,30 +3,28 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.gui;
 
-import java.awt.FlowLayout;
-
 import static javax.swing.SwingUtilities.invokeLater;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
-
-import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
-import de.uhingen.kielkopf.andreas.backsnap.btrfs.Mount;
-
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+
+import de.uhingen.kielkopf.andreas.backsnap.btrfs.Mount;
+import de.uhingen.kielkopf.andreas.backsnap.btrfs.Pc;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 
 /**
  * @author Andreas Kielkopf
  *
  */
 public class Computer extends JPanel {
-   private static final long       serialVersionUID=-1777560551058489693L;
+   static private final long       serialVersionUID=-1777560551058489693L;
    private JPanel                  panel;
    private JPanel                  connection;
    private JPanel                  subvolumes;
@@ -132,7 +130,7 @@ public class Computer extends JPanel {
    protected void updateSubvolumeInfo(ListSelectionEvent ev) {
       if (ev.getSource() instanceof JList<?> l)
          if (l.getSelectedValue() instanceof Mount mount) {
-            Backsnap.logln(6, mount.toString());
+            Log.logln(mount.toString(), LEVEL.BTRFS);
             getSubvol().setMount(mount);
          }
    }
@@ -151,7 +149,7 @@ public class Computer extends JPanel {
                invokeLater(() -> calculateExtern());
             }
          });
-         benutzer.setModel(new DefaultComboBoxModel<String>(new String[] {"sudo", "root"}));
+         benutzer.setModel(new DefaultComboBoxModel<String>(new String[] {Pc.SUDO, Pc.ROOT}));
          benutzer.setSelectedIndex(0);
          benutzer.setEditable(true);
       }
@@ -219,7 +217,7 @@ public class Computer extends JPanel {
    /** recalculate the connectionString */
    protected void calculateExtern() {
       if (benutzer.getSelectedItem() instanceof String b) {
-         boolean s=(b.equals("sudo"));
+         boolean s=(b.equals(Pc.SUDO));
          getComputerName().setEnabled(!s);
          // extern=s ? b : b + "@" + getComputerName().getText();
          // System.out.println(extern);

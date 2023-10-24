@@ -3,23 +3,20 @@
  */
 package de.uhingen.kielkopf.andreas.backsnap.gui;
 
-import javax.swing.JPanel;
 import java.awt.BorderLayout;
+import java.awt.Color;
+
+import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.Mount;
-
-import java.awt.Color;
-import javax.swing.JTextField;
-import javax.swing.BoxLayout;
-import javax.swing.JLabel;
 
 /**
  * @author Andreas Kielkopf
  *
  */
 public class Subvol extends JPanel {
-   private static final long serialVersionUID=-4206237186411548874L;
+   static private final long serialVersionUID=-4206237186411548874L;
    private JPanel            panel;
    private JTextField        svName;
    private JPanel            panel_1;

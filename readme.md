@@ -1,48 +1,17 @@
-# [HowTo] Backup btrfs snapshots with send/receive
-## How to use BackSnap
+# How to use BackSnap
+##### or [HowTo] Backup btrfs snapshots with send/receive
 
-* In the **[master](../master/gallery/gallery.md)** branch is a version for use with "snapper"
-* In the **[timeshift](../timeshift/gallery/gallery.md)** branch is a beta version for use with "timeshift"
+* This a Rework with somme cached commands
+* It works with Snapper and Timeshift.
+* It uses btrfs compression with send/receive 
+* It uses Config in /etc/backsnap/...
+* You even may find **newer versions** in other branches (like in compress, config ...)
 
 ![BackSnap in action](./gallery/timeshift.png  "BackSnap gui")
 With BackSnap, regular backups for btrfs are no longer a burden, but an easy task.
 
-## Prologue
-###### A snapshot is not a backup!
-
-
-I've read that before. Basically correct, but a btrfs snapshot is **as good as any other in-system backup**.
-Btrfs can bring a high level of security against data loss for home users.
-With some additional work, the external backup for btrfs can also be achieved. Then backup 3-2-1 with btrfs is easily possible
-
-## The responsibility for backups never lies with a program, but always with the user!
-
-##### In-System Backup (n-snapshots 1)
-Btrfs with RAID0 and **readonly snapshots** by snapper are like a backup of the original files housed in the same system. It protects against:
-* minor problems, like accidentally deleting a file
-* delete an entire file tree (e.g. /home/hans/* )
-* from unintentionally changing file permissions of many files
-* unintentionally modified files
-
-##### In-System Backup with RAID (+1)
-Running btrfs with `RAID1` on at least 2 different devices is as good as **a local backup**.
-This also protects against:
-* Failure of a complete device
-* Corruption of the file system on a device
-* Loss of partition table on a device
-* overwrite a device with dd ;-)
-
-##### Out Of System Backup (+1)
-If the snapshots are also backed up on an external disk, this is another REAL **external backup**.
-At best, the external disk should only be connected to the computer for a short time. This also protects against:
-* Complete failure of the computer
-* Loss of past backups up to capacity of external disk
-* Targeted deletion of the internal backups (e.g. by Mallware)
-
-Btrfs then corresponds to 3-2-1 Backup (Near CDP)
-
 ## Goals of BackSnap:
-**Simple external backup** of a complete (btrfs) subvolume
+**Simple external backup** of complete (btrfs) subvolumes
 
 * Back up **all** snapshots
 * **Differential backup** of each snapshot (fast). If the backup is repeated after a few days/weeks/months
@@ -50,32 +19,31 @@ Btrfs then corresponds to 3-2-1 Backup (Near CDP)
 * The backup medium can be used for **backups of different computers**
 * Command line program without GUI
 * KISS
-* with GUI -g clear representation of snapshots and existing backups
+* GUI with -g clear representation of snapshots and existing backups
+* Assisted configuration with -gi
 * GUI controlled deletion of outdated backups
 * GUI controlled pruning of backups
 
 ##### No Goal:
 * Automatic management of backups by age
 * Automatically delete old backups when there is not enough space
-* Backup of the current state of a subvolume
+* Backup of the current state (this minute) of a subvolume
 
 ##### Desirable side effects
-* The **backup strategy** is already defined in snapper, and is involved here
+* The **backup strategy** is already defined in snapper or timeshift, and is involved here
 * The backup is compressed, but at the same time all snapshots in the backup are **always fully read-only accessible**
 
 ## Requirements:
-* **Java 17** or newer on the computer
+* **Java 21** on the computer <img src="gallery/needsJava21.png" width=7% height=7%>
 * Recommended: **pv** installed
 * BTRFS both on the computer (recommended as **RAID 1** with 2 devices) and on the backup medium (single)
-* **snapper** layout of the snapshots 
-* The snapshots must be **readonly** otherwise btrfs cannot transfer them.
+* **snapper**-layout of the snapshots or **timeshift**-layout
 * Recommended: external backup medium e.g. USB3 hard drive
-* Recommended: your own bash script to start the backup easily
 
 # BackSnap:
-The Java program BackSnap backs up ALL snapshots from a specified directory to another directory on a
-backup medium. To do this, it uses **btrfs send** and **btrfs receive**.
-
+The Java program BackSnap backs up ALL snapshots from a specified directory to another directory on a backup medium. 
+To do this, it uses **btrfs send** and **btrfs receive**.
+You can use backsnap without any configuration as cli-programm, or you can create your configuration in /etc/backsnap.d/*.conf . Working with konfiguration in /etc is way faster ;-)
 ##### Source (snapshots)
 The 1st passed parameter points to the **SOURCE path** where the snapshots are reachable by Snapper. Snapper creates all snapshots in directories with ascending numbering. The actual snapshot there is simply called "snapshot".
 
@@ -94,8 +62,43 @@ Backsnap goes through all the directories in the source path in **ascending time
 
 If possible, a previous snapshot is used as **"parent"**.
 
-Each time the program is called, all snapshots of ONE subvolume can be backed up, which corresponds to ONE configuration of Snapper.
+Each time the program is called, all snapshots of ONE subvolume can be backed up, which corresponds to ONE configuration of Snapper or Timeshift.
 
 ## Furter reading:
 * In the **[master](../master/gallery/gallery.md)** branch is a version for use with "snapper"
 * In the **[timeshift](../timeshift/gallery/gallery.md)** branch is a beta version for use with "timeshift"
+
+
+## Afterword
+###### A snapshot is not a backup!
+
+
+I've read that before. Basically true, but a BTRFS snapshot is **as good as any other system internal backup**.
+Btrfs can provide home users with a high level of security against data loss.
+With a little additional effort, external backup for BTRFS can also be implemented. Then a 3-2-1 backup with Btrfs is possible without any problems
+
+#### The responsibility for backups never lies with a program, but always with the user!
+
+##### In-system backup (n-snapshots 1)
+Btrfs with RAID0 and **read-only snapshots** via Snapper (or Timeshift) are like a backup of the original files stored in the same system. It protects against:
+* minor problems, such as accidentally deleting a file
+* delete an entire file tree (e.g. /home/hans/* )
+* by unintentionally changing the file permissions of many files
+* unintentionally changed files
+
+##### In-system backup with RAID (+1)
+Running btrfs with "RAID1" on at least two different devices is as good as **local backup**.
+This also protects against:
+* Failure of a complete device
+* File system corruption on a device
+* Loss of partition table on a device
+* overwrite a device with dd ;-)
+
+##### Out-of-system backup (+1)
+If the snapshots are also backed up to an external hard drive, it is another TRUE **external backup**.
+Ideally, the external hard drive should only be connected to the computer for a short period of time. This also protects against:
+* Complete computer failure
+* Loss of previous backups up to the capacity of the external hard drive
+* Targeted deletion of internal backups (e.g. by mallware)
+
+Btrfs then corresponds to 3-2-1 Backup (Near CDP)

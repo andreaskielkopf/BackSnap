@@ -10,6 +10,8 @@ import javax.swing.JPanel;
  *
  */
 public class PanelBalance extends JPanel {
+   private static final long serialVersionUID=-1691962412108609293L;
+
    /**
     * Create the panel.
     */
