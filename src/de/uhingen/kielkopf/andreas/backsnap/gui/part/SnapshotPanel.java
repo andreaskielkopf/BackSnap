@@ -33,7 +33,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_R_UUID    =new ConcurrentSkipListMap<>();
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_ParentUuid=new ConcurrentSkipListMap<>();
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_KeyO      =new ConcurrentSkipListMap<>();
-   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_DirNameS   =new ConcurrentSkipListMap<>();
+   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_DirNameS  =new ConcurrentSkipListMap<>();
    public ArrayList<SnapshotLabel>                     mixedList           =new ArrayList<>();
    private TitledBorder                                tBorder             =new TitledBorder(null, "Snapshots of ...",
             TitledBorder.LEADING, TitledBorder.TOP, null, null);
@@ -317,7 +317,8 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
          getInfoVolume().setText(mount.devicePath().toString());
          getInfoSubvolume().setText(mount.btrfsPath().toString());
          getInfoMountPoint().setText(mount.mountPath().toString());
-         // repaint(100);
+         getPanelInfo().revalidate();
+         getPanelInfo().repaint(100);
       });
    }
    private JSplitPane getSplitPane() {
