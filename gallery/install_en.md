@@ -11,7 +11,6 @@ openjdk version "21" 2023-09-19
 OpenJDK Runtime Environment (build 21+35)
 OpenJDK 64-Bit Server VM (build 21+35, mixed mode, sharing)
 ```
-See also: [archlinux wiki java](https://wiki.archlinux.org/title/java) , [manjaro pamac](https://wiki.manjaro.org/index.php/Pamac) , [manjaro pacman] (https://wiki.manjaro.org/index.php/Pacman_Overview) , [manjaro trizen](https://wiki.archlinux.de/title/Trizen)
 
 ## 2. Install `pv`
 `pv` shows the progress and speed of the snapshot transfer. It is not required but recommended.
@@ -56,5 +55,8 @@ java [version=21, major=21, minor=null, patch=null]
 using ThreadPerTaskExecutor
 ```
 ### [next step ->](device_en.md)
+
 ----
+
+See also: [archlinux wiki java](https://wiki.archlinux.org/title/java) , [manjaro pamac](https://wiki.manjaro.org/index.php/Pamac) , [manjaro pacman](https://wiki.manjaro.org/index.php/Pacman_Overview) , [manjaro trizen](https://wiki.archlinux.de/title/Trizen)
 Sonntag, 29. Oktober 2023 08:39 
