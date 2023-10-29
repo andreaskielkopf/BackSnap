@@ -16,15 +16,18 @@ See also: [archlinux wiki java](https://wiki.archlinux.org/title/java) , [manjar
 ## 2. Install `pv`
 `pv` shows the progress and speed of the snapshot transfer. It is not required but recommended.
 #### for ARCH or manjaro:
-`pamac install pv`
-
-or
-`pacman -S pv`
-
-or
-`tricen -S pv`
-
-## 3. Install `BackSnap`
+`pamac install pv` or `pacman -S pv` or `tricen -S pv`
+#### Test as `user` and as `root`:
+`pv -V`
+```
+pv 1.8.0
+Copyright 2023 Andrew Wood
+License: GPLv3+ <https://www.gnu.org/licenses/gpl-3.0.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Project web site: <https://www.ivarch.com/programs/pv.shtml>
+```
+## 3. Install `backsnap`
 The installation must be done as root (or with sudo). It should be done in such a way that BackSnap is accessible in both **root**'s `$PATH` and **user**'s `$PATH`.
 
 `echo $PATH`
@@ -47,8 +50,11 @@ Make BackSnap executable
 ### Test as `user` and as `root`:
 `backsnap -x`
 ```
-args > -x
-<html>BackSnap <br> Version 0.6 <br> (2023/06/00)
+BackSnap Version 0.6.6.41 (2023/10/24)
+args >  -x 
+java [version=21, major=21, minor=null, patch=null]
+using ThreadPerTaskExecutor
 ```
+### [next step ->](device_en.md)
 ----
-Monday, June 19, 2023 06:19
+Sonntag, 29. Oktober 2023 08:39 
