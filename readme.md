@@ -1,14 +1,14 @@
 # How to use BackSnap
 
-## [Install backsnap de/en](./gallery/gallery.md)
+### [Install backsnap en ->](./gallery/install_en.md)
+### [Install backsnap de ->](./gallery/install_de)
 
-##### or [HowTo] Backup btrfs snapshots with send/receive
+#### or [HowTo] Backup btrfs snapshots with send/receive
 
-* This a Rework with somme cached commands
-* It works with Snapper and Timeshift.
-* It uses btrfs compression with send/receive 
-* It uses Config in /etc/backsnap/...
-* You even may find **newer versions** in other branches (like in compress, config ...)
+* This a Rework with somme **cached** commands
+* It works with **Snapper** and **Timeshift.**
+* It uses **btrfs compression** with send/receive 
+* It uses configfiles in `/etc/backsnap/*.conf`.
 
 ![BackSnap in action](./gallery/timeshift.png  "BackSnap gui")
 With BackSnap, regular backups for btrfs are no longer a burden, but an easy task.
@@ -28,9 +28,9 @@ With BackSnap, regular backups for btrfs are no longer a burden, but an easy tas
 * GUI controlled pruning of backups
 
 ##### No Goal:
-* Automatic management of backups by age
-* Automatically delete old backups when there is not enough space
-* Backup of the current state (this minute) of a subvolume
+* No automatic management of backups by age
+* No automatically delete old backups when there is not enough space
+* No backup of the current state (this minute) of a subvolume
 
 ##### Desirable side effects
 * The **backup strategy** is already defined in snapper or timeshift, and is involved here
@@ -46,7 +46,14 @@ With BackSnap, regular backups for btrfs are no longer a burden, but an easy tas
 # BackSnap:
 The Java program BackSnap backs up ALL snapshots from a specified directory to another directory on a backup medium. 
 To do this, it uses **btrfs send** and **btrfs receive**.
-You can use backsnap without any configuration as cli-programm, or you can create your configuration in /etc/backsnap.d/*.conf . Working with konfiguration in /etc is way faster ;-)
+You can use backsnap without any configuration as cli-programm, or you can create your configuration in `/etc/backsnap.d/*.conf` . Working with configfiles in /etc is way faster ;-)
+
+### With configuration in `/etc/backsnap.d/`
+You only need to start backsnap in a terminal. It will look for configuration and flags in `/etc/backsnap.d/` 
+In a terminal: `sudo backsnap -gc -v=5 -a=5` 
+This is **way faster** then calling backsnap for each pc or subvolume, because the backup-disk will only be mounted once.
+
+### Without configuration
 ##### Source (snapshots)
 The 1st passed parameter points to the **SOURCE path** where the snapshots are reachable by Snapper. Snapper creates all snapshots in directories with ascending numbering. The actual snapshot there is simply called "snapshot".
 
@@ -68,8 +75,9 @@ If possible, a previous snapshot is used as **"parent"**.
 Each time the program is called, all snapshots of ONE subvolume can be backed up, which corresponds to ONE configuration of Snapper or Timeshift.
 
 ## Furter reading:
-* In the **[master](../master/gallery/gallery.md)** branch is a version for use with "snapper"
-* In the **[timeshift](../timeshift/gallery/gallery.md)** branch is a beta version for use with "timeshift"
+### [Install backsnap en ->](./gallery/install_en.md)
+### [Install backsnap de ->](./gallery/install_de)
+
 
 
 ## Afterword
@@ -105,3 +113,7 @@ Ideally, the external hard drive should only be connected to the computer for a 
 * Targeted deletion of internal backups (e.g. by mallware)
 
 Btrfs then corresponds to 3-2-1 Backup (Near CDP)
+
+----
+
+Sonntag, 29. Oktober 2023 17:45 
