@@ -5,7 +5,7 @@
 module backsnap {
    exports de.uhingen.kielkopf.andreas.backsnap.btrfs;
    exports de.uhingen.kielkopf.andreas.backsnap;
-   exports de.uhingen.kielkopf.andreas.backsnap.gui;
+   exports de.uhingen.kielkopf.andreas.backsnap.gui;   
    exports de.uhingen.kielkopf.andreas.backsnap.gui.element;
    exports de.uhingen.kielkopf.andreas.backsnap.gui.part;
    requires transitive Beans;

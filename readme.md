@@ -1,4 +1,8 @@
 # How to use BackSnap
+
+##### [Install backsnap en](./gallery/gallery.md)
+
+
 ##### or [HowTo] Backup btrfs snapshots with send/receive
 
 * This a Rework with somme cached commands
