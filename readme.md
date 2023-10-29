@@ -1,7 +1,6 @@
 # How to use BackSnap
 
-##### [Install backsnap en](./gallery/gallery.md)
-
+## [Install backsnap de/en](./gallery/gallery.md)
 
 ##### or [HowTo] Backup btrfs snapshots with send/receive
 
