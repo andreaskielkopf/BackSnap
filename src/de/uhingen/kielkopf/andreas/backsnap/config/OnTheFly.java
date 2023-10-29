@@ -238,8 +238,12 @@ public class OnTheFly extends JPanel {
       lines.add("# backup local pc per ssh");
       lines.add("# pc = " + Pc.ROOT_LOCALHOST);
       lines.add("");
+      lines.add("# use these flags for the following backup (optional)");
+      lines.add("#flags = -gtc -v=1 -a=12");
       lines.add("# backuplabel = manjaro18 for snapshots of /");
       lines.add("manjaro18 = /");
+      lines.add("");
+      lines.add("#flags = -gtc -v=1 -a=12");
       lines.add("# backuplabel = manjaro18.home for snapshots of /home");
       lines.add("manjaro18.home = /home");
       lines.add("");

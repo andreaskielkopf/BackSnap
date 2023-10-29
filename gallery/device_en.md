@@ -19,8 +19,8 @@ Backsnap can now carry out the further preparation itself if it is started in a 
 
 `sudo backsnap -gi`
 
-### [next step ->](clitest_en.md)
-
+### [next step ->](config_en.md)
 ----
 [More info on btrfs](https://wiki.manjaro.org/index.php/Btrfs)
-Sonntag, 29. Oktober 2023 08:41 
+Sonntag, 29. Oktober 2023 11:49 
+
