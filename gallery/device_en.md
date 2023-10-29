@@ -15,7 +15,9 @@ It is recommended to provide the device with a `GPT` partition table. The partit
 
 ### Further preparation
 
-Backsnap can now carry out the further preparation itself if it is started in a terminal with the `-gi` option.
+Backsnap can carry out the further preparation itself if it is started in a terminal with the `-gi` option. 
+
+Please connect your backup-device, so that btrfs will be able to detect it. (You do not need to mount it)
 
 `sudo backsnap -gi`
 

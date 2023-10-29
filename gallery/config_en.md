@@ -3,7 +3,7 @@ The following assumes that everything has been [installed](install_en.md) and th
 ## Config backsnap
 Backsnap needs to know what snapshots to backup, and where to store the backups. This is set in configfiles under `/etc/backsnap.d/`
 
-When starting `sudo backsnap -gi` backsnap will first create `/etc/backsnap.d/` and then it will create a configfile for the local pc
+When you started `sudo backsnap -gi` backsnap first created `/etc/backsnap.d/` and then created a configfile for the local pc
 
 ### `/etc/backsnap.d/local.conf`
 
@@ -35,7 +35,7 @@ manjaro18 = /
 ```
 All snapshots of the subvolume mounted at **/** will be included in the backup at Backupvolume/BackSnap/**manjaro18**/
 
-#### 4) select aoptions and a name for the next subvolume
+#### 4) Select options and a name for the next subvolume
 ```
 #flags = -gtc -v=1 -a=12 
 # backuplabel = manjaro18.home for snapshots of /home
@@ -43,7 +43,7 @@ manjaro18.home = /home
 ```
 All snapshots of the subvolume mounted at **/home** will be included in the backup at Backupvolume/BackSnap/**manjaro18.home**/
 
-#### 5) and so on
+#### 5) And so on
 You may specify furter subvolumes to be included into the backup (each with its own name)
 
 ### /etc/backsnap.d/laptop.conf
@@ -63,5 +63,24 @@ notebook.home = /home
 Backsnap will try to make backups of the notebook using **ssh root@notebook**.
 If the notebook is not reachable, backsnap will skip it.
 
+### Now you are ready to go
+##### You can do a dry-run to test backsnap. 
+In a terminal type:
+`sudo backsnap -gcd -v=6 -a=20`
+* -g with gui
+* -c compressed btrfs send-format
+* -d dry-run
+* -v=6 be verbose
+* -a=20 automatic continue if not paused after 20 seconds
+
+##### You can do a real backup:
+`sudo backsnap -gc -v=6 -a=10`
+* -g with gui
+* -c compressed btrfs send-format
+* -d dry-run
+* -v=6 be verbose
+* -a=10 automatic continue  after 10 seconds
+
 ----
-Sonntag, 29. Oktober 2023 04:31 
+Sonntag, 29. Oktober 2023 17:01 
+
