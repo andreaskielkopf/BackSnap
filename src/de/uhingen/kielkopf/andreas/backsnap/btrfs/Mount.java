@@ -78,8 +78,8 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
     * @throws IOException
     */
    public void populate() throws IOException {
-      SnapTree      snapTree         =SnapTree.getSnapTree(this);
-      boolean       snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.dateMap().isEmpty() : false;
+      SnapTree snapTree=SnapTree.getSnapTree(this);
+      boolean snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.dateMap().isEmpty() : false;
       StringBuilder subvolumeShowSB=new StringBuilder(Btrfs.SUBVOLUME_SHOW).append(mountPath);
       String subvolumeSchowCmd=pc.getCmd(subvolumeShowSB, true);
       Log.logln(subvolumeSchowCmd, LEVEL.BTRFS);
@@ -94,8 +94,8 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
                if (snapTreeVorhanden) {
                   Matcher ms=SNAPSHOT.matcher(line);
                   if (ms.find()) {
-                     Path     btrfsPath1=Path.of("/", ms.group(1));
-                     Snapshot snapshot  =snapTree.btrfsPathMap().get(btrfsPath1);
+                     Path btrfsPath1=Path.of("/", ms.group(1));
+                     Snapshot snapshot=snapTree.btrfsPathMap().get(btrfsPath1);
                      if ((snapshot != null) && (snapshot.mount() != null)) {
                         if (!snapshot.mount().mountPath.startsWith(this.mountPath))
                            Log.errln("Mount passt nicht für: " + this + " -> " + snapshot, LEVEL.ERRORS);
@@ -120,8 +120,8 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
       }
    }
    public void updateSnapshots() throws IOException {
-      SnapTree      snapTree         =SnapTree.getSnapTree(this);
-      boolean       snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.dateMap().isEmpty() : false;
+      SnapTree snapTree=SnapTree.getSnapTree(this);
+      boolean snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.dateMap().isEmpty() : false;
       StringBuilder subvolumeShowSB=new StringBuilder(Btrfs.SUBVOLUME_SHOW).append(mountPath);
       String subvolumeShowCmd=pc.getCmd(subvolumeShowSB, true);
       Log.logln(subvolumeShowCmd, LEVEL.BTRFS);
@@ -136,8 +136,8 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
                if (snapTreeVorhanden) {
                   Matcher ms=SNAPSHOT.matcher(line);
                   if (ms.find()) {
-                     Path     btrfsPath1=Path.of("/", ms.group(1));
-                     Snapshot snapshot  =snapTree.btrfsPathMap().get(btrfsPath1);
+                     Path btrfsPath1=Path.of("/", ms.group(1));
+                     Snapshot snapshot=snapTree.btrfsPathMap().get(btrfsPath1);
                      if ((snapshot != null) && (snapshot.mount() != null)) {
                         if (!snapshot.mount().mountPath.startsWith(this.mountPath))
                            Log.errln("Mount passt nicht für: " + this + " -> " + snapshot, LEVEL.ERRORS);

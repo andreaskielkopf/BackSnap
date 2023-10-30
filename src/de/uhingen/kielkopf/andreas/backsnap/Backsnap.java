@@ -37,11 +37,11 @@ import de.uhingen.kielkopf.andreas.beans.shell.CmdStreams;
  */
 public class Backsnap {
    static public final ExecutorService virtual        =Version.getVx();
-   static int                        lastLine           =0;
+   static int                          lastLine       =0;
    public static String                cantFindParent;
    static public int                   disconnectCount=0;
-   static Future<?>                  task               =null;
-   static public BacksnapGui           bsGui;
+   static Future<?>                    task           =null;
+   static public BacksnapGui           bsGui          =null;
    static public OneBackup             actualBackup   =null;
    static private int                  skipCount      =0;
    static final Flag                   HELP           =new Flag('h', "help");                   // show usage
@@ -60,7 +60,7 @@ public class Backsnap {
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
    static final Flag                   PEXEC          =new Flag('p', "pexec");                  // use pexec instead of sudo
    static public final String          SNAPSHOT       ="snapshot";
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.6.41 (2023/10/24)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.6.43 (2023/10/30)";
    static public final String          LF             =System.lineSeparator();
    static public void main(String[] args) {
       Flag.setArgs(args, "");
@@ -110,14 +110,14 @@ public class Backsnap {
                Flag.setArgs(args, "");
             if (lastBackup != null)
                if (actualBackup.srcPc() != lastBackup.srcPc())
-      try {
+                  try {
                      lastBackup.srcPc().mountBtrfsRoot(lastBackup.srcPath(), false);// umount
                   } catch (IOException e) {/*  */ } // umount
             actualBackup.mountBtrfsRoot();
             if (!actualBackup.srcPc().isReachable())
                continue;
             lastBackup=actualBackup;
-         // Start collecting information
+            // Start collecting information
             SnapConfig srcConfig=SnapConfig.getConfig(actualBackup);
             srcConfig.volumeMount().populate();
             Log.logln("Backup snapshots from " + srcConfig.volumeMount().keyM(), LEVEL.SNAPSHOTS);
@@ -133,68 +133,69 @@ public class Backsnap {
             backupTree=SnapTree.getSnapTree(backupMount);
             if (disconnectCount > 0) {
                Log.errln("no SSH Connection", LEVEL.ERRORS);
-            ende("X");
-            System.exit(0);
-         }
-            bsGui=GUI.get() ? bsGui=BacksnapGui.getGui(srcConfig, backupTree, usage) : null;
+               ende("X");
+               System.exit(0);
+            }
+            if (GUI.get())
+               bsGui=BacksnapGui.getGui(srcConfig, backupTree, usage);
             if (bsGui instanceof BacksnapGui g) {
                final JProgressBar speedBar=g.getSpeedBar();
-            SwingUtilities.invokeLater(() -> {
+               SwingUtilities.invokeLater(() -> {
                   speedBar.setValue(0);
                   speedBar.setString("doing Backups");
-            });
-         }
+               });
+            }
             if (usage.isFull())
                throw new RuntimeException(
                         LF + "The backup volume has less than 10GiB unallocated: " + usage.unallcoated() + " of "
                                  + usage.size() + LF + "Please free some space on the backup volume");
-         /// Alle Snapshots einzeln sichern
-         int counter=0;
-         for (Snapshot sourceSnapshot:srcConfig.volumeMount().otimeKeyMap().values()) {
-            counter++;
+            /// Alle Snapshots einzeln sichern
+            int counter=0;
+            for (Snapshot sourceSnapshot:srcConfig.volumeMount().otimeKeyMap().values()) {
+               counter++;
                if (cantFindParent != null) {
                   Log.errln("Please remove " + Pc.TMP_BACKSNAP + "/" + OneBackup.backupPc.getBackupLabel() + "/"
                            + cantFindParent + "/" + SNAPSHOT + " !", LEVEL.ERRORS);
-               ende("X");
-               System.exit(-9);
-            } else
+                  ende("X");
+                  System.exit(-9);
+               } else
                   if (disconnectCount > 3) {
                      Log.errln("SSH Connection lost !", LEVEL.ERRORS);
-                  ende("X");
-                  System.exit(-8);
-               }
-            try {
+                     ende("X");
+                     System.exit(-8);
+                  }
+               try {
                   if (bsGui instanceof BacksnapGui gui)
                      gui.updateProgressbar(counter, srcConfig.volumeMount().otimeKeyMap().size());
                   if (!backup(actualBackup, sourceSnapshot, backupTree))
-                  continue;
-               // Anzeige im Progressbar anpassen
+                     continue;
+                  // Anzeige im Progressbar anpassen
                   if (bsGui instanceof BacksnapGui gui)
                      gui.refreshGUI();
-               if (SINGLESNAPSHOT.get())// nur einen Snapshot übertragen und dann abbrechen
+                  if (SINGLESNAPSHOT.get())// nur einen Snapshot übertragen und dann abbrechen
+                     break;
+               } catch (NullPointerException n) {
+                  n.printStackTrace();
                   break;
-            } catch (NullPointerException n) {
-               n.printStackTrace();
-               break;
+               }
             }
-         }
             Log.logln("", LEVEL.SNAPSHOTS);
-      } catch (IOException e) {
-         if ((e.getMessage().startsWith("ssh: connect to host"))
-                  || (e.getMessage().startsWith("Could not find snapshot:")))
-               Log.errln(e.getMessage(),LEVEL.ERRORS);
-         else
-            e.printStackTrace();
+         } catch (IOException e) {
+            if ((e.getMessage().startsWith("ssh: connect to host"))
+                     || (e.getMessage().startsWith("Could not find snapshot:")))
+               Log.errln(e.getMessage(), LEVEL.ERRORS);
+            else
+               e.printStackTrace();
             if (OneBackup.backupList.size() <= 1) {
                try {
                   if (lastBackup != null)
                      lastBackup.srcPc().mountBtrfsRoot(lastBackup.srcPath(), false);
                   Pc.mountBackupRoot(false);
                } catch (IOException ignore) {/* */ } // umount
-         ende("Xabbruch");
-         System.exit(-1);
+               ende("Xabbruch");
+               System.exit(-1);
             }
-      } finally {
+         } finally {
             BTRFS.writeLock().unlock();
          }
          if (bsGui instanceof BacksnapGui gui)
@@ -256,7 +257,7 @@ public class Backsnap {
          parentSnapshot=srcSnapshot;
       return true;
    }
-   static StringBuilder pv=new StringBuilder("- Info -");
+   static StringBuilder    pv=new StringBuilder("- Info -");
    private static Usage    usage;
    private static SnapTree backupTree;
    static private void rsyncFiles(OneBackup oneBackup, Path sDir, Path bDir) throws IOException {
@@ -278,11 +279,11 @@ public class Backsnap {
       Log.logln(rsyncCmd, LEVEL.RSYNC);// if (!DRYRUN.get())
       try (CmdStreams rsyncStream=CmdStreams.getDirectStream(rsyncCmd)) {
          rsyncStream.outBGerr().forEach(t -> Log.logln(t, LEVEL.RSYNC));
-         if (rsyncStream.errLines().anyMatch(line -> (line.contains("No route to host") || line.contains("Connection closed")
-                  || line.contains("connection unexpectedly closed")))) {
+         if (rsyncStream.errLines().anyMatch(line -> (line.contains("No route to host")
+                  || line.contains("Connection closed") || line.contains("connection unexpectedly closed")))) {
             Backsnap.disconnectCount=10;
+         }
       }
-   }
    }
    /**
     * @param bdir
@@ -337,8 +338,8 @@ public class Backsnap {
                      while (bsGui.getTglPause().isSelected())
                         Thread.sleep(50);
                   } catch (InterruptedException ignore) {/* ignore */}
-         }
-      }
+               }
+            }
          } else
             while (bsGui != null)
                try {
@@ -369,7 +370,7 @@ public class Backsnap {
          if (GUI.get()) {
             if (bsGui != null)
                SwingUtilities.invokeLater(() -> {
-               JProgressBar sl=bsGui.getSpeedBar();
+                  JProgressBar sl=bsGui.getSpeedBar();
                   sl.setString("Ready to exit".toString()); // sl.repaint(100);
                });
             if (AUTO.get()) {
@@ -388,11 +389,11 @@ public class Backsnap {
                         speedBar.setString(String.format("%2.1f sec till exit", f));
                         // speedBar.repaint(50);
                      });
-                        try {
+                     try {
                         Thread.sleep((long) (1000 / FAKTOR));
                         while (bsGui.getTglPause().isSelected())
                            Thread.sleep(50);
-                        } catch (InterruptedException ignore) {/* ignore */}
+                     } catch (InterruptedException ignore) {/* ignore */}
                   }
                   bsGui.getPrefs().saveFramePos(bsGui.frame);
                   frame.setVisible(false);
@@ -407,7 +408,7 @@ public class Backsnap {
                   } catch (InterruptedException ignore) {/* */}
          }
          Log.log(" to", LEVEL.BASIC);
-            try {
+         try {
             virtual.shutdown();
             Log.log(" ex", LEVEL.BASIC);
             virtual.awaitTermination(120, TimeUnit.SECONDS);

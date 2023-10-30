@@ -68,8 +68,8 @@ public class Btrfs {
       try (CmdStreams removeStream=CmdStreams.getDirectStream(removeCmd)) {
          removeStream.outBGerr().forEach(line -> {
             Log.logln(line, LEVEL.DELETE);
-            if (Backsnap.GUI.get())
-               Backsnap.bsGui.lblPvSetText(line);
+            if (Backsnap.bsGui instanceof BacksnapGui gui)
+               gui.lblPvSetText(line);
          });
          removeStream.errPrintln();
       } finally {
