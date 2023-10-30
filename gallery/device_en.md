@@ -14,8 +14,8 @@ It is recommended to use a drive that has **significantly** more storage space t
 It is recommended to equip the device with a `GPT` partition table. The partition to be used for backup must be formatted with `btrfs`. I have had good experiences with `gparted`. The name of the BTRFS partition can be anything.
 
 ### Further preparation
-Backsnap can carry out the further preparation itself if it is started in a terminal with the `-gi` option.
-Please connect your backup device so Btrfs can detect it. (You don't need to mount it)
+Backsnap can carry out the further preparation itself if it is started in a terminal with the “-gi” option.
+Please connect your backup drive so that Btrfs can recognize it. (You don't need to mount it)
 
 `sudo backsnap -gi`
 
