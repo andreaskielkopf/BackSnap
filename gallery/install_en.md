@@ -19,7 +19,7 @@ OpenJDK 64-Bit Server VM (build 21+35, mixed mode, sharing)
 **`pv`** shows the progress and speed of the snapshot transfer. It is not required but recommended.
 
 #### Manjaro or Arch:
-`pamac install pv` or `pacman -S pv` or `tricen -S pv`
+`pamac install pv` or `pacman -S pv` or `trizen -S pv`
 
 ##### Test as `user` and as `root`:
 `pv -V`
@@ -41,18 +41,14 @@ If `/usr/local/bin` is in your path, it's easiest to install backsnap there.
 
 `sudo wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/local/bin/backsnap`
 
-Make BackSnap executable
-
-`sudo chmod a+x /usr/local/bin/backsnap`
+Make backsnap executable: `sudo chmod a+x /usr/local/bin/backsnap`
 
 #### or in `/usr/bin`
-If `/usr/local/bin` is **not** in your path, the easiest way is to install BackSnap in `/usr/bin`.
+If `/usr/local/bin` is **not** in your path, the easiest way is to install backsnap in `/usr/bin`.
 
 `sudo wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/bin/backsnap`
 
-Make BackSnap executable:
-
-`sudo chmod a+x /usr/bin/backsnap`
+Make backsnap executable: `sudo chmod a+x /usr/bin/backsnap`
 
 ### Test as `user` and as `root`:
 `backsnap -x`

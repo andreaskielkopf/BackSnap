@@ -1,22 +1,26 @@
-# Backup-medium vorbereiten
-BackSnap stellt spezifische Anforderungen an das verwendete Backup-medium. Diese sind aber nicht schwer zu erfüllen. 
+# Bereiten Sie ein Sicherungslaufwerk vor
+BackSnap stellt besondere Anforderungen an das verwendete Sicherungslaufwerk. Aber diese sind nicht schwer zu erreichen.
 
-### Das Backupmedium:
-* sollte unbedingt ein externes Medium sein (z.B. USB-Festplatte)
-* sollte unbedingt deutlich größer sein als die zu sichernden Daten
-* muß auf einem anderen Device liegen wie die Snapshots die gesichert werden sollen
-* muß mit **btrfs formatiert** sein
+### Das Backup-Laufwerk:
+* Sollte auf jeden Fall ein **externes** Laufwerk sein (z. B. USB-Festplatte)
+* Sollte auf jeden Fall deutlich **größer** sein als das zu sichernde Laufwerk in Ihrem PC
+* Muss sich auf einem **anderen** Laufwerk befinden als die zu sichernden Snapshots
+* Muss **btrfs-formatiert sein**
 
-### Device aussuchen
-Es ist Empfehlenswert ein Device zu verwenden, das **deutlich** mehr Speicherplatz hat als alle zu sichernden Rechner zusammen. Das mag dann eine externe **Festplatte mit 5TB** sein, oder auch mehr.
+### Laufwerk auswählen
+Es wird empfohlen, ein Laufwerk zu verwenden, das über **deutlich** mehr Speicherplatz verfügt als alle zu sichernden Computer zusammen. Das könnte dann eine externe **Festplatte mit 2TB** sein, oder auch mehr.
 
-### 2. Device partitionieren und formatieren
-Es ist empfehlenswert das Device mit einer `GPT`-Partitionstabelle zu versehen. Die Partition die zum Backup verwendet werden soll, muß mit `btrfs` formatiert werden. Ich habe mit `gparted` gute Erfahrungen gemacht. Das Label der btrfs-Partition darf beliebig lauten. In meinem Beispiel ist es `Backup`
+### Partitionieren und formatieren Sie das Backup-Laufwerk
+Es wird empfohlen, das Gerät mit einer **GPT-Partitionstabelle** auszustatten. Die für die Sicherung zu verwendende Partition muss mit **btrfs** formatiert sein. Ich habe gute Erfahrungen mit `gparted` gemacht. Die Bezeichnung der BTRFS-Partition kann beliebig sein. 
 
 #### Weitere Vorbereitung
 
-Die weitere Vorbereitung kann backsnap inzwichen selbst durchführen, wenn es mit der option `-gi` gestartet wird.
+Die weitere Vorbereitung kann backsnap selbst durchführen, wenn es mit der option `-gi` gestartet wird.
+Bitte schließen Sie Ihr Backup-Laufwerk an, so dass Btrfs es erkennen kann. (Sie müssen es nicht monten)
 
+`sudo backsnap -gi`
+
+### [nächster Schritt ->](config_de.md)
 ----
 [Weitere Infos zu btrfs](https://wiki.manjaro.org/index.php/Btrfs) 
 Sonntag, 30. April 2023 07:01 

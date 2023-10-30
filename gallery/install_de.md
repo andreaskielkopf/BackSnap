@@ -42,16 +42,14 @@ Wenn `/usr/local/bin` in deinem Pfad enthalten ist, ist es das einfachste `backs
 
 `sudo wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/local/bin/backsnap`
 
-`backsnap` ausführbar machen:
-`sudo chmod a+x /usr/local/bin/backsnap`
+Backsnap ausführbar machen: `sudo chmod a+x /usr/local/bin/backsnap`
 
 #### oder in `/usr/bin`
 Wenn `/usr/local/bin` nicht in deinem Pfad enthalten ist, ist es das einfachste BackSnap in `/usr/bin` zu installieren.
 
 `sudo wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/bin/backsnap`
 
-backsnap ausführbar machen:
-`sudo chmod a+x /usr/bin/backsnap`
+Backsnap ausführbar machen:`sudo chmod a+x /usr/bin/backsnap`
 
 #### Test als `user` und als `root`:
 `backsnap -x`
