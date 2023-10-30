@@ -81,6 +81,7 @@ In einem Terminal: **`sudo backsnap -gc -v=6 -a=10`**
 * -a=10 automatsch weitermachen mit dem nächsten Subvolume nach 10 Sekunden
 
 Bitte denken Sie daran, dass das je nach Anzahl der Snapshots wirklich lange dauern kann.
+
 ----
 
 Sonntag, 29. Oktober 2023 17:01 
