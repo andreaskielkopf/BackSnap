@@ -8,7 +8,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Map;
 import java.util.concurrent.*;
 import java.util.regex.Pattern;
 
@@ -44,23 +43,23 @@ public class Backsnap {
    static public BacksnapGui           bsGui          =null;
    static public OneBackup             actualBackup   =null;
    static private int                  skipCount      =0;
-   static final Flag                   HELP           =new Flag('h', "help");                   // show usage
-   static final Flag                   VERSION        =new Flag('x', "version");                // show date and version
-   static final Flag                   DRYRUN         =new Flag('d', "dryrun");                 // do not do anythimg ;-)
+   static final Flag                   HELP           =new Flag('h', "help");                  // show usage
+   static final Flag                   VERSION        =new Flag('x', "version");               // show date and version
+   static final Flag                   DRYRUN         =new Flag('d', "dryrun");                // do not do anythimg ;-)
    public static final Flag            VERBOSE        =new Flag('v', "verbose");
-   static public final Flag            SINGLESNAPSHOT =new Flag('s', "singlesnapshot");         // backup exactly one snapshot
+   static public final Flag            SINGLESNAPSHOT =new Flag('s', "singlesnapshot");        // backup exactly one snapshot
    // static public final Flag TIMESHIFT =new Flag('t', "timeshift");
-   static public final Flag            GUI            =new Flag('g', "gui");                    // enable gui (only with sudo)
-   static final Flag                   AUTO           =new Flag('a', "auto");                   // auto-close gui when ready
+   static public final Flag            GUI            =new Flag('g', "gui");                   // enable gui (only with sudo)
+   static final Flag                   AUTO           =new Flag('a', "auto");                  // auto-close gui when ready
    // static final Flag NOSYNC =new Flag('n', "nosync"); // no sync after every command
-   static final Flag                   COMPRESSED     =new Flag('c', "compressed");             // use protokoll 2
-   static final Flag                   INIT           =new Flag('i', "init");                   // init /etc/backsnap.d/local.conf
-   static public final Flag            DELETEOLD      =new Flag('o', "deleteold");              // mark old snapshots for deletion
-   static public final Flag            KEEP_MINIMUM   =new Flag('m', "keepminimum");            // mark all but minimum snapshots
+   static final Flag                   COMPRESSED     =new Flag('c', "compressed");            // use protokoll 2
+   static final Flag                   INIT           =new Flag('i', "init");                  // init /etc/backsnap.d/local.conf
+   static public final Flag            DELETEOLD      =new Flag('o', "deleteold");             // mark old snapshots for deletion
+   static public final Flag            KEEP_MINIMUM   =new Flag('m', "keepminimum");           // mark all but minimum snapshots
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
-   static final Flag                   PEXEC          =new Flag('p', "pexec");                  // use pexec instead of sudo
+   static final Flag                   PEXEC          =new Flag('p', "pexec");                 // use pexec instead of sudo
    static public final String          SNAPSHOT       ="snapshot";
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.6.43 (2023/10/30)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.0 (2023/10/30)";
    static public final String          LF             =System.lineSeparator();
    static public void main(String[] args) {
       Flag.setArgs(args, "");
@@ -73,8 +72,6 @@ public class Backsnap {
          System.exit(0);
       if (DRYRUN.get())
          Log.logln("Doing a dry run ! ", LEVEL.BASIC);
-      if (GUI.get() && Commandline.processBuilder.environment() instanceof Map<String, String> env)
-         env.putIfAbsent("SSH_ASKPASS_REQUIRE", "prefer");
       try { // Wenn notwendig initialisieren und configuration laden
          OneBackup.setConfig((INIT.get() ? OnTheFly.prepare() : Etc.getConfig("backsnap")));
       } catch (IOException e) {
@@ -416,7 +413,7 @@ public class Backsnap {
             e.printStackTrace();
          }
          Log.log("it", LEVEL.BASIC);
-         Commandline.cleanup();
+         CmdStreams.cleanup();
          Log.logln(" java", LEVEL.BASIC);
          if (AUTO.get())
             System.exit(0);

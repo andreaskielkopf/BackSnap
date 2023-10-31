@@ -2,7 +2,7 @@
 # ©2023 Andreas Kielkopf
 # License: `GNU General Public License v3.0`
 export SSH_ASKPASS_REQUIRE=prefer   
-java -XX:+UseZGC -XX:+ZGenerational -jar "$0" "$@"
+sudo java -XX:+UseZGC -XX:+ZGenerational -jar "$0" "$@"
 EC="$?"
 [ "$EC" = 0 ] && exit;
 echo -n "$EC ==>"

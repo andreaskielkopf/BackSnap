@@ -11,43 +11,27 @@
         </sealing>
     </manifest>
     <selectedElements exportClassFiles="true" exportJavaFiles="true" exportOutputFolder="false">
-        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui.part"/>
+        <file path="/backsnap/gallery/install_en.md"/>
         <file path="/backsnap/gallery/device_de.md"/>
         <file path="/backsnap/gallery/needsJava21.png"/>
-        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap"/>
+        <javaElement handleIdentifier="=backsnap/src"/>
         <file path="/backsnap/gallery/guitest_de.md"/>
-        <javaElement handleIdentifier="=Beans/src&lt;de.uhingen.kielkopf.andreas.beans.shell"/>
-        <file path="/backsnap/gallery/restore_de.md"/>
-        <javaElement handleIdentifier="=Beans/src&lt;de.uhingen.kielkopf.andreas.beans.gui"/>
-        <javaElement handleIdentifier="=Beans/src&lt;de.uhingen.kielkopf.andreas.beans{Version.java"/>
-        <javaElement handleIdentifier="=Beans/src&lt;de.uhingen.kielkopf.andreas.beans.data{Link.java"/>
-        <folder path="/backsnap/etc"/>
-        <file path="/backsnap/gallery/backup_de.md"/>
-        <file path="/backsnap/gallery/clitest_de.md"/>
-        <file path="/backsnap/WieEsFunktioniert.md"/>
-        <file path="/backsnap/gallery/config_en.md"/>
-        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui{Subvol.java"/>
-        <javaElement handleIdentifier="=Beans/src&lt;de.uhingen.kielkopf.andreas.beans{RecordParser.java"/>
-        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui{package-info.java"/>
-        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui{BacksnapGui.java"/>
-        <file path="/backsnap/gallery/install_en.md"/>
         <file path="/backsnap/gallery/install_de.md"/>
+        <file path="/backsnap/gallery/restore_de.md"/>
         <file path="/backsnap/gallery/clitest_en.md"/>
-        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui.dialog"/>
-        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.btrfs"/>
-        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.config"/>
-        <file path="/backsnap/src/de/uhingen/kielkopf/andreas/backsnap/gui/.gitignore"/>
-        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui{Config.java"/>
+        <folder path="/backsnap/etc"/>
         <file path="/backsnap/readme.md"/>
+        <file path="/backsnap/gallery/backup_de.md"/>
+        <file path="/backsnap/gallery/config_de.md"/>
+        <file path="/backsnap/gallery/clitest_de.md"/>
         <file path="/backsnap/SECURITY.md"/>
         <file path="/backsnap/gallery/device_en.md"/>
-        <javaElement handleIdentifier="=Beans/src&lt;de.uhingen.kielkopf.andreas.beans.minijson{Etc.java"/>
+        <file path="/backsnap/WieEsFunktioniert.md"/>
         <file path="/backsnap/gallery/gallery.md"/>
         <file path="/backsnap/gallery/restore_en.md"/>
-        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui{Computer.java"/>
         <file path="/backsnap/gallery/backup_en.md"/>
+        <file path="/backsnap/gallery/config_en.md"/>
         <file path="/backsnap/gallery/ssh_de.md"/>
-        <javaElement handleIdentifier="=Beans/src&lt;de.uhingen.kielkopf.andreas.beans.cli{Flag.java"/>
-        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui.element"/>
+        <file path="/backsnap/LICENSE.txt"/>
     </selectedElements>
 </jardesc>
