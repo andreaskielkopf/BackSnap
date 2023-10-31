@@ -135,6 +135,11 @@ public class CmdStreams implements AutoCloseable {
    @Override
    public void close() {
       try {
+         process.waitFor();
+      } catch (InterruptedException e) {
+         e.printStackTrace();
+      }
+      try {
          out.close();
       } catch (IOException e) {/* erg wurde gelesen */
          System.err.println(e);
@@ -143,8 +148,8 @@ public class CmdStreams implements AutoCloseable {
          err.close();
       } catch (IOException e) { /* errlist ist komplett jetzt */
          System.err.println(e);
-      } 
-      process.destroy();
+      }
+      // process.destroy();
    }
    /**
     * Einzelenes Cmd sauber aus dem cache entfernen und close() ausführen
