@@ -7,6 +7,8 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
 /**
@@ -15,21 +17,26 @@ import java.util.stream.Stream;
  * @author Andreas Kielkopf
  */
 public class CmdStreams implements AutoCloseable {
-   static final ConcurrentSkipListMap<String, CmdStreams> cache=new ConcurrentSkipListMap<>();
+   static final ConcurrentSkipListMap<String, CmdStreams> cache  =new ConcurrentSkipListMap<>();
    final String                                           key;
    final Process                                          process;
    final AtomicBoolean                                    processed;
    private final CmdBufferedReader                        out;
    private final CmdBufferedReader                        err;
+   static AtomicInteger                                   counter=new AtomicInteger(0);
+   private final int                                      nr;
+   static ReentrantLock                                   get    =new ReentrantLock();
    @SuppressWarnings("resource")
    private CmdStreams(String cmd) throws IOException {
       key=cmd;
+      nr=counter.incrementAndGet();
+      // System.out.println(nr + " " + cmd);
       ProcessBuilder builder=new ProcessBuilder(List.of("/bin/bash", "-c", cmd));
       builder.environment().putIfAbsent("SSH_ASKPASS_REQUIRE", "prefer");
       process=builder.start();
       processed=new AtomicBoolean(false);
-      out=new CmdBufferedReader(process.getInputStream());
-      err=new CmdBufferedReader(process.getErrorStream());
+      out=new CmdBufferedReader(nr + " out", process.getInputStream());
+      err=new CmdBufferedReader(nr + " err", process.getErrorStream());
    }
    /**
     * 
@@ -51,20 +58,30 @@ public class CmdStreams implements AutoCloseable {
     */
    @SuppressWarnings("resource")
    public static CmdStreams getCachedStream(String s, String key) throws IOException {
-      if (!(s instanceof String cmd))
-         return null;
-      if (cache.containsKey(key)) // aus dem cache antworten, wenn es im cache ist
-         cache.get(key).waitFor(); // der Befehl muß aber vorher fertig geworden sein !
-      else
-         cache.putIfAbsent(key, new CmdStreams(cmd));
-      return cache.get(key);
+      get.lock();
+      try {
+         if (!(s instanceof String cmd))
+            return null;
+         if (cache.containsKey(key)) // aus dem cache antworten, wenn es im cache ist
+            cache.get(key).waitFor(); // der Befehl muß aber vorher fertig geworden sein !
+         else
+            cache.putIfAbsent(key, new CmdStreams(cmd));
+         return cache.get(key);
+      } finally {
+         get.unlock();
+      }
    }
    static public CmdStreams getDirectStream(String s) throws IOException {
-      if (!(s instanceof String cmd))
-         return null;
-      if (cache.containsKey(cmd)) // aus dem cache entfernen, wenn es im cache ist
-         cache.remove(cmd).close();
-      return new CmdStreams(cmd);
+      get.lock();
+      try {
+         if (!(s instanceof String cmd))
+            return null;
+         if (cache.containsKey(cmd)) // aus dem cache entfernen, wenn es im cache ist
+            cache.remove(cmd).close();
+         return new CmdStreams(cmd);
+      } finally {
+         get.unlock();
+      }
    }
    /**
     * Beim ersten mal den echten Stream liefern. später den aus dem cache
@@ -120,6 +137,8 @@ public class CmdStreams implements AutoCloseable {
          return 0;
       try {
          int x=process.waitFor();
+         err.waitFor();
+         out.waitFor();
          processed.set(true);
          return x;
       } catch (InterruptedException ignore) {
@@ -134,6 +153,7 @@ public class CmdStreams implements AutoCloseable {
     */
    @Override
    public void close() {
+      // waitFor();
       try {
          out.close();
       } catch (IOException e) {/* erg wurde gelesen */
@@ -143,7 +163,7 @@ public class CmdStreams implements AutoCloseable {
          err.close();
       } catch (IOException e) { /* errlist ist komplett jetzt */
          System.err.println(e);
-      } 
+      }
       process.destroy();
    }
    /**
@@ -152,8 +172,14 @@ public class CmdStreams implements AutoCloseable {
     * @param cmd
     */
    static public void removeFromCache(String cmd) {
-      if (cache.containsKey(cmd))
-         cache.remove(cmd).close();
+      if (cache.containsKey(cmd)) {
+         get.lock();
+         try {
+            cache.remove(cmd).close();
+         } finally {
+            get.unlock();
+         }
+      }
    }
    /**
     * Wenn die Streams nicht mehr gebraucht werden, alle aufräumen
@@ -207,8 +233,8 @@ public class CmdStreams implements AutoCloseable {
          }
          System.out.println("-----------------------------");
          try (CmdStreams dcs=getDirectStream(cmd)) {
-            dcs.outBGerr().filter(s -> s.contains("-rwx")).forEach(System.out::println);
             dcs.errLines().forEach(System.err::println);
+            dcs.outBGerr().filter(s -> s.contains("-rwx")).forEach(System.out::println);
          }
       } catch (IOException e) { // TODO Auto-generated catch block
          System.err.println(e);
