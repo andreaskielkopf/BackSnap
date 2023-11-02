@@ -5,10 +5,9 @@ package de.uhingen.kielkopf.andreas.beans.shell;
 
 import java.io.*;
 import java.nio.channels.AsynchronousCloseException;
-import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
 /**
@@ -19,95 +18,73 @@ import java.util.stream.Stream;
  *         Der Inhalt des Streams wird zwischengespeichert und kann mehrfach abgerufen werden
  */
 public class CmdBufferedReader extends BufferedReader implements AutoCloseable {
-   static final ExecutorService                  v          =Executors.newVirtualThreadPerTaskExecutor();
-   static final String                           UTF_8      ="UTF-8";
-   static final int                              bSize      =0x10000;                                    // 64k Buffer für jeden Stream
-   private ConcurrentLinkedQueue<String>         queue      =new ConcurrentLinkedQueue<>();
-   /** Flag for the first read that fills the queue */
-   AtomicBoolean                                 wasReadF   =new AtomicBoolean(false);
-   private AtomicBoolean                         wasClosedF =new AtomicBoolean(false);
-   /** Zähle wie viele Streans noch offen sind */
-   AtomicInteger                                 openStreams=new AtomicInteger(0);
-   // AtomicBoolean used =new AtomicBoolean(false);
-   private Stream<String>                        first;
-   private ConcurrentLinkedQueue<Stream<String>> streams    =new ConcurrentLinkedQueue<>();
-   private Future<Boolean>                       virtual;
-   private final String                          name;
+   static final String                   UTF_8  ="UTF-8";
+   static final int                      bSize  =0x10000;                      // 64k Buffer für jeden Stream
+   private ConcurrentLinkedQueue<String> queue  =new ConcurrentLinkedQueue<>();
+   AtomicBoolean                         used   =new AtomicBoolean(false);
+   AtomicBoolean                         virtual=new AtomicBoolean(false);
+   AtomicBoolean                         closed =new AtomicBoolean(false);
+   ReentrantLock                         open   =new ReentrantLock(true);
+   private Status                        status;
+   public enum Status {
+      CREATED, STARTED, CLOSED, QUEUE;
+   }
    /**
     * @param in
     * @throws UnsupportedEncodingException
     */
-   public CmdBufferedReader(String name1, InputStream in) throws UnsupportedEncodingException {
+   public CmdBufferedReader(InputStream in) throws UnsupportedEncodingException {
       super(new InputStreamReader(in, UTF_8), bSize);
-      this.name=name1;
+      status=Status.CREATED;
    }
    /**
-    * Beim ersten mal den echten Stream liefern. Abdem 2.mal dann den aus der queue
+    * Beim ersten mal den echten Stream liefern. später den aus der queue
     * 
     * @return erg
     * @throws AsynchronousCloseException
     */
    @Override
    public Stream<String> lines() {
-      openStreams.incrementAndGet();
-//      System.out.println(name + " Read " + openStreams.get());
-      if (!wasReadF.compareAndExchange(false, true)) {
-         System.out.println(name + " ReadF " + openStreams.get());
-         // System.out.println(name + " Read F");
-         first=super.lines().peek(queue::add).onClose(() -> {
-            wasClosedF.set(true);
-            // System.out.println(name + " onClose F " + openStreams.get());
-            openStreams.getAndDecrement();
-         });
-         streams.add(first);
-         return first;
+      if (closed.get() || used.get()) {
+         status=Status.QUEUE;
+         return queue.stream();// Replay stream
       }
-      consume();
-      System.out.println(name + " Read " + openStreams.get());
-      // System.out.println(name + " Read N ");
-      Stream<String> next=queue.stream().onClose(() -> {
-         // System.out.println(name + " onClose N " + openStreams.get());
-         openStreams.getAndDecrement();
-      });
-      streams.add(next);
-      return next;
+      if (used.compareAndSet(false, true)) {
+         open.lock();
+         status=Status.STARTED;
+         return super.lines().peek(queue::add).onClose(() -> {
+            closed.set(true);
+            status=Status.CLOSED;
+            open.unlock();
+         });
+      }
+      throw new UncheckedIOException(new AsynchronousCloseException());
    }
-   public void consume() {
-      fetchVirtual();
-      if (virtual != null)
+   Thread fetchVirtual() {
+      if (!used.get())
+         if (virtual.compareAndSet(false, true)) {
+            return Thread.ofVirtual().name("fetch").start(() -> lines().count()); // alles lesen und in peek() verarbeiten
+         }
+      return null;
+   }
+   public void waitFor() {
+      while (open.isLocked())
+         Thread.yield();
+      if (fetchVirtual() instanceof Thread t)
          try {
-            virtual.get();
-         } catch (InterruptedException | ExecutionException e) { // TODO Auto-generated catch block
+            t.join();
+         } catch (InterruptedException e) {
             e.printStackTrace();
          }
    }
-   public Future<Boolean> fetchVirtual() {
-      if (!wasReadF.get()) {
-         // System.out.println(name + " B.fetchVirtual-a");
-         Future<Boolean> q=v.submit(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception { // TODO Auto-generated method stub
-               // System.out.println(name + " B.virtual-b");
-               @SuppressWarnings("unused")
-               List<String> n=lines()/* .peek(w -> System.out.print(".")) */.toList();
-               // System.out.println(name + " B.virtual-c " + openStreams.get() + " " + n.size());
-               return true;
-            }
-         });
-         virtual=q;
-         return q;
-      }
-      return null;
-   }
-   /** Warte bis der erste Stream consumed ist */
-   public void waitForF() {
-      while (!wasClosedF.get())
-         Thread.onSpinWait();
-      // System.out.println(name + " B.waitFor()");
-   }
    @Override
    public void close() throws IOException {
-      while (!streams.isEmpty())
-         streams.poll().close();
+      if (!used.get())
+         waitFor();
+      if (closed.compareAndSet(false, true))
+         super.close();
+   }
+   public Status getStatus() {
+      return status;
    }
 }
