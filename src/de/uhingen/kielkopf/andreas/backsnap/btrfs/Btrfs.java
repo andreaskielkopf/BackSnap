@@ -233,7 +233,7 @@ public class Btrfs {
                if (line.contains(":00 ")) {
                   if (skip) {
                      skip=false;
-                     logln("m: " + line, LEVEL.PROGRESS);
+//                     logln("m: " + line, LEVEL.PROGRESS);
                      Backsnap.disconnectCount=0;
                   } else {
                      Owlog(">: " + line, LEVEL.PROGRESS);

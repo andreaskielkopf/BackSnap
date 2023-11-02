@@ -94,13 +94,13 @@ public class Flag {
    public String getParameter() {
       if (param == null) {
          if (kurz != null) {
-            final String findShort=".* -" + kurz + "=([^- =]+).*";
+            final String findShort=" -" + kurz + "=([^- =]+)";
             final Matcher ma=Pattern.compile(findShort).matcher(args);
             if (ma.find())
                param=ma.group(1);
          }
          if (lang != null) {
-            final String findLong=".* --" + lang.toLowerCase().replaceAll("_", "-") + "=([^- =]+).*";
+            final String findLong=" --" + lang.toLowerCase().replaceAll("_", "-") + "=([^- =]+)";
             final Matcher ma2=Pattern.compile(findLong).matcher(args);
             if (ma2.find())
                param=ma2.group(1);
@@ -187,5 +187,13 @@ public class Flag {
             System.err.println(ignore.getMessage() + ":" + s);
          }
       return def;
+   }
+   @Override
+   public String toString() {
+      return new StringBuilder("Flag[")//
+               .append(kurz).append(" ")//
+               .append(lang).append(" ")//
+               .append(param).append(" ")//
+               .append("]").toString();
    }
 }
