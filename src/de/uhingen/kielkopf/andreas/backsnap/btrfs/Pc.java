@@ -309,14 +309,15 @@ public record Pc(String extern, // Marker für diesen PC
       }
       String mountCmd=getCmd(mountSB, true);
       Log.logln(mountCmd, LEVEL.MOUNT);
-      BTRFS.writeLock().lock();
+//      BTRFS.writeLock().tryLock();
       try (CmdStreams mountStream=CmdStreams.getDirectStream(mountCmd)) {
          mountStream.outBGerr().forEach(t -> Log.logln(t, LEVEL.BTRFS_ANSWER));
          if (mountStream.errLines().anyMatch(l -> (l.contains("No route to host") || l.contains("Connection closed")
                   || l.contains("connection unexpectedly closed"))))
             Backsnap.disconnectCount=10;
-      } finally {
-         BTRFS.writeLock().unlock();
+//      } finally {
+//         if (BTRFS.isWriteLockedByCurrentThread())
+//            BTRFS.writeLock().unlock();
       }
       getMountList(true); // Mountlist neu einlesen und Mounts gegen-prüfen
    }

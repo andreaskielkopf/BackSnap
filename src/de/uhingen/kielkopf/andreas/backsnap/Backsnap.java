@@ -1,6 +1,6 @@
 package de.uhingen.kielkopf.andreas.backsnap;
 
-import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
+//import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
 import static de.uhingen.kielkopf.andreas.backsnap.config.Log.lnlog;
 
 import java.awt.Frame;
@@ -59,7 +59,7 @@ public class Backsnap {
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
    static final Flag                   PEXEC          =new Flag('p', "pexec");                 // use pexec instead of sudo
    static public final String          SNAPSHOT       ="snapshot";
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.0 (2023/10/30)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.4 (2023/10/30)";
    static public final String          LF             =System.lineSeparator();
    static public void main(String[] args) {
       Flag.setArgs(args, "");
@@ -98,7 +98,7 @@ public class Backsnap {
          actualBackup=ob;
          if (!actualBackup.srcPc().isReachable())
             continue;
-         BTRFS.writeLock().lock();
+//         BTRFS.writeLock().tryLock();
          try {
             if (actualBackup.flags() instanceof String s) {
                String a=String.join(" ", args).concat(" ").concat(s);
@@ -192,8 +192,8 @@ public class Backsnap {
                ende("Xabbruch");
                System.exit(-1);
             }
-         } finally {
-            BTRFS.writeLock().unlock();
+//         } finally {
+//            BTRFS.writeLock().unlock();
          }
          if (bsGui instanceof BacksnapGui gui)
             gui.getPanelMaintenance().updateButtons();

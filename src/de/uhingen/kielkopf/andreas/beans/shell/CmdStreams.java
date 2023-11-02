@@ -15,12 +15,13 @@ import java.util.stream.Stream;
  * @author Andreas Kielkopf
  */
 public class CmdStreams implements AutoCloseable {
-   static final ConcurrentSkipListMap<String, CmdStreams> cache=new ConcurrentSkipListMap<>();
+   static final ConcurrentSkipListMap<String, CmdStreams> cache    =new ConcurrentSkipListMap<>();
    final String                                           key;
    final Process                                          process;
    final AtomicBoolean                                    processed;
    private final CmdBufferedReader                        out;
    private final CmdBufferedReader                        err;
+   private AtomicBoolean                                  wasClosed=new AtomicBoolean(false);
    @SuppressWarnings("resource")
    private CmdStreams(String cmd) throws IOException {
       key=cmd;
@@ -28,8 +29,8 @@ public class CmdStreams implements AutoCloseable {
       builder.environment().putIfAbsent("SSH_ASKPASS_REQUIRE", "prefer");
       process=builder.start();
       processed=new AtomicBoolean(false);
-      out=new CmdBufferedReader(process.getInputStream());
-      err=new CmdBufferedReader(process.getErrorStream());
+      out=new CmdBufferedReader("out", process.getInputStream());
+      err=new CmdBufferedReader("err", process.getErrorStream());
    }
    /**
     * 
@@ -116,6 +117,8 @@ public class CmdStreams implements AutoCloseable {
     * @throws AsynchronousCloseException
     */
    public int waitFor() {
+      out.consume();
+      err.consume();
       if (processed.get())
          return 0;
       try {
@@ -134,20 +137,49 @@ public class CmdStreams implements AutoCloseable {
     */
    @Override
    public void close() {
-      try {
-         process.waitFor();
-      } catch (InterruptedException e) {
-         e.printStackTrace();
-      }
-      try {
-         out.close();
-      } catch (IOException e) {/* erg wurde gelesen */
-         System.err.println(e);
-      }
-      try {
-         err.close();
-      } catch (IOException e) { /* errlist ist komplett jetzt */
-         System.err.println(e);
+      // System.out.println("CmdStream.close()");
+      if (wasClosed.compareAndSet(false, true)) {
+         if (!out.wasReadF.get())
+            if (out.fetchVirtual() instanceof Future<Boolean> f) {
+               // System.out.println("out-Va");
+               try {
+                  f.get();
+               } catch (InterruptedException | ExecutionException e) { // TODO Auto-generated catch block
+                  e.printStackTrace();
+               }
+               // System.out.println("out-Vb");
+            }
+         if (!err.wasReadF.get())
+            if (err.fetchVirtual() instanceof Future<Boolean> f) {
+               // System.out.println("err-Va");
+               try {
+                  f.get();
+               } catch (InterruptedException | ExecutionException e) { // TODO Auto-generated catch block
+                  e.printStackTrace();
+               }
+               // System.out.println("err-Vb");
+            }
+         try {
+            process.waitFor();
+         } catch (InterruptedException e) {
+            e.printStackTrace();
+         }
+         try {
+            // out.consume();
+            // out.waitFor();
+            if (out.openStreams.get() > 0)
+               out.close();
+         } catch (Exception e) {/* erg wurde gelesen */
+            System.err.println(e);
+         }
+         try {
+            // err.waitFor();
+            if (err.openStreams.get() > 0)
+               err.close();
+         } catch (Exception e) { /* errlist ist komplett jetzt */
+            System.err.println(e);
+         }
+         // System.out.println("CmdStream.closed()");
       }
       // process.destroy();
    }
@@ -195,26 +227,39 @@ public class CmdStreams implements AutoCloseable {
    public static void main(String[] args) {
       String cmd="ls -lA ~";
       try {
+         System.out.println("0----------------------------"); // don`t care about anything
          try (CmdStreams ccs1=getCachedStream(cmd)) {
-            System.out.println("-----------------------------"); // don`t care about anything
+            System.out.println("1----------------------------"); // don`t care about anything
          }
          try (CmdStreams ccs1=getCachedStream(cmd)) {
+            System.out.println("2----------------------------");
             ccs1.outLines().filter(s -> s.contains("drwx-")).forEach(System.out::println); // don`t care about errors
          }
-         System.out.println("-----------------------------");
          try (CmdStreams ccs1=getCachedStream(cmd)) {
+            System.out.println("2b---------------------------");
+            ccs1.outLines().filter(s -> s.contains("drwx-")).forEach(System.out::println); // don`t care about errors
+            ccs1.errLines().forEach(System.out::println); // don`t care about errors
+         }
+         try (CmdStreams ccs1=getCachedStream(cmd)) {
+            System.out.println("3----------------------------");
             ccs1.outBGerr().filter(s -> s.contains("drwx-")).forEach(System.out::println);
          }
-         System.out.println("-----------------------------");
-         try (CmdStreams ccs2=getCachedStream(cmd)) {
-            ccs2.outBGerr().filter(s -> s.contains("lrwx")).forEach(System.out::println);
-            ccs2.errLines().forEach(System.err::println);
+         try (CmdStreams ccs1=getCachedStream(cmd)) {
+            System.out.println("4----------------------------");
+            ccs1.outBGerr().filter(s -> s.contains("lrwx")).forEach(System.out::println);
+            ccs1.errLines().forEach(System.err::println);
          }
-         System.out.println("-----------------------------");
+         try (CmdStreams ccs1=getCachedStream(cmd)) {
+            System.out.println("4b---------------------------");
+            ccs1.errLines().forEach(System.err::println);
+            ccs1.outBGerr().filter(s -> s.contains("lrwx")).forEach(System.out::println);
+         }
          try (CmdStreams dcs=getDirectStream(cmd)) {
+            System.out.println("5----------------------------");
             dcs.outBGerr().filter(s -> s.contains("-rwx")).forEach(System.out::println);
             dcs.errLines().forEach(System.err::println);
          }
+         System.out.println("99----------------------------");
       } catch (IOException e) { // TODO Auto-generated catch block
          System.err.println(e);
       }
