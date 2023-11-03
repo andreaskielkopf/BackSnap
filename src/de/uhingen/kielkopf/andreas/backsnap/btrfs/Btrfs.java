@@ -12,6 +12,8 @@ import java.util.ArrayList;
 
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log;
@@ -27,7 +29,7 @@ import de.uhingen.kielkopf.andreas.beans.shell.CmdStreams;
 public class Btrfs {
    /* Liefert eine Map der verfügbaren Volumes sortiert nach UUID */
    public static final String                 DEVICE_USAGE    ="btrfs device usage ";
-   public static final String                 FILESYSTEM_SHOW ="btrfs filesystem show ";
+   private static final String                FILESYSTEM_SHOW ="btrfs filesystem show ";
    public static final String                 FILESYSTEM_USAGE="btrfs filesystem usage ";
    public static final String                 SUBVOLUME_LIST_1="btrfs subvolume list -apuqRs ";
    public static final String                 SUBVOLUME_LIST_2="btrfs subvolume list -apuqRcg ";
@@ -35,15 +37,17 @@ public class Btrfs {
    public static final String                 PROPERTY_SET    ="btrfs property set ";
    public static final String                 PROPERTY_GET    ="btrfs property get ";
    public static final String                 VERSION         ="btrfs version ";
-   public static final String                 SEND            ="btrfs send ";
+   private static final String                SEND            ="btrfs send ";
    public static final String                 RECEIVE         ="btrfs receive ";
-   public static final String                 SUBVOLUME_DELETE="btrfs subvolume delete -Cv ";
-   public static final String                 SUBVOLUME_CREATE="btrfs subvolume create ";
+   private static final String                SUBVOLUME_DELETE="btrfs subvolume delete -Cv ";
+   private static final String                SUBVOLUME_CREATE="btrfs subvolume create ";
    public static final String                 SUBVOLUME_LIST  ="btrfs subvolume list ";
+   private static final Pattern               STD_MIN_        =Pattern.compile(" [0-9]:[0-9][0-9]:");
+   private static String                      std_min_;                                              // =" 0:00:";
    public static final ReentrantReadWriteLock BTRFS           =new ReentrantReadWriteLock(true);
    private static Boolean                     pvUsable        =null;
-   static int                                 lastLine        =0;
-   static boolean                             skip            =false;
+   private static int                         lastLine        =0;
+   // private static boolean skip =false;
    /**
     * löscht eines der Backups im Auftrag der GUI
     * 
@@ -179,6 +183,7 @@ public class Btrfs {
       if (!dryrun) {
          if (bsGui != null)
             bsGui.getPanelMaintenance().updateButtons();
+         std_min_=" 0:00:";
          BTRFS.writeLock().lock();
          try (CmdStreams btrfsSendStream=CmdStreams.getDirectStream(btrfsSendSB.toString())) {
             Thread.ofVirtual().name(SEND).start(() -> btrfsSendStream.outLines().forEach(line -> extractOuput(line)));
@@ -199,7 +204,7 @@ public class Btrfs {
     * 
     * @return
     */
-   static private boolean usePv() {
+   private static boolean usePv() {
       if (pvUsable == null)
          try {
             pvUsable=false;
@@ -219,40 +224,50 @@ public class Btrfs {
       }
    }
    private static void extractPv(final BacksnapGui bsGui, String line) {
-      try {
-         // lnlog(line, LEVEL.PROGRESS);
+      try { // lnlog(line, LEVEL.PROGRESS);
          if (line.contains("ERROR: cannot find parent subvolume"))
             Backsnap.cantFindParent=line;
          if (line.contains("No route to host") || line.contains("Connection closed")
                   || line.contains("connection unexpectedly closed"))
             Backsnap.disconnectCount=10;
          if (line.contains("<=>")) { // from pv // log(line, LEVEL.PROGRESS);
-            if (lastLine == 0)
-               logln("l: " + line, LEVEL.PROGRESS);
-            else {
-               if (line.contains(":00 ")) {
-                  if (skip) {
-                     skip=false;
-//                     logln("m: " + line, LEVEL.PROGRESS);
-                     Backsnap.disconnectCount=0;
-                  } else {
-                     Owlog(">: " + line, LEVEL.PROGRESS);
-                  }
-               } else {
-                  skip=true;
+            Matcher m1=STD_MIN_.matcher(line);
+            if (m1.find()) {
+               if (m1.group().startsWith(std_min_)) {
                   Owlog("o: " + line, LEVEL.PROGRESS);
+               } else {
+                  std_min_=m1.group();
+                  logln(">: " + line, LEVEL.PROGRESS);// Eine Minute abgelaufen
                }
+            } else {
+               logln("?: " + line, LEVEL.PROGRESS);
             }
-            show(line, bsGui);
-            lastLine++;
+            // if (lastLine == 0)
+            // logln("l: " + line, LEVEL.PROGRESS);
+            // else {
+            // if (line.contains(":00 ")) {
+            // if (skip) {
+            // skip=false; // logln("m: " + line, LEVEL.PROGRESS);
+            // Backsnap.disconnectCount=0;
+            // } else {
+            // Owlog(">: " + line, LEVEL.PROGRESS);
+            // }
+            // } else {
+            // skip=true;
+            // Owlog("o: " + line, LEVEL.PROGRESS);
+            // }
+            // }
+            // show(line, bsGui);
+            // lastLine++;
          } else {
-            if (lastLine != 0) {
-               lastLine=0;
-               logln(" ", LEVEL.PROGRESS);
-            }
+            // if (lastLine != 0) {
+            // lastLine=0;
+            // logln(" ", LEVEL.PROGRESS);
+            // }
+            logln(" v ", LEVEL.PROGRESS);
             logln("x: " + line, LEVEL.PROGRESS);
-            show(line, bsGui);
          }
+         show(line, bsGui);
       } catch (Exception e) {
          e.printStackTrace();
       }
@@ -260,7 +275,7 @@ public class Btrfs {
    /**
     * @param line
     */
-   static private final void show(String line, BacksnapGui bsGui) {
+   private static final void show(String line, BacksnapGui bsGui) {
       if (bsGui == null)
          return;
       line.replaceAll("[\n\r]?", " "); // if (line.equals("\n") || line.equals("\r")) return;

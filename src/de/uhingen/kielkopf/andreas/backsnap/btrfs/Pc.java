@@ -33,7 +33,7 @@ public record Pc(String extern, // Marker für diesen PC
          AtomicBoolean notReachable) {// BackupLabel am BackupPC
    static final ConcurrentSkipListMap<String, Pc> pcCache=new ConcurrentSkipListMap<String, Pc>();
    /* In /tmp werden die Snapshots vorübergehend eingehängt */
-   static public final Path TMP_BTRFS_ROOT=Path.of("/tmp/BtrfsRoot");
+   static private final Path TMP_BTRFS_ROOT=Path.of("/tmp/BtrfsRoot");
    static public final Path TMP_BACKUP_ROOT=Path.of("/tmp/BackupRoot");
    static public final Path TMP_BACKSNAP=TMP_BACKUP_ROOT.resolve("@BackSnap");
    static public final String ROOT="root";
@@ -42,7 +42,7 @@ public record Pc(String extern, // Marker für diesen PC
    static public final String SUDO_="sudo ";
    static public final String PKEXEC="pkexec";
    static public final String PKEXEC_="pkexec ";
-   static final Pattern allowExtern=Pattern.compile("[a-zA-Z_0-9]+@[a-zA-Z_0-9.]+|" + SUDO_ + "|" + PKEXEC_);
+   private static final Pattern ALLOW_EXTERN=Pattern.compile("[a-zA-Z_0-9]+@[a-zA-Z_0-9.]+|" + SUDO_ + "|" + PKEXEC_);
    private static final String BACKUP_OPTIONS=",compress=zstd:9 ";
    private static final String MOUNT_BTRFS="mount -t btrfs ";
    /**
@@ -59,7 +59,7 @@ public record Pc(String extern, // Marker für diesen PC
                         : extern.startsWith(PKEXEC) ? PKEXEC_ : extern;
       if ((x == SUDO_) && System.getenv().containsKey("ECLIPSE_RUN"))
          x=ROOT_LOCALHOST;
-      Matcher m=allowExtern.matcher(x);
+      Matcher m=ALLOW_EXTERN.matcher(x);
       if (m.matches())
          if (!pcCache.containsKey(x))
             pcCache.put(x, new Pc(x));
@@ -113,16 +113,7 @@ public record Pc(String extern, // Marker für diesen PC
     */
    public Optional<Mount> getTimeshiftBase() {
       return mountCache.values().stream().filter(m -> m.mountPath().equals(TMP_BTRFS_ROOT)).findFirst();
-   }
-   /**
-    * @return
-    * @throws IOException
-    */
-   public SubVolumeList getSubVolumeList() throws IOException {
-      if (subVolumeList.get() == null)
-         subVolumeList.set(new SubVolumeList(this));
-      return subVolumeList.get();
-   }
+   }  
    /**
     * Ermittle alle Mounts eines Rechners
     * 
@@ -197,10 +188,6 @@ public record Pc(String extern, // Marker für diesen PC
       }
       return kernelVersion.get();
    }
-   // @Override public int compareTo(Pc o) { if (o instanceof Pc pc) return extern.compareTo(o.extern); return 1; }
-   // @Override public boolean equals(Object o) { if (o instanceof Pc pc) return Objects.equals(extern, pc.extern);
-   // return false; }
-   // @Override public int hashCode() { return Objects.hash(extern); }
    public final Path getBackupLabel() {
       return backupLabel.get();
    }
@@ -212,7 +199,7 @@ public record Pc(String extern, // Marker für diesen PC
     * @return
     * @throws IOException
     */
-   static public Mount getBackupMount(/* boolean refresh */) throws IOException {
+   static public Mount getBackupMount() throws IOException {
       synchronized (pcCache) {
          Optional<Mount> o=OneBackup.backupPc.getMountList(false).values().stream()
                   .filter(m -> m.mountPath().toString().equals(TMP_BACKUP_ROOT.toString())).findFirst();
@@ -282,7 +269,7 @@ public record Pc(String extern, // Marker für diesen PC
       if (OneBackup.backupId instanceof String uuid && uuid.length() >= 8 && OneBackup.backupPc instanceof Pc pc)
          pc.mountBackupRoot(OneBackup.backupPc, uuid, doMount);
    }
-   public void mountBackupRoot(Pc pc, String uuid, boolean doMount) {
+   private void mountBackupRoot(Pc pc, String uuid, boolean doMount) {
       Btrfs.show(pc, false, false).entrySet().stream().filter(e -> e.getKey().contains(uuid)).map(e -> e.getValue())
                .findFirst().ifPresent(volume -> {
                   try {
