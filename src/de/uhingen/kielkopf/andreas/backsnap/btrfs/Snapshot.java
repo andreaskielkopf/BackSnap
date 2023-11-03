@@ -19,8 +19,6 @@ import java.util.stream.Stream;
 import org.eclipse.jdt.annotation.Nullable;
 
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
-import de.uhingen.kielkopf.andreas.backsnap.Commandline;
-
 import de.uhingen.kielkopf.andreas.backsnap.config.Log;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
@@ -216,13 +214,13 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       if (mount == null)
          throw new FileNotFoundException("Could not find dir: " + btrfsPath);
       // if (Backsnap.TIMESHIFT.get()) {
-         Optional<Mount> om=mount.pc().getTimeshiftBase();
-         if (om.isPresent())
-            if (om.get().devicePath().equals(mount.devicePath())) {
-               Path rel=Path.of("/").relativize(btrfsPath);
-               Path abs=om.get().mountPath().resolve(rel);
-               return abs;
-            }
+      Optional<Mount> om=mount.pc().getTimeshiftBase();
+      if (om.isPresent())
+         if (om.get().devicePath().equals(mount.devicePath())) {
+            Path rel=Path.of("/").relativize(btrfsPath);
+            Path abs=om.get().mountPath().resolve(rel);
+            return abs;
+         }
       // }
       Path rel=mount.btrfsPath().relativize(btrfsPath);
       Path abs=mount.mountPath().resolve(rel);
@@ -241,8 +239,8 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    static private Mount getMount(Mount mount0, Path btrfsPath1) throws IOException {
       if (btrfsPath1 == null)
          return null;
-      Path  b2 =btrfsPath1;
-      Mount erg=null;      // default ?
+      Path b2=btrfsPath1;
+      Mount erg=null; // default ?
       if (!b2.toString().contains("timeshift-btrfs")) {
          for (Mount mount1:mount0.pc().getMountList(false).values())
             if (mount0.devicePath().equals(mount1.devicePath())) // only from same device
@@ -337,7 +335,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       try {
          Flag.setArgs(args, Pc.SUDO + ":/" + DOT_SNAPSHOTS + " /mnt/BACKUP/" + AT_SNAPSHOTS + "/manjaro");// Par. sammeln
          String backupDir=Flag.getParameterOrDefault(1, "@BackSnap");
-         String source   =Flag.getParameter(0);
+         String source=Flag.getParameter(0);
          String externSsh=source.contains(":") ? source.substring(0, source.indexOf(":")) : "";
          String sourceDir=externSsh.isBlank() ? source : source.substring(externSsh.length() + 1);
          if (externSsh.startsWith(Pc.SUDO))
@@ -350,7 +348,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
             sourceDir=sourceDir.substring(0, sourceDir.length() - 2);
          // SrcVolume ermitteln
          SubVolumeList subVolumes=new SubVolumeList(Pc.getPc(externSsh));
-         Mount         srcVolume =subVolumes.mountTree().get(sourceDir);
+         Mount srcVolume=subVolumes.mountTree().get(sourceDir);
          if (srcVolume == null)
             throw new RuntimeException(Backsnap.LF + "Could not find srcDir: " + sourceDir);
          if (srcVolume.btrfsMap().isEmpty())
@@ -382,7 +380,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
          // Mount backupVolumeMount=Pc.getBackupVolumeMount();
          System.out.println(backupMount);
          System.exit(-9);
-         List<Snapshot> snapshots       =new ArrayList<>();
+         List<Snapshot> snapshots=new ArrayList<>();
          StringBuilder subvolumeListCmd=new StringBuilder(Btrfs.SUBVOLUME_LIST_1).append(backupDir);
          if ((externSsh instanceof String x) && (!x.isBlank()))
             if (x.startsWith(Pc.SUDO_))
@@ -407,7 +405,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
             if (snapshot.received_uuid() instanceof String ru)
                System.out.println(snapshot.dirName() + " => " + snapshot.toString());
          }
-         Commandline.cleanup();
+//         CmdStreams.cleanup();
       } catch (IOException e) {
          e.printStackTrace();
       }

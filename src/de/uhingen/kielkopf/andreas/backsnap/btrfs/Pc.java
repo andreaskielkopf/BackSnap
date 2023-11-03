@@ -11,10 +11,10 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
 
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
-import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 import de.uhingen.kielkopf.andreas.beans.Version;
@@ -57,8 +57,7 @@ public record Pc(String extern, // Marker für diesen PC
       String x=(extern == null) ? SUDO_
                : extern.startsWith(SUDO) ? SUDO_ //
                         : extern.startsWith(PKEXEC) ? PKEXEC_ : extern;
-      if ((x == SUDO_) && Commandline.processBuilder.environment() instanceof Map<String, String> env
-               && env.containsKey("ECLIPSE_RUN"))
+      if ((x == SUDO_) && System.getenv().containsKey("ECLIPSE_RUN"))
          x=ROOT_LOCALHOST;
       Matcher m=allowExtern.matcher(x);
       if (m.matches())

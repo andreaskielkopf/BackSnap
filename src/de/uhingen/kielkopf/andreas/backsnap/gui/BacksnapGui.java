@@ -14,14 +14,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.*;
-
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
 import org.eclipse.jdt.annotation.NonNull;
 
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
-import de.uhingen.kielkopf.andreas.backsnap.Commandline;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.*;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
@@ -33,6 +31,7 @@ import de.uhingen.kielkopf.andreas.beans.Version;
 import de.uhingen.kielkopf.andreas.beans.cli.Flag;
 import de.uhingen.kielkopf.andreas.beans.gui.Prefs;
 import de.uhingen.kielkopf.andreas.beans.gui.Rotator;
+import de.uhingen.kielkopf.andreas.beans.shell.CmdStreams;
 
 /**
  * @author Andreas Kielkopf
@@ -753,7 +752,7 @@ public class BacksnapGui implements MouseListener {
          try {
             if (refreshGUIcKey == null) // refreshBackupPc=backupPc;
                refreshGUIcKey=OneBackup.backupPc.extern() + ":" + Pc.getBackupMount(/* true */).devicePath();
-            Commandline.removeFromCache(refreshGUIcKey); // umgeht den cache
+            CmdStreams.removeFromCache(refreshGUIcKey); // umgeht den cache
             setBackup(new SnapTree(Pc.getBackupMount(/* true */)));
             if (Instant.now().isAfter(refreshUsage)) {
                getPanelMaintenance().setUsage(new Usage(Pc.getBackupMount(/* true */), false));

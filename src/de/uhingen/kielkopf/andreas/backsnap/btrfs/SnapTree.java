@@ -42,7 +42,7 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
       String subvolumeListCmd=mount.pc().getCmd(subvolumeListCommand, true);
       Log.logln(subvolumeListCmd, LEVEL.BTRFS);
       BTRFS.readLock().lock();
-      try (CmdStreams snapshotStream=CmdStreams.getCachedStream(subvolumeListCmd, mount.keyD())) {
+      try (CmdStreams snapshotStream=CmdStreams.getCachedStream(subvolumeListCmd, mount.keyD())) {         
          snapshotStream.outBGerr().forEachOrdered(line -> {
             try {
                if (line.contains("timeshift"))
@@ -53,7 +53,8 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
                dateMap.put(snapshot.keyO(), snapshot);
                if (snapshot.isBackup())
                   rUuidMap.put(snapshot.received_uuid(), snapshot);
-            } catch (IOException e) {
+            } catch (Exception e) {
+               System.err.println(" --> "+e);
                e.printStackTrace();
             }
          });
@@ -63,6 +64,7 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
             Backsnap.disconnectCount=10;
             throw new IOException(erg.get());
          }
+         Thread.onSpinWait();
       } finally {
          BTRFS.readLock().unlock();
       }
