@@ -15,31 +15,33 @@ import java.util.stream.Stream;
  *         Der Inhalt des Streams wird zwischengespeichert und kann mehrfach abgerufen werden
  */
 public class CmdBufferedReader extends BufferedReader implements AutoCloseable {
-   static final String                   UTF_8      ="UTF-8";
-   static final int                      bSize      =0x10000;                      // 64k Buffer für jeden Stream
-   private ConcurrentLinkedQueue<String> queue      =new ConcurrentLinkedQueue<>();
-   AtomicBoolean                         usedFirst  =new AtomicBoolean(false);
-   AtomicBoolean                         closedFirst=new AtomicBoolean(false);
-   AtomicBoolean                         virtual    =new AtomicBoolean(false);
-   AtomicInteger                         counter    =new AtomicInteger(0);
-   ReentrantLock                         line       =new ReentrantLock(true);
-   Stream<String>                        realStream;
-   // private Status status;
-   final String                          name;
-   public enum Status {
-      CREATED, STARTED, CLOSED, QUEUE;
-   }
+   static final String                   UTF_8        ="UTF-8";                      // verwende UTF-8
+   static final int                      bSize        =0x10000;                      // 64k Buffer für jeden Stream
+   final String                          name;                                       // name nur fürs debugging
+   private ConcurrentLinkedQueue<String> queue        =new ConcurrentLinkedQueue<>();
+   /** Der erste Stream wurde angefangen zu lesen */
+   private AtomicBoolean                 usedFirst    =new AtomicBoolean(false);
+   /** Der erste Stream wurde komplett gelesen */
+   private AtomicBoolean                 closedFirst  =new AtomicBoolean(false);
+   /** Link auf den ersten Stream bis er closed() ist */
+   private Stream<String>                firstStream;
+   /** Die Anzahl, wie oft der Stream bisher angefordert wurde */
+   AtomicInteger                         streamCounter=new AtomicInteger(0);
+   /** Nur genau einen Hintergrund-Thread starten */
+   AtomicBoolean                         virtual      =new AtomicBoolean(false);
+   ReentrantLock                         line         =new ReentrantLock(true);
    /**
+    * Erzeugt einen mehrfach lesbaren Stream aus einem InputStreamReader
+    * 
     * @param in
     * @throws UnsupportedEncodingException
     */
    public CmdBufferedReader(String name0, InputStream in) throws UnsupportedEncodingException {
       super(new InputStreamReader(in, UTF_8), bSize);
-      // status=Status.CREATED;
       name=name0;
    }
    /**
-    * Beim ersten mal den echten Stream liefern. später den aus der queue
+    * Beim ersten Mal den echten Stream liefern. Später den aus der queue
     * 
     * @return erg
     * @throws AsynchronousCloseException
@@ -48,45 +50,31 @@ public class CmdBufferedReader extends BufferedReader implements AutoCloseable {
    public Stream<String> lines() {
       line.lock();
       try {
-         if (usedFirst.compareAndSet(false, true)) { // open.lock();
-            // status=Status.STARTED;
-            // System.out.println(name + " first stream " + counter.get());
-            counter.getAndIncrement();
-            realStream=super.lines().peek(queue::add).onClose(() -> {
-               closedFirst.set(true);
-               // System.out.println(name + " first stream closed " + counter.get());
-               // status=Status.CLOSED; // open.unlock();
-            });
-            return realStream;
-         }
-         // if (closedFirst.get() || usedFirst.get()) {
-         // status=Status.QUEUE;
-         // System.out.println(name + " queue stream " + counter.get());
-         counter.getAndIncrement();
-         Stream<String> v=queue.stream().onClose(() -> {
-            closedFirst.set(true);
-            // System.out.println(name + " queue stream closed");
-         });// Replay stream
-         return v;
-         // }
-         // throw new UncheckedIOException(new AsynchronousCloseException());
+         if (usedFirst.compareAndSet(false, true)) { // System.out.println(name + " first stream " + streamCounter.get());
+            streamCounter.getAndIncrement();
+            firstStream=super.lines().peek(queue::add).onClose(() -> closedFirst.set(true));
+            // System.out.println(name + " first stream closed " + streamCounter.get());
+            return firstStream;
+         } // System.out.println(name + " queue stream " + streamCounter.get());
+         streamCounter.getAndIncrement(); // Replay stream
+         return queue.stream().onClose(() -> closedFirst.set(true));// System.out.println(name + " queue stream closed");
       } finally {
          line.unlock();
       }
    }
+   /**
+    * startet einen Hintergrund Thread um den Stream zu lesen
+    * 
+    * @return
+    */
    Thread fetchVirtual() {
       if (!usedFirst.get())
-         if (virtual.compareAndSet(false, true)) {
-            // System.out.println(name + " virtual start");
-            Thread v=Thread.ofVirtual().name("fetch " + name).start(() -> {
+         if (virtual.compareAndSet(false, true)) { // System.out.println(name + " virtual start");
+            return Thread.ofVirtual().name("fetch " + name).start(() -> {
                AtomicLong n=new AtomicLong(0);
-               lines().forEachOrdered(w -> {
-                  n.incrementAndGet();
-               });
-               closedFirst.set(true);
-               // System.out.println(name + " virtual ends " + n.get());
+               lines().forEachOrdered(w -> n.incrementAndGet());
+               closedFirst.set(true); // System.out.println(name + " virtual ends " + n.get());
             }); // alles lesen und in peek() verarbeiten
-            return v;
          }
       return null;
    }
@@ -104,15 +92,9 @@ public class CmdBufferedReader extends BufferedReader implements AutoCloseable {
    public void close() throws IOException {
       if (!usedFirst.get())
          waitFor();
-      // if (closedFirst.compareAndSet(false, true)) {
-      if (realStream != null) {
-         realStream.close();
-         realStream=null;
+      if (firstStream != null) { // stelle sicher dass der reale Stream genau 1x closed() wird
+         firstStream.close();
+         firstStream=null;
       }
-      // super.close();
-      // }
    }
-   // public Status getStatus() {
-   // return status;
-   // }
 }
