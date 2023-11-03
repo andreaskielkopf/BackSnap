@@ -22,7 +22,9 @@ public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, 
          implements Comparable<OneBackup> {
    public static Pc backupPc=null;
    public static String backupId=null;
+   /** sortierte Liste mit den vorgesehenen Backups */
    public static ConcurrentSkipListSet<OneBackup> backupList=new ConcurrentSkipListSet<>();
+   private static Pattern linePattern=Pattern.compile("^( *[a-zA-Z0-9._]{2,80} *)=(.+)"); // Kommentare ausblenden
    /**
     * @throws IOException
     */
@@ -44,7 +46,7 @@ public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, 
    public static boolean isBackupExtern() {
       return backupPc.isExtern();
    }
-   public boolean isLocalConfig() {
+   private boolean isLocalConfig() {
       String x=srcPc.extern();
       return (x.contains("@localhost") || (!x.contains("@")));
    }
@@ -57,7 +59,6 @@ public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, 
                && (srcPc().getKernelVersion() instanceof Version v1 && (v1.getMayor() >= 6))
                && (backupPc.getBtrfsVersion() instanceof Version v2 && (v2.getMayor() >= 6));
    }
-   static Pattern linePattern=Pattern.compile("^( *[a-zA-Z0-9._]{2,80} *)=(.+)"); // Kommentare ausblenden
    /**
     * @param etc
     */
@@ -96,28 +97,10 @@ public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, 
             }
          }
    }
-   public static void setBasis(Etc etc1) {
-      setConfig(etc1);
-      backupList.clear();
-   }
    /**
     * @return
     */
-   public static List<Pc> getPcs() {
-      // TODO Auto-generated method stub
-      return null;
-   }
-   /**
-    * @return
-    */
-   public static List<OneBackup> getBackups() {
-      // TODO Auto-generated method stub
-      return null;
-   }
-   /**
-    * @return
-    */
-   public static String getBasisText() {
+   private static String getBasisText() {
       return new StringBuilder().append((backupPc == null) ? "no Pc" : backupPc.toString())
                .append((backupId == null) ? " & no Id" : " & Id:" + backupId).toString();
    }
@@ -134,9 +117,13 @@ public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, 
    @Override
    public int compareTo(OneBackup o) {
       if (o == null)
-         return 1;
-      if (isLocalConfig() != o.isLocalConfig())
-         return isLocalConfig() ? 1 : -1;
-      return etcPath.compareTo(o.etcPath);
+         return -1;
+      if (isLocalConfig() != o.isLocalConfig())// localconfig an die erste Stelle
+         return isLocalConfig() ? -1 : 1;
+      int ep=etcPath.compareTo(o.etcPath);// pfad der Configdatei vergleichen
+      if (ep != 0)
+         return ep;
+      int sp=srcPath.compareTo(o.srcPath);// Pfad des Volume vergleichen
+      return sp;
    }
 }
