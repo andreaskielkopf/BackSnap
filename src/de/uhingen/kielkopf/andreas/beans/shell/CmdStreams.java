@@ -12,43 +12,45 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
 /**
- * Zusammenfassung von beiden Streams (out und err) zu einem Objekt
+ * Zusammenfassung von 2 Streams (out und err) zu einem Objekt
+ * 
+ * Der cache soll genutzt werden, wenn die Commands Infos liefern, die wieder verwendet werden dürfen
  * 
  * @author Andreas Kielkopf
  */
 public class CmdStreams implements AutoCloseable {
-   static final ConcurrentSkipListMap<String, CmdStreams> cache  =new ConcurrentSkipListMap<>();
-   final String                                           key;
-   final Process                                          process;
-   final AtomicBoolean                                    processed;
-   private final CmdBufferedReader                        out;
-   private final CmdBufferedReader                        err;
-   static AtomicInteger                                   counter=new AtomicInteger(0);
+   /** Cache mit den bisher abgefragten Commands */
+   static final ConcurrentSkipListMap<String, CmdStreams> cmdCache   =new ConcurrentSkipListMap<>();
+   /** Wie oft wurde irgendein neues Cmd abgerufen */
+   static final AtomicInteger                             readCounter=new AtomicInteger(0);
+   static final ReentrantLock                             getLock    =new ReentrantLock();
+   /** Der Process der cmd0 ausführt */
+   private final Process                                  cmdProcess;
+   private final AtomicBoolean                            cmdProcessed;
+   private final CmdBufferedReader                        cmdOut;
+   private final CmdBufferedReader                        cmdErr;
+   /** fortlaufende Nummer dess cmd */
    private final int                                      nr;
-   static ReentrantLock                                   get    =new ReentrantLock();
    @SuppressWarnings("resource")
    private CmdStreams(String cmd) throws IOException {
-      key=cmd;
-      nr=counter.incrementAndGet();
-      // System.out.println(nr + " " + cmd);
+      nr=readCounter.incrementAndGet(); // System.out.println(nr + " " + cmd);
       ProcessBuilder builder=new ProcessBuilder(List.of("/bin/bash", "-c", cmd));
       builder.environment().putIfAbsent("SSH_ASKPASS_REQUIRE", "prefer");
-      process=builder.start();
-      processed=new AtomicBoolean(false);
-      out=new CmdBufferedReader(nr + " out", process.getInputStream());
-      err=new CmdBufferedReader(nr + " err", process.getErrorStream());
+      cmdProcess=builder.start();
+      cmdProcessed=new AtomicBoolean(false);
+      cmdOut=new CmdBufferedReader(nr + " out", cmdProcess.getInputStream());
+      cmdErr=new CmdBufferedReader(nr + " err", cmdProcess.getErrorStream());
    }
    /**
-    * 
-    * @param o
-    *           String oder
-    * @return
+    * @param cmd0
+    *           String cmd0 ausführen und das Ergebniss cachen
+    * @return Antwort des cmd0
     * @throws IOException
     */
-   static public CmdStreams getCachedStream(String s) throws IOException {
-      if (!(s instanceof String cmd))
+   static public CmdStreams getCachedStream(String cmd0) throws IOException {
+      if (!(cmd0 instanceof String cmd))
          return null;
-      return getCachedStream(s, s);
+      return getCachedStream(cmd, cmd);
    }
    /**
     * @param subvolumeListCmd
@@ -57,30 +59,37 @@ public class CmdStreams implements AutoCloseable {
     * @throws IOException
     */
    @SuppressWarnings("resource")
-   public static CmdStreams getCachedStream(String s, String key) throws IOException {
-      get.lock();
+   public static CmdStreams getCachedStream(String cmd0, String key) throws IOException {
+      getLock.lock();
       try {
-         if (!(s instanceof String cmd))
+         if (!(cmd0 instanceof String cmd))
             return null;
-         if (cache.containsKey(key)) // aus dem cache antworten, wenn es im cache ist
-            cache.get(key).waitFor(); // der Befehl muß aber vorher fertig geworden sein !
+         if (cmdCache.containsKey(key)) // aus dem cache antworten, wenn es im cache ist
+            cmdCache.get(key).waitFor(); // der Befehl muß aber vorher fertig geworden sein !
          else
-            cache.putIfAbsent(key, new CmdStreams(cmd));
-         return cache.get(key);
+            cmdCache.putIfAbsent(key, new CmdStreams(cmd));
+         return cmdCache.get(key);
       } finally {
-         get.unlock();
+         getLock.unlock();
       }
    }
-   static public CmdStreams getDirectStream(String s) throws IOException {
-      get.lock();
+   /**
+    * Cmd0 Ausführen ohne den Cache zu benutzen
+    * 
+    * @param cmd0
+    * @return
+    * @throws IOException
+    */
+   static public CmdStreams getDirectStream(String cmd0) throws IOException {
+      getLock.lock();
       try {
-         if (!(s instanceof String cmd))
+         if (!(cmd0 instanceof String cmd))
             return null;
-         if (cache.containsKey(cmd)) // aus dem cache entfernen, wenn es im cache ist
-            cache.remove(cmd).close();
+         if (cmdCache.containsKey(cmd)) // aus dem cache entfernen, wenn es im cache ist
+            cmdCache.remove(cmd).close();
          return new CmdStreams(cmd);
       } finally {
-         get.unlock();
+         getLock.unlock();
       }
    }
    /**
@@ -90,10 +99,10 @@ public class CmdStreams implements AutoCloseable {
     * @throws AsynchronousCloseException
     */
    public Stream<String> outLines() {
-      return out.lines();
+      return cmdOut.lines();
    }
    public Stream<String> errLines() {
-      return err.lines();
+      return cmdErr.lines();
    }
    /**
     * Den err-Stream im Background lesen, out übergeben
@@ -102,7 +111,7 @@ public class CmdStreams implements AutoCloseable {
     * @throws AsynchronousCloseException
     */
    public Stream<String> outBGerr() throws AsynchronousCloseException {
-      err.fetchVirtual();
+      cmdErr.fetchVirtual();
       return outLines();
    }
    /**
@@ -112,17 +121,18 @@ public class CmdStreams implements AutoCloseable {
     * @throws AsynchronousCloseException
     */
    public Stream<String> errBGout() throws AsynchronousCloseException {
-      out.fetchVirtual();
+      cmdOut.fetchVirtual();
       return errLines();
    }
    public void errPrintln() {
       errLines().forEach(System.err::println);
    }
+   /** Infos fürs debugging */
    @Override
    public String toString() {
-      Info info=process.info();
-      return new StringBuilder("CStream(id=").append(process.pid()).append(")")//
-               .append(process.isAlive() ? "r+" : "c=")// running/completed
+      Info info=cmdProcess.info();
+      return new StringBuilder("CStream").append(nr).append("(id=").append(cmdProcess.pid()).append(")")//
+               .append(cmdProcess.isAlive() ? "r+" : "c=")// running/completed
                .append(info.totalCpuDuration().orElse(Duration.ZERO)).append(" ")//
                .append(info.commandLine().orElse("null")).toString();
    }
@@ -133,13 +143,13 @@ public class CmdStreams implements AutoCloseable {
     * @throws AsynchronousCloseException
     */
    public int waitFor() {
-      if (processed.get())
+      if (cmdProcessed.get())
          return 0;
       try {
-         int x=process.waitFor();
-         err.waitFor();
-         out.waitFor();
-         processed.set(true);
+         int x=cmdProcess.waitFor();
+         cmdErr.waitFor();
+         cmdOut.waitFor();
+         cmdProcessed.set(true);
          return x;
       } catch (InterruptedException ignore) {
          System.err.println(ignore);
@@ -152,19 +162,18 @@ public class CmdStreams implements AutoCloseable {
     * @throws IOException
     */
    @Override
-   public void close() {
-      // waitFor();
+   public void close() { // waitFor();
       try {
-         out.close();
+         cmdOut.close();
       } catch (IOException e) {/* erg wurde gelesen */
          System.err.println(e);
       }
       try {
-         err.close();
+         cmdErr.close();
       } catch (IOException e) { /* errlist ist komplett jetzt */
          System.err.println(e);
       }
-      process.destroy();
+      cmdProcess.destroy();
    }
    /**
     * Einzelenes Cmd sauber aus dem cache entfernen und close() ausführen
@@ -172,12 +181,12 @@ public class CmdStreams implements AutoCloseable {
     * @param cmd
     */
    static public void removeFromCache(String cmd) {
-      if (cache.containsKey(cmd)) {
-         get.lock();
+      if (cmdCache.containsKey(cmd)) {
+         getLock.lock();
          try {
-            cache.remove(cmd).close();
+            cmdCache.remove(cmd).close();
          } finally {
-            get.unlock();
+            getLock.unlock();
          }
       }
    }
@@ -185,7 +194,7 @@ public class CmdStreams implements AutoCloseable {
     * Wenn die Streams nicht mehr gebraucht werden, alle aufräumen
     */
    static public void cleanup() {
-      for (String cmd:cache.keySet())
+      for (String cmd:cmdCache.keySet())
          removeFromCache(cmd);
    }
    /**

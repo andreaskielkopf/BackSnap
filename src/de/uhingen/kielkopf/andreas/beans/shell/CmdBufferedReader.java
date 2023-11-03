@@ -67,7 +67,7 @@ public class CmdBufferedReader extends BufferedReader implements AutoCloseable {
     * 
     * @return
     */
-   Thread fetchVirtual() {
+   public Thread fetchVirtual() {
       if (!usedFirst.get())
          if (virtual.compareAndSet(false, true)) { // System.out.println(name + " virtual start");
             return Thread.ofVirtual().name("fetch " + name).start(() -> {
