@@ -17,13 +17,14 @@ import org.eclipse.jdt.annotation.NonNull;
  */
 public class Etc {
    static final String                                    CONF=".conf";
-   public final ConcurrentSkipListMap<Path, List<String>> conf;
+   /** Eine Map mit dem Pfad und dem Inhalt alle Configfiles */
+   public final ConcurrentSkipListMap<Path, List<String>> confFiles;
    /**
     * @param directory
     * @param map
     */
    public Etc(@NonNull ConcurrentSkipListMap<Path, List<String>> conf0) {
-      conf=conf0;
+      confFiles=conf0;
    }
    /**
     * @param string
@@ -58,9 +59,8 @@ public class Etc {
       ConcurrentSkipListMap<Path, List<String>> map=new ConcurrentSkipListMap<>();
       if (hasConfigDir(directory) instanceof Path p) {
          List<Path> list=Files.list(p).filter(f -> f.getFileName().toString().endsWith(".conf")).toList();
-         for (Path path:list) 
+         for (Path path:list)
             map.put(path, Files.readAllLines(path));
-         
          return new Etc(map);
       }
       return null;
@@ -71,7 +71,7 @@ public class Etc {
     */
    public void save() throws IOException {
       // Path p=Paths.get("/etc", directory + ".d");
-      for (Entry<Path, List<String>> entry:conf.entrySet())
+      for (Entry<Path, List<String>> entry:confFiles.entrySet())
          if (entry.getKey() instanceof Path path)
             if (entry.getValue() instanceof List<String> ls)
                Files.write(path, ls, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING,

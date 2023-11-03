@@ -1,12 +1,11 @@
-/**
- * 
- */
 package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,13 +13,16 @@ import de.uhingen.kielkopf.andreas.beans.Version;
 import de.uhingen.kielkopf.andreas.beans.minijson.Etc;
 
 /**
+ * Konfiguration für ein Backup von einem Subvolume
+ * 
  * @author Andreas Kielkopf
  *
  */
-public record OneBackup(Pc srcPc, Path srcPath, Path backupLabel, String flags) {
+public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, String flags)
+         implements Comparable<OneBackup> {
    public static Pc backupPc=null;
    public static String backupId=null;
-   public static List<OneBackup> backupList=new ArrayList<>();
+   public static ConcurrentSkipListSet<OneBackup> backupList=new ConcurrentSkipListSet<>();
    /**
     * @throws IOException
     */
@@ -42,6 +44,10 @@ public record OneBackup(Pc srcPc, Path srcPath, Path backupLabel, String flags) 
    public static boolean isBackupExtern() {
       return backupPc.isExtern();
    }
+   public boolean isLocalConfig() {
+      String x=srcPc.extern();
+      return (x.contains("@localhost") || (!x.contains("@")));
+   }
    /**
     * @return
     * @throws IOException
@@ -57,10 +63,10 @@ public record OneBackup(Pc srcPc, Path srcPath, Path backupLabel, String flags) 
     */
    public static void setConfig(Etc etc0) {
       if (etc0 instanceof Etc etc)
-         for (List<String> file:etc.conf.values()) {
+         for (Entry<Path, List<String>> entry:etc.confFiles.entrySet()) {
             Pc pc=null;
             String flags=null;
-            for (String line:file) {
+            for (String line:entry.getValue()) {
                Matcher m=linePattern.matcher(line);
                if (m.matches()) {
                   String a=m.group(1).strip();
@@ -83,7 +89,7 @@ public record OneBackup(Pc srcPc, Path srcPath, Path backupLabel, String flags) 
                         Path label=Path.of(a); // relativ
                         Path pfad=Path.of(b); // absolut
                         if (pfad.isAbsolute())
-                           backupList.add(new OneBackup(pc, pfad, label, flags));
+                           backupList.add(new OneBackup(entry.getKey(), pc, pfad, label, flags));
                         break;
                   }
                }
@@ -124,5 +130,13 @@ public record OneBackup(Pc srcPc, Path srcPath, Path backupLabel, String flags) 
       for (OneBackup backup:backupList)
          l.add(backup.toString());
       return l;
+   }
+   @Override
+   public int compareTo(OneBackup o) {
+      if (o == null)
+         return 1;
+      if (isLocalConfig() != o.isLocalConfig())
+         return isLocalConfig() ? 1 : -1;
+      return etcPath.compareTo(o.etcPath);
    }
 }

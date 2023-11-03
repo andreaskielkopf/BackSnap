@@ -43,21 +43,21 @@ public class Backsnap {
    static public BacksnapGui           bsGui          =null;
    static public OneBackup             actualBackup   =null;
    static private int                  skipCount      =0;
-   static final Flag                   HELP           =new Flag('h', "help");                  // show usage
-   static final Flag                   VERSION        =new Flag('x', "version");               // show date and version
-   static final Flag                   DRYRUN         =new Flag('d', "dryrun");                // do not do anythimg ;-)
+   static final Flag                   HELP           =new Flag('h', "help");                   // show usage
+   static final Flag                   VERSION        =new Flag('x', "version");                // show date and version
+   static final Flag                   DRYRUN         =new Flag('d', "dryrun");                 // do not do anythimg ;-)
    public static final Flag            VERBOSE        =new Flag('v', "verbose");
-   static public final Flag            SINGLESNAPSHOT =new Flag('s', "singlesnapshot");        // backup exactly one snapshot
+   static public final Flag            SINGLESNAPSHOT =new Flag('s', "singlesnapshot");         // backup exactly one snapshot
    // static public final Flag TIMESHIFT =new Flag('t', "timeshift");
-   static public final Flag            GUI            =new Flag('g', "gui");                   // enable gui (only with sudo)
-   static final Flag                   AUTO           =new Flag('a', "auto");                  // auto-close gui when ready
+   static public final Flag            GUI            =new Flag('g', "gui");                    // enable gui (only with sudo)
+   static final Flag                   AUTO           =new Flag('a', "auto");                   // auto-close gui when ready
    // static final Flag NOSYNC =new Flag('n', "nosync"); // no sync after every command
-   static final Flag                   COMPRESSED     =new Flag('c', "compressed");            // use protokoll 2
-   static final Flag                   INIT           =new Flag('i', "init");                  // init /etc/backsnap.d/local.conf
-   static public final Flag            DELETEOLD      =new Flag('o', "deleteold");             // mark old snapshots for deletion
-   static public final Flag            KEEP_MINIMUM   =new Flag('m', "keepminimum");           // mark all but minimum snapshots
+   static final Flag                   COMPRESSED     =new Flag('c', "compressed");             // use protokoll 2
+   static final Flag                   INIT           =new Flag('i', "init");                   // init /etc/backsnap.d/local.conf
+   static public final Flag            DELETEOLD      =new Flag('o', "deleteold");              // mark old snapshots for deletion
+   static public final Flag            KEEP_MINIMUM   =new Flag('m', "keepminimum");            // mark all but minimum snapshots
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
-   static final Flag                   PEXEC          =new Flag('p', "pexec");                 // use pexec instead of sudo
+   static final Flag                   PEXEC          =new Flag('p', "pexec");                  // use pexec instead of sudo
    static public final String          SNAPSHOT       ="snapshot";
    static public final String          BS_VERSION     ="BackSnap Version 0.6.7.10 (2023/11/02)";
    static public final String          LF             =System.lineSeparator();
@@ -83,12 +83,11 @@ public class Backsnap {
          String[] source=Flag.getParameter(0).split("[:]"); // Parameter sammeln für SOURCE
          String[] backup=Flag.getParameter(1).split("[:]");// BackupVolume ermitteln
          OneBackup.backupPc=(backup.length == 1) ? Pc.getPc(null) : Pc.getPc(backup[0]);
-         if (OneBackup.backupPc instanceof Pc bPc)
-            // Btrfs.BTRFS.lock();
+         if (OneBackup.backupPc instanceof Pc bPc) // Btrfs.BTRFS.lock();
             bPc.setBackupLabel(Paths.get(backup[backup.length - 1]).getFileName());
          else
             throw new RuntimeException(LF + "Could not find Backuplabel " + String.join(" : ", backup));
-         OneBackup.backupList.add(new OneBackup(Pc.getPc(source[0]),
+         OneBackup.backupList.add(new OneBackup(Path.of(""), Pc.getPc(source[0]),
                   Path.of("/", source[source.length - 1].replace(Snapshot.DOT_SNAPSHOTS, "")),
                   OneBackup.backupPc.getBackupLabel(), null));
       } // Wenn keine 2 Parameter da sind, config verwenden

@@ -141,7 +141,7 @@ public class OnTheFly extends JPanel {
       JCheckBox cb=showSelection(getCb_2(), false);
       try {
          if (Etc.getConfig("backsnap") instanceof Etc etc) {
-            return showSelection(cb, etc.conf.entrySet().stream()
+            return showSelection(cb, etc.confFiles.entrySet().stream()
                      .filter(e -> e.getKey().getFileName().toString().startsWith("local")).findAny().isPresent())
                               .isSelected();
          }
@@ -171,7 +171,7 @@ public class OnTheFly extends JPanel {
       JCheckBox cb=showSelection(getCb_3(), false);
       try {
          if (Etc.getConfig("backsnap") instanceof Etc etc) // ergibt eine config mit der ID
-            return showSelection(cb, etc.conf.entrySet().stream()
+            return showSelection(cb, etc.confFiles.entrySet().stream()
                      .filter(e -> e.getValue().stream().filter(l -> l.startsWith("backup_id")).findAny().isPresent())
                      .findFirst().isPresent()).isSelected();
       } catch (IOException e) { /* */
@@ -200,13 +200,13 @@ public class OnTheFly extends JPanel {
          Etc.createConfigDir("backsnap");
       if (Etc.getConfig("backsnap") instanceof Etc etc) {
          // 2. /etc/backsnap.d/local erstellen
-         boolean hasLocal=etc.conf.entrySet().stream()
+         boolean hasLocal=etc.confFiles.entrySet().stream()
                   .filter(e -> e.getKey().getFileName().toString().startsWith("local")).findAny().isPresent();
          Path local=Path.of("/etc/backsnap.d/local.conf");
          if (!hasLocal)
             etc=createLocalConf(local);
          // 3. Backup-UUID ermitteln und eintragen
-         boolean hasId=etc.conf.entrySet().stream()
+         boolean hasId=etc.confFiles.entrySet().stream()
                   .filter(e -> e.getValue().stream().filter(l -> l.startsWith("backup_id")).findAny().isPresent())
                   .findAny().isPresent();
          if (!hasId) {
@@ -218,7 +218,7 @@ public class OnTheFly extends JPanel {
       return null;
    }
    static void addUUID(Etc etc, Path local, String uuid) throws IOException {
-      List<String> lines=etc.conf.get(local);
+      List<String> lines=etc.confFiles.get(local);
       int nr=lines.isEmpty() ? 0
                : lines.indexOf(lines.stream().filter(l -> (l.startsWith("pc ") || l.startsWith("pc="))).findFirst()
                         .orElse(lines.getLast()));
@@ -232,7 +232,7 @@ public class OnTheFly extends JPanel {
       Log.logln("create " + local.toString(), LEVEL.CONFIG);
       Files.createFile(local);
       Etc etc=Etc.getConfig("backsnap"); // neu einlesen
-      List<String> lines=etc.conf.get(local);
+      List<String> lines=etc.confFiles.get(local);
       lines.add("# backup local pc per " + Pc.SUDO);
       lines.add("pc = localhost");
       lines.add("# backup local pc per ssh");
