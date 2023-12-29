@@ -27,12 +27,14 @@ public class CmdStreams implements AutoCloseable {
    /** Der Process der cmd0 ausführt */
    private final Process                                  cmdProcess;
    private final AtomicBoolean                            cmdProcessed;
+   private final AtomicBoolean                            firstCmdClosed;
    private final CmdBufferedReader                        cmdOut;
    private final CmdBufferedReader                        cmdErr;
    /** fortlaufende Nummer dess cmd */
    private final int                                      nr;
    @SuppressWarnings("resource")
    private CmdStreams(String cmd) throws IOException {
+      firstCmdClosed=new AtomicBoolean(false);
       nr=readCounter.incrementAndGet(); // System.out.println(nr + " " + cmd);
       ProcessBuilder builder=new ProcessBuilder(List.of("/bin/bash", "-c", cmd));
       builder.environment().putIfAbsent("SSH_ASKPASS_REQUIRE", "prefer");
@@ -145,6 +147,8 @@ public class CmdStreams implements AutoCloseable {
    public int waitFor() {
       if (cmdProcessed.get())
          return 0;
+      while (cmdProcess.isAlive() && !firstCmdClosed.get())
+         Thread.onSpinWait();
       try {
          int x=cmdProcess.waitFor();
          cmdErr.waitFor();
@@ -173,6 +177,7 @@ public class CmdStreams implements AutoCloseable {
       } catch (IOException e) { /* errlist ist komplett jetzt */
          System.err.println(e);
       }
+      firstCmdClosed.set(false); // oder erst am ende ?
       cmdProcess.destroy();
    }
    /**

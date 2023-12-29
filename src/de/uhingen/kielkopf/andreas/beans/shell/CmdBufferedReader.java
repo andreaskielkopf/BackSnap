@@ -39,6 +39,7 @@ public class CmdBufferedReader extends BufferedReader implements AutoCloseable {
    public CmdBufferedReader(String name0, InputStream in) throws UnsupportedEncodingException {
       super(new InputStreamReader(in, UTF_8), bSize);
       name=name0;
+//      queue.add("");
    }
    /**
     * Beim ersten Mal den echten Stream liefern. Später den aus der queue

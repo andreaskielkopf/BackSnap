@@ -113,7 +113,7 @@ public record Pc(String extern, // Marker für diesen PC
     */
    public Optional<Mount> getTimeshiftBase() {
       return mountCache.values().stream().filter(m -> m.mountPath().equals(TMP_BTRFS_ROOT)).findFirst();
-   }  
+   }
    /**
     * Ermittle alle Mounts eines Rechners
     * 
@@ -128,9 +128,13 @@ public record Pc(String extern, // Marker für diesen PC
          Log.logln(mountCmd, LEVEL.BTRFS);
          BTRFS.readLock().lock();
          try (CmdStreams mountStream=CmdStreams.getDirectStream(mountCmd)) {
-            mountStream.outBGerr().forEachOrdered(line -> mountList2.put(line, mountCache.containsKey(line)//
-                     ? mountCache.get(line) // reuse existing
-                     : new Mount(this, line))); // create new
+            mountStream.outBGerr().forEachOrdered(line -> {
+//               if (!line.isEmpty()) {
+                  mountList2.put(line, mountCache.containsKey(line)//
+                           ? mountCache.get(line) // reuse existing
+                           : new Mount(this, line));
+//               }
+            }); // create new
             Optional<String> x=mountStream.errLines().filter(l -> (l.contains("No route to host")
                      || l.contains("Connection closed") || l.contains("connection unexpectedly closed"))).findAny();
             if (x.isPresent())
@@ -155,7 +159,10 @@ public record Pc(String extern, // Marker für diesen PC
          Log.logln(btrfsVersionCmd, LEVEL.COMMANDS);
          BTRFS.readLock().lock();
          try (CmdStreams btrfsVersionStream=CmdStreams.getDirectStream(btrfsVersionCmd)) {
-            btrfsVersionStream.outBGerr().forEach(line -> btrfsVersion.set(new Version("btrfs", line)));
+            btrfsVersionStream.outBGerr().forEach(line -> {
+//               if (!line.isEmpty())
+                  btrfsVersion.set(new Version("btrfs", line));
+            });
             Optional<String> x=btrfsVersionStream.errLines().filter(l -> (l.contains("No route to host")
                      || l.contains("Connection closed") || l.contains("connection unexpectedly closed"))).findAny();
             if (x.isPresent())
@@ -178,7 +185,10 @@ public record Pc(String extern, // Marker für diesen PC
          String versionCmd=getCmd(new StringBuilder("uname -rs"), false);
          Log.logln(versionCmd, LEVEL.COMMANDS);
          try (CmdStreams versionStream=CmdStreams.getDirectStream(versionCmd)) {
-            versionStream.outBGerr().forEach(line -> kernelVersion.set(new Version("kernel", line)));
+            versionStream.outBGerr().forEach(line -> {
+//               if (!line.isEmpty())
+                  kernelVersion.set(new Version("kernel", line));
+            });
             Optional<String> x=versionStream.errLines().filter(l -> (l.contains("No route to host")
                      || l.contains("Connection closed") || l.contains("connection unexpectedly closed"))).findAny();
             if (x.isPresent())

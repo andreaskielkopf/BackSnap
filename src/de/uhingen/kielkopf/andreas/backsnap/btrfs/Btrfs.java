@@ -39,7 +39,7 @@ public class Btrfs {
    public static final String                 VERSION         ="btrfs version ";
    private static final String                SEND            ="btrfs send ";
    public static final String                 RECEIVE         ="btrfs receive ";
-   private static final String                SUBVOLUME_DELETE="btrfs subvolume delete -Cv ";
+   private static final String                SUBVOLUME_DELETE="btrfs subvolume delete -v ";
    private static final String                SUBVOLUME_CREATE="btrfs subvolume create ";
    public static final String                 SUBVOLUME_LIST  ="btrfs subvolume list ";
    private static final Pattern               STD_MIN_        =Pattern.compile(" [0-9]:[0-9][0-9]:");
@@ -71,9 +71,11 @@ public class Btrfs {
       BTRFS.writeLock().lock();
       try (CmdStreams removeStream=CmdStreams.getDirectStream(removeCmd)) {
          removeStream.outBGerr().forEach(line -> {
-            Log.logln(line, LEVEL.DELETE);
-            if (Backsnap.bsGui instanceof BacksnapGui gui)
-               gui.lblPvSetText(line);
+//            if (!line.isEmpty()) {
+               Log.logln(line, LEVEL.DELETE);
+               if (Backsnap.bsGui instanceof BacksnapGui gui)
+                  gui.lblPvSetText(line);
+//            }
          });
          removeStream.errPrintln();
       } finally {
@@ -92,14 +94,16 @@ public class Btrfs {
       try (CmdStreams volumeListStream=CmdStreams.getCachedStream(volumeListCmd)) {
          ArrayList<String> tmpList=new ArrayList<>();
          volumeListStream.outBGerr().forEachOrdered(line -> {
-            if (!line.isBlank())
-               tmpList.add(line);
-            else
-               if (!tmpList.isEmpty()) {
-                  Volume v=Volume.getVolume(pc, tmpList);
-                  list.put(v.uuid(), v);
-                  tmpList.clear();
-               }
+//            if (!line.isEmpty()) {
+               if (!line.isBlank())
+                  tmpList.add(line);
+               else
+                  if (!tmpList.isEmpty()) {
+                     Volume v=Volume.getVolume(pc, tmpList);
+                     list.put(v.uuid(), v);
+                     tmpList.clear();
+                  }
+//            }
          });
          volumeListStream.errPrintln();
       } catch (IOException e1) {
@@ -237,7 +241,8 @@ public class Btrfs {
                   Owlog("o: " + line, LEVEL.PROGRESS);
                } else {
                   std_min_=m1.group();
-                  logln(">: " + line, LEVEL.PROGRESS);// Eine Minute abgelaufen
+                  lnlog("", LEVEL.PROGRESS);
+                  Owlog(">: " + line, LEVEL.PROGRESS);// Eine Minute abgelaufen
                }
             } else {
                logln("?: " + line, LEVEL.PROGRESS);

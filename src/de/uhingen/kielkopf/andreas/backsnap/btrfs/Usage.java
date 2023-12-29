@@ -48,7 +48,7 @@ public record Usage(String size, String allocated, String unallcoated, String mi
    public Usage(Mount m, boolean b) throws IOException {
       this(getMString(m, b));
       if (needsBalance())
-         Log.errln("It seems urgently advisable to balance the backup volume",LEVEL.ERRORS);
+         Log.errln("It seems urgently advisable to balance the backup volume", LEVEL.ERRORS);
    }
    /**
     * @param m
@@ -64,7 +64,10 @@ public record Usage(String size, String allocated, String unallcoated, String mi
       BTRFS.readLock().lock();
       try (CmdStreams usageStream=CmdStreams.getDirectStream(usageCmd)) {
          StringBuilder usageLine=new StringBuilder();
-         usageStream.outBGerr().forEach(line -> usageLine.append(line).append('\n'));
+         usageStream.outBGerr().forEach(line -> {
+//            if (!line.isEmpty())
+               usageLine.append(line).append('\n');
+         });
          Optional<String> erg=usageStream.errLines().filter(line -> (line.contains("No route to host")
                   || line.contains("Connection closed") || line.contains("connection unexpectedly closed"))).findAny();
          if (erg.isPresent()) {
@@ -76,7 +79,7 @@ public record Usage(String size, String allocated, String unallcoated, String mi
       } finally {
          BTRFS.readLock().unlock();
       }
-      }
+   }
    static public double getZahl(String s) {
       IB f=IB.valueOf(s.replaceAll("[0-9.]", ""));
       return Double.parseDouble(s.replaceAll("[KMGTiB]", "")) * f.f;

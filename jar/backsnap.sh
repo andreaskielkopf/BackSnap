@@ -2,7 +2,7 @@
 # ©2023 Andreas Kielkopf
 # License: `GNU General Public License v3.0`
 export SSH_ASKPASS_REQUIRE=prefer   
-sudo java -XX:+UseZGC -XX:+ZGenerational -jar "$0" "$@"
+sudo java -jar "$0" "$@"
 EC="$?"
 [ "$EC" = 0 ] && exit;
 echo -n "$EC ==>"
@@ -10,8 +10,7 @@ echo -n "$EC ==>"
 [ "$EC" = 1 ] && echo "$0 needs a java runtime with version 21"
 { cat; exit; } <<EOF
 
-BackSnap is made for btrfs snapshots on manjaro linux
-but may work for others too
+BackSnap is made for making backups of btrfs snapshots on linux
 
 Usage:
 ------

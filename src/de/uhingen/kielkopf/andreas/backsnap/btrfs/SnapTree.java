@@ -42,19 +42,21 @@ public record SnapTree(Mount mount, TreeMap<String, Snapshot> uuidMap, TreeMap<S
       String subvolumeListCmd=mount.pc().getCmd(subvolumeListCommand, true);
       Log.logln(subvolumeListCmd, LEVEL.BTRFS);
       BTRFS.readLock().lock();
-      try (CmdStreams snapshotStream=CmdStreams.getCachedStream(subvolumeListCmd, mount.keyD())) {         
-         snapshotStream.outBGerr().forEachOrdered(line -> {
+      try (CmdStreams snapshotStream=CmdStreams.getCachedStream(subvolumeListCmd, mount.keyD())) {
+         snapshotStream.outBGerr().forEachOrdered(line -> { 
             try {
-               if (line.contains("timeshift"))
-                  Log.logln(line, LEVEL.BTRFS_ANSWER);
-               Snapshot snapshot=new Snapshot(mount, line);
-               btrfsPathMap.put(snapshot.btrfsPath(), snapshot);// nach pfad sortiert
-               uuidMap.put(snapshot.uuid(), snapshot);
-               dateMap.put(snapshot.keyO(), snapshot);
-               if (snapshot.isBackup())
-                  rUuidMap.put(snapshot.received_uuid(), snapshot);
+//               if (!line.isEmpty()) {
+                  if (line.contains("timeshift"))
+                     Log.logln(line, LEVEL.BTRFS_ANSWER);
+                  Snapshot snapshot=new Snapshot(mount, line);
+                  btrfsPathMap.put(snapshot.btrfsPath(), snapshot);// nach pfad sortiert
+                  uuidMap.put(snapshot.uuid(), snapshot);
+                  dateMap.put(snapshot.keyO(), snapshot);
+                  if (snapshot.isBackup())
+                     rUuidMap.put(snapshot.received_uuid(), snapshot);
+//               }
             } catch (Exception e) {
-               System.err.println(" --> "+e);
+               System.err.println(" --> " + e);
                e.printStackTrace();
             }
          });
