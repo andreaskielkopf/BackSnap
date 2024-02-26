@@ -16,7 +16,7 @@ import java.util.stream.Stream;
  */
 public class CmdBufferedReader extends BufferedReader implements AutoCloseable {
    static final String                   UTF_8        ="UTF-8";                      // verwende UTF-8
-   static final int                      bSize        =0x10000;                      // 64k Buffer für jeden Stream
+   static final int                      bSize        =0x100000;                      // 1M Buffer für jeden Stream
    final String                          name;                                       // name nur fürs debugging
    private ConcurrentLinkedQueue<String> queue        =new ConcurrentLinkedQueue<>();
    /** Der erste Stream wurde angefangen zu lesen */
