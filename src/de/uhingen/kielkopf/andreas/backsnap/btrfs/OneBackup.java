@@ -5,7 +5,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,7 +23,7 @@ public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, 
    public static Pc backupPc=null;
    public static String backupId=null;
    /** sortierte Liste mit den vorgesehenen Backups */
-   public static ConcurrentSkipListSet<OneBackup> backupList=new ConcurrentSkipListSet<>();
+   final public static ConcurrentSkipListMap<String, OneBackup> backupMap=new ConcurrentSkipListMap<>();
    private static Pattern linePattern=Pattern.compile("^( *[a-zA-Z0-9._]{2,80} *)=(.+)"); // Kommentare ausblenden
    /**
     * @throws IOException
@@ -90,7 +90,7 @@ public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, 
                         Path label=Path.of(a); // relativ
                         Path pfad=Path.of(b); // absolut
                         if (pfad.isAbsolute())
-                           backupList.add(new OneBackup(entry.getKey(), pc, pfad, label, flags));
+                           backupMap.put(label.toString(), new OneBackup(entry.getKey(), pc, pfad, label, flags));
                         break;
                   }
                }
@@ -110,7 +110,7 @@ public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, 
    public static List<String> getConfigText() {
       ArrayList<String> l=new ArrayList<>();
       l.add(getBasisText());
-      for (OneBackup backup:backupList)
+      for (OneBackup backup:backupMap.values())
          l.add(backup.toString());
       return l;
    }

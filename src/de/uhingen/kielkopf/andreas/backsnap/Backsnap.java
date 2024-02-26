@@ -8,6 +8,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.concurrent.*;
 import java.util.regex.Pattern;
 
@@ -32,7 +33,7 @@ import de.uhingen.kielkopf.andreas.beans.shell.CmdStreams;
  * @author Andreas Kielkopf
  * @see https://github.com/andreaskielkopf/BackSnap
  * @see https://forum.manjaro.org/t/howto-hilfsprogramm-fur-backup-btrfs-snapshots-mit-send-recieve timeshift
- * 
+ * ssh
  */
 public class Backsnap {
    static public final ExecutorService virtual        =Version.getVx();
@@ -58,7 +59,7 @@ public class Backsnap {
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
    static final Flag                   PEXEC          =new Flag('p', "pexec");                  // use pexec instead of sudo
    static public final String          SNAPSHOT       ="snapshot";
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.20 (2023/12/28)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.8.1 (2024/02/23)";
    static public final String          LF             =System.lineSeparator();
    static public void main(String[] args) {
       Flag.setArgs(args, "");
@@ -76,23 +77,36 @@ public class Backsnap {
       } catch (IOException e) {
          e.printStackTrace();
       }
-      // Wenn 2 Parameter da sind, dann diese verwenden
-      if (!Flag.getParameter(1).isBlank()) {
-         OneBackup.backupList.clear(); // Kommandozeile statt config, aber Basisconfig behalten
-         String[] source=Flag.getParameter(0).split("[:]"); // Parameter sammeln für SOURCE
-         String[] backup=Flag.getParameter(1).split("[:]");// BackupVolume ermitteln
-         OneBackup.backupPc=(backup.length == 1) ? Pc.getPc(null) : Pc.getPc(backup[0]);
-         if (OneBackup.backupPc instanceof Pc bPc) // Btrfs.BTRFS.lock();
-            bPc.setBackupLabel(Paths.get(backup[backup.length - 1]).getFileName());
-         else
-            throw new RuntimeException(LF + "Could not find Backuplabel " + String.join(" : ", backup));
-         OneBackup.backupList.add(new OneBackup(Path.of(""), Pc.getPc(source[0]),
-                  Path.of("/", source[source.length - 1].replace(Snapshot.DOT_SNAPSHOTS, "")),
-                  OneBackup.backupPc.getBackupLabel(), null));
-      } // Wenn keine 2 Parameter da sind, config verwenden
+      if (!Flag.getParameter(0).isBlank()) {// Wenn Parameter da sind, dann zuerst die auswerten
+         if (OneBackup.backupMap.containsKey(Flag.getParameter(0))) { // Wenn Labels da sind haben die Priorität
+            // System.out.println("Treffer");
+            List<String> pList=Flag.getParameterList();
+            for (String key:OneBackup.backupMap.keySet()) {
+               if (!pList.contains(key)) {
+                  OneBackup.backupMap.remove(key);
+                  // System.out.println("-" + key);
+               } else
+                  System.out.println("+" + key);
+            }
+         } else
+            if (!Flag.getParameter(1).isBlank()) { // Wenn 2 Parameter da sind, dann diese verwenden
+               OneBackup.backupMap.clear(); // Kommandozeile statt config, aber Basisconfig behalten
+               String[] source=Flag.getParameter(0).split("[:]"); // Parameter sammeln für SOURCE
+               String[] backup=Flag.getParameter(1).split("[:]"); // BackupVolume ermitteln
+               OneBackup.backupPc=(backup.length == 1) ? Pc.getPc(null) : Pc.getPc(backup[0]);
+               if (OneBackup.backupPc instanceof Pc bPc) // Btrfs.BTRFS.lock();
+                  bPc.setBackupLabel(Paths.get(backup[backup.length - 1]).getFileName());
+               else
+                  throw new RuntimeException(LF + "Could not find Backuplabel " + String.join(" : ", backup));
+               OneBackup.backupMap.put(OneBackup.backupPc.getBackupLabel().toString(),
+                        new OneBackup(Path.of(""), Pc.getPc(source[0]),
+                                 Path.of("/", source[source.length - 1].replace(Snapshot.DOT_SNAPSHOTS, "")),
+                                 OneBackup.backupPc.getBackupLabel(), null));
+            }
+      }
       Log.logln(OneBackup.getConfigText(), LEVEL.CONFIG);
       OneBackup lastBackup=null;
-      for (OneBackup ob:OneBackup.backupList) {
+      for (OneBackup ob:OneBackup.backupMap.values()) {
          actualBackup=ob;
          if (!actualBackup.srcPc().isReachable())
             continue;
@@ -181,7 +195,7 @@ public class Backsnap {
                Log.errln(e.getMessage(), LEVEL.ERRORS);
             else
                e.printStackTrace();
-            if (OneBackup.backupList.size() <= 1) {
+            if (OneBackup.backupMap.size() <= 1) {
                try {
                   if (lastBackup != null)
                      lastBackup.srcPc().mountBtrfsRoot(lastBackup.srcPath(), false);
