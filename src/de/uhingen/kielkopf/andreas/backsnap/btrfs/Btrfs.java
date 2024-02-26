@@ -71,11 +71,11 @@ public class Btrfs {
       BTRFS.writeLock().lock();
       try (CmdStreams removeStream=CmdStreams.getDirectStream(removeCmd)) {
          removeStream.outBGerr().forEach(line -> {
-//            if (!line.isEmpty()) {
-               Log.logln(line, LEVEL.DELETE);
-               if (Backsnap.bsGui instanceof BacksnapGui gui)
-                  gui.lblPvSetText(line);
-//            }
+            // if (!line.isEmpty()) {
+            Log.logln(line, LEVEL.DELETE);
+            if (Backsnap.bsGui instanceof BacksnapGui gui)
+               gui.lblPvSetText(line);
+            // }
          });
          removeStream.errPrintln();
       } finally {
@@ -94,16 +94,16 @@ public class Btrfs {
       try (CmdStreams volumeListStream=CmdStreams.getCachedStream(volumeListCmd)) {
          ArrayList<String> tmpList=new ArrayList<>();
          volumeListStream.outBGerr().forEachOrdered(line -> {
-//            if (!line.isEmpty()) {
-               if (!line.isBlank())
-                  tmpList.add(line);
-               else
-                  if (!tmpList.isEmpty()) {
-                     Volume v=Volume.getVolume(pc, tmpList);
-                     list.put(v.uuid(), v);
-                     tmpList.clear();
-                  }
-//            }
+            // if (!line.isEmpty()) {
+            if (!line.isBlank())
+               tmpList.add(line);
+            else
+               if (!tmpList.isEmpty()) {
+                  Volume v=Volume.getVolume(pc, tmpList);
+                  list.put(v.uuid(), v);
+                  tmpList.clear();
+               }
+            // }
          });
          volumeListStream.errPrintln();
       } catch (IOException e1) {
@@ -194,6 +194,11 @@ public class Btrfs {
             btrfsSendStream.errLines().forEach(line -> extractPv(bsGui, line));
          } finally {
             BTRFS.writeLock().unlock();
+            Runtime r=Runtime.getRuntime();
+            long n=1024 * 1024;
+            System.err.println("free(" + r.freeMemory() / n + "),max(" + r.maxMemory() / n + "),total("
+                     + r.totalMemory() / n + ")");
+            System.gc();
             lnlog("", LEVEL.PROGRESS);
          }
          if (bsGui != null)
