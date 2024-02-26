@@ -37,7 +37,6 @@ public class CmdStreams implements AutoCloseable {
       firstCmdClosed=new AtomicBoolean(false);
       nr=readCounter.incrementAndGet(); // System.out.println(nr + " " + cmd);
       ProcessBuilder builder=new ProcessBuilder(List.of("/bin/bash", "-c", cmd));
-      builder.environment().putIfAbsent("SSH_ASKPASS_REQUIRE", "prefer");
       cmdProcess=builder.start();
       cmdProcessed=new AtomicBoolean(false);
       cmdOut=new CmdBufferedReader(nr + " out", cmdProcess.getInputStream());
