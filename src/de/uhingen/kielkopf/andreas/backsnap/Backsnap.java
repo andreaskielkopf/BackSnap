@@ -58,7 +58,7 @@ public class Backsnap {
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
    static final Flag                   PEXEC          =new Flag('p', "pexec");                 // use pexec instead of sudo
    static public final String          SNAPSHOT       ="snapshot";
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.8.4 (2024/03/09)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.8.6 (2024/03/09)";
    static public final String          LF             =System.lineSeparator();
    static public void main(String[] args) {
       Flag.setArgs(args, "");
@@ -77,15 +77,14 @@ public class Backsnap {
          e.printStackTrace();
       }
       if (!Flag.getParameter(0).isBlank()) {// Wenn Parameter da sind, dann zuerst die auswerten
-         if (OneBackup.backupMap.containsKey(Flag.getParameter(0))) { // Wenn Labels da sind haben die Priorität
-            // System.out.println("Treffer");
-            List<String> pList=Flag.getParameterList();
-            for (String key:OneBackup.backupMap.keySet()) {
-               if (!pList.contains(key)) {
-                  OneBackup.backupMap.remove(key);
-                  // System.out.println("-" + key);
-               } else
-                  System.out.println("+" + key);
+         if (Flag.getParameter(0).endsWith("*") || OneBackup.backupMap.containsKey(Flag.getParameter(0))) {
+            List<String> pList=Flag.getParameterList(); // System.out.println("Treffer");
+            Keys: for (String key:OneBackup.backupMap.keySet()) {
+               for (String param:pList)
+                  if (param.equals(key) || (param.endsWith("*") && (key.equals(param.substring(0, param.length() - 1))
+                           || key.startsWith(param.substring(0, param.length() - 1) + "."))))
+                     continue Keys; // System.out.println("+" + param + "=" + key);
+               OneBackup.backupMap.remove(key);
             }
          } else
             if (!Flag.getParameter(1).isBlank()) { // Wenn 2 Parameter da sind, dann diese verwenden
