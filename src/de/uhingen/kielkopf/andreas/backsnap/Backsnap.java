@@ -32,8 +32,7 @@ import de.uhingen.kielkopf.andreas.beans.shell.CmdStreams;
  * 
  * @author Andreas Kielkopf
  * @see https://github.com/andreaskielkopf/BackSnap
- * @see https://forum.manjaro.org/t/howto-hilfsprogramm-fur-backup-btrfs-snapshots-mit-send-recieve timeshift
- * ssh
+ * @see https://forum.manjaro.org/t/howto-hilfsprogramm-fur-backup-btrfs-snapshots-mit-send-recieve timeshift ssh
  */
 public class Backsnap {
    static public final ExecutorService virtual        =Version.getVx();
@@ -43,23 +42,23 @@ public class Backsnap {
    static public BacksnapGui           bsGui          =null;
    static public OneBackup             actualBackup   =null;
    static private int                  skipCount      =0;
-   static final Flag                   HELP           =new Flag('h', "help");                   // show usage
-   static final Flag                   VERSION        =new Flag('x', "version");                // show date and version
-   static final Flag                   DRYRUN         =new Flag('d', "dryrun");                 // do not do anythimg ;-)
+   static final Flag                   HELP           =new Flag('h', "help");                  // show usage
+   static final Flag                   VERSION        =new Flag('x', "version");               // show date and version
+   static final Flag                   DRYRUN         =new Flag('d', "dryrun");                // do not do anythimg ;-)
    public static final Flag            VERBOSE        =new Flag('v', "verbose");
-   static public final Flag            SINGLESNAPSHOT =new Flag('s', "singlesnapshot");         // backup exactly one snapshot
+   static public final Flag            SINGLESNAPSHOT =new Flag('s', "singlesnapshot");        // backup exactly one snapshot
    // static public final Flag TIMESHIFT =new Flag('t', "timeshift");
-   static public final Flag            GUI            =new Flag('g', "gui");                    // enable gui (only with sudo)
-   static final Flag                   AUTO           =new Flag('a', "auto");                   // auto-close gui when ready
+   static public final Flag            GUI            =new Flag('g', "gui");                   // enable gui (only with sudo)
+   static final Flag                   AUTO           =new Flag('a', "auto");                  // auto-close gui when ready
    // static final Flag NOSYNC =new Flag('n', "nosync"); // no sync after every command
-   static final Flag                   COMPRESSED     =new Flag('c', "compressed");             // use protokoll 2
-   static final Flag                   INIT           =new Flag('i', "init");                   // init /etc/backsnap.d/local.conf
-   static public final Flag            DELETEOLD      =new Flag('o', "deleteold");              // mark old snapshots for deletion
-   static public final Flag            KEEP_MINIMUM   =new Flag('m', "keepminimum");            // mark all but minimum snapshots
+   static final Flag                   COMPRESSED     =new Flag('c', "compressed");            // use protokoll 2
+   static final Flag                   INIT           =new Flag('i', "init");                  // init /etc/backsnap.d/local.conf
+   static public final Flag            DELETEOLD      =new Flag('o', "deleteold");             // mark old snapshots for deletion
+   static public final Flag            KEEP_MINIMUM   =new Flag('m', "keepminimum");           // mark all but minimum snapshots
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
-   static final Flag                   PEXEC          =new Flag('p', "pexec");                  // use pexec instead of sudo
+   static final Flag                   PEXEC          =new Flag('p', "pexec");                 // use pexec instead of sudo
    static public final String          SNAPSHOT       ="snapshot";
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.8.2 (2024/02/26)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.8.3 (2024/02/26)";
    static public final String          LF             =System.lineSeparator();
    static public void main(String[] args) {
       Flag.setArgs(args, "");
@@ -303,14 +302,17 @@ public class Backsnap {
    static private void mkDirs(Path bdir) throws IOException {
       if (bdir.isAbsolute()) {
          String mkdirCmd=OneBackup.backupPc.getCmd(new StringBuilder("mkdir -pv ").append(bdir), true);
-         Log.log(mkdirCmd, LEVEL.RSYNC);
+         Log.log(mkdirCmd, LEVEL.BASIC);
          if (DRYRUN.get())
             return;
-         if (!OneBackup.isBackupExtern())
+         if (!OneBackup.isBackupExtern()) {
+            if (bdir.toFile().isDirectory())
+               return;
             if (bdir.toFile().mkdirs())
                return; // erst mit sudo, dann noch mal mit localhost probieren
+         }
          try (CmdStreams mkdirStream=CmdStreams.getDirectStream(mkdirCmd)) {
-            if (mkdirStream.outBGerr().peek(t -> Log.logln(t, LEVEL.RSYNC))
+            if (mkdirStream.outBGerr().peek(t -> Log.logln(t, LEVEL.BASIC))
                      .anyMatch(Pattern.compile("mkdir").asPredicate()))
                return;
             // if (mkdirStream.errBuffer().queue(). isEmpty())
