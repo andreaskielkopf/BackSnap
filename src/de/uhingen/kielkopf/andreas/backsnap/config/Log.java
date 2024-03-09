@@ -83,8 +83,8 @@ public class Log {
       if (needsPrinting(levels)) {
          for (String line:texts)
             if (dedup(line) instanceof String s) {
-               if (Log.logPos + s.length() > Log.logMAXLEN)
-                  System.out.print(System.lineSeparator());
+//               if (Log.logPos + s.length() > Log.logMAXLEN)
+//                  System.out.print(System.lineSeparator());
                System.out.print(s + System.lineSeparator());
                Log.logPos=0;
             }
