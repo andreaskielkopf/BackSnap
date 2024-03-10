@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
@@ -296,32 +298,36 @@ public class BacksnapGui implements MouseListener {
     * 
     * @param jCheckBox
     */
+   AtomicBoolean deleteUnterbrechen=new AtomicBoolean();
    public void delete(final JButton jButton, final JCheckBox jCheckBox, STATUS status) {
-      try {
-         List<Snapshot> toRemove=getPanelBackup().labelTree_KeyO.values().stream()
-                  .filter(i -> (i instanceof SnapshotLabel sl && sl.getStatus() == status)).map(sl -> sl.snapshot)
-                  .toList();
-         if (toRemove.isEmpty())
-            return;
-         jButton.setEnabled(false);
-         Pc.mountBackupRoot(true);
-         virtual.execute(() -> {// jButton.setEnabled(false);
-            for (Snapshot snapshot:toRemove) {
-               Log.logln("to remove " + snapshot.dirName(), LEVEL.DELETE);
-               if (!jCheckBox.isSelected())
-                  continue;
-               try {
-                  Btrfs.removeSnapshot(snapshot); // BTRFS-Lock inside
-                  Thread.sleep(100);
-               } catch (IOException | InterruptedException e1) { /* */ }
-               refreshGUI();
-               if (Backsnap.SINGLESNAPSHOT.get())
-                  break;
-            }
-            Log.logln("", LEVEL.DELETE);
-            jButton.setEnabled(true);
-         });
-      } catch (IOException ignore) { /* */ }
+      deleteUnterbrechen.set(!jCheckBox.isSelected());
+      if (!deleteUnterbrechen.get())
+         try {
+            List<Snapshot> toRemove=getPanelBackup().labelTree_KeyO.values().stream()
+                     .filter(i -> (i instanceof SnapshotLabel sl && sl.getStatus() == status)).map(sl -> sl.snapshot)
+                     .toList();
+            if (toRemove.isEmpty())
+               return;
+            // jButton.setEnabled(false);
+            // Pc.mountBackupRoot(true);
+            Btrfs.removeSnapshots(toRemove, deleteUnterbrechen, jButton, this);
+            // virtual.execute(() -> {// jButton.setEnabled(false);
+            // for (Snapshot snapshot:toRemove) {
+            // if (!deleteUnterbrechen.get()) {
+            // Log.logln("to remove " + snapshot.dirName(), LEVEL.DELETE);
+            // try {
+            // Btrfs.removeSnapshot(snapshot); // BTRFS-Lock inside
+            // Thread.sleep(100);
+            // } catch (IOException | InterruptedException e1) { /* */ }
+            // refreshGUI();
+            // if (Backsnap.SINGLESNAPSHOT.get())
+            // break;
+            // }
+            // }
+            // Log.logln("", LEVEL.DELETE);
+            // // jButton.setEnabled(true);
+            // });
+         } catch (IOException ignore) { /* */ }
    }
    /**
     * Erstelle oder Erneuere die Anzeige der Backups
@@ -733,6 +739,17 @@ public class BacksnapGui implements MouseListener {
          getTxtParent().setText((parentSnapshot == null) ? " " : parentSnapshot.dirName());
       });
    }
+   public void setDeleteInfo(String text) {
+      SwingUtilities.invokeLater(() -> {
+         if (text.isBlank()) {
+            getLblSnapshot().setText("remove backup of:");
+            getLblParent().setText(" ");
+            getTxtParent().setText(" ");
+         } else
+            getTxtSnapshot().setText(text);
+      });
+   }
+   @Deprecated
    public void setDeleteInfo(Snapshot toDelete) throws FileNotFoundException {
       Log.logln(toDelete.getSnapshotMountPath().toString(), LEVEL.DELETE);
       SwingUtilities.invokeLater(() -> {

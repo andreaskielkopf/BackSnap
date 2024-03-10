@@ -9,11 +9,15 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-
+import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.swing.JButton;
 
 import de.uhingen.kielkopf.andreas.backsnap.Backsnap;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log;
@@ -28,36 +32,100 @@ import de.uhingen.kielkopf.andreas.beans.shell.CmdStreams;
  */
 public class Btrfs {
    /* Liefert eine Map der verfügbaren Volumes sortiert nach UUID */
-   public static final String                 DEVICE_USAGE    ="btrfs device usage ";
-   private static final String                FILESYSTEM_SHOW ="btrfs filesystem show ";
-   public static final String                 FILESYSTEM_USAGE="btrfs filesystem usage ";
-   public static final String                 SUBVOLUME_LIST_1="btrfs subvolume list -apuqRs ";
-   public static final String                 SUBVOLUME_LIST_2="btrfs subvolume list -apuqRcg ";
-   public static final String                 SUBVOLUME_SHOW  ="btrfs subvolume show ";
-   public static final String                 PROPERTY_SET    ="btrfs property set ";
-   public static final String                 PROPERTY_GET    ="btrfs property get ";
-   public static final String                 VERSION         ="btrfs version ";
-   private static final String                SEND            ="btrfs send ";
-   public static final String                 RECEIVE         ="btrfs receive ";
-   private static final String                SUBVOLUME_DELETE="btrfs subvolume delete -v ";
-   private static final String                SUBVOLUME_CREATE="btrfs subvolume create ";
-   public static final String                 SUBVOLUME_LIST  ="btrfs subvolume list ";
-   private static final Pattern               STD_MIN_        =Pattern.compile(" [0-9]:[0-9][0-9]:");
-   private static String                      std_min_;                                              // =" 0:00:";
-   public static final ReentrantReadWriteLock BTRFS           =new ReentrantReadWriteLock(true);
-   private static Boolean                     pvUsable        =null;
-   private static int                         lastLine        =0;
+   public static final String                     DEVICE_USAGE    ="btrfs device usage ";
+   private static final String                    FILESYSTEM_SHOW ="btrfs filesystem show ";
+   public static final String                     FILESYSTEM_USAGE="btrfs filesystem usage ";
+   public static final String                     SUBVOLUME_LIST_1="btrfs subvolume list -apuqRs ";
+   public static final String                     SUBVOLUME_LIST_2="btrfs subvolume list -apuqRcg ";
+   public static final String                     SUBVOLUME_SHOW  ="btrfs subvolume show ";
+   public static final String                     PROPERTY_SET    ="btrfs property set ";
+   public static final String                     PROPERTY_GET    ="btrfs property get ";
+   public static final String                     VERSION         ="btrfs version ";
+   private static final String                    SEND            ="btrfs send ";
+   public static final String                     RECEIVE         ="btrfs receive ";
+   private static final String                    SUBVOLUME_DELETE="btrfs subvolume delete -v ";
+   private static final String                    SUBVOLUME_CREATE="btrfs subvolume create ";
+   public static final String                     SUBVOLUME_LIST  ="btrfs subvolume list ";
+   private static final Pattern                   STD_MIN_        =Pattern.compile(" [0-9]:[0-9][0-9]:");
+   private static String                          std_min_;                                              // =" 0:00:";
+   public static final ReentrantReadWriteLock     BTRFS           =new ReentrantReadWriteLock(true);
+   private static Boolean                         pvUsable        =null;
+   private static int                             lastLine        =0;
    // private static boolean skip =false;
+   private static ConcurrentLinkedQueue<Snapshot> removeQueue     =new ConcurrentLinkedQueue<>();
+   static public void removeSnapshots(List<Snapshot> list, AtomicBoolean deleteUnterbrechen, JButton jButton,
+            BacksnapGui gui) {
+      // SwingUtilities.invokeLater(()-> jButton.setEnabled(false));
+      removeQueue.addAll(list);
+      Thread.ofVirtual().start(() -> {
+         try {
+            Pc.mountBackupRoot(true);
+            StringBuilder removeSB=new StringBuilder();// für den Befehl
+            StringBuilder dirList=new StringBuilder();// für die Anzeige
+            if (gui != null)
+               gui.setDeleteInfo("");
+            while (removeQueue.poll() instanceof Snapshot snap)
+               if (!deleteUnterbrechen.get()) {
+                  try {
+                     // Log.log(" " + snap.dirName(), LEVEL.DELETE);
+                     Path bmp=Pc.getBackupMount().mountPath()
+                              .resolve(snap.btrfsPath().getRoot().relativize(snap.btrfsPath()));
+                     if (!bmp.toString().startsWith(Pc.TMP_BACKUP_ROOT.toString()) || bmp.toString().contains("../"))
+                        throw new SecurityException("I am not allowed to delete " + bmp.toString());
+                     removeSB.append(bmp);
+                     dirList.append(" " + snap.dirName());
+                     if (gui != null)
+                        gui.mark(snap.received_uuid(), STATUS.INPROGRESS);// farbig anzeigen
+                     if (removeQueue.isEmpty() || removeSB.length() > 80) { // Do delete now
+                        if (gui != null)
+                           gui.setDeleteInfo(dirList.toString());// Info einblenden
+                        dirList.setLength(0);
+                        if (gui != null)
+                           gui.getPanelMaintenance().updateButtons();
+                        removeSB.insert(0, SUBVOLUME_DELETE);
+                        String removeCmd=snap.mount().pc().getCmd(removeSB, true);
+                        removeSB.setLength(0);
+                        Log.logln(removeCmd, LEVEL.BTRFS);
+                        BTRFS.writeLock().lock();
+                        try (CmdStreams removeStream=CmdStreams.getDirectStream(removeCmd)) {
+                           removeStream.outBGerr().forEach(line -> {
+                              // if (!line.isEmpty()) {
+                              Log.logln(line, LEVEL.DELETE);
+                              if (Backsnap.bsGui instanceof BacksnapGui gui2)
+                                 gui2.lblPvSetText(line);
+                              // }
+                           });
+                           removeStream.errPrintln();
+                        } finally {
+                           BTRFS.writeLock().unlock();
+                           if (gui != null)
+                              gui.getPanelMaintenance().updateButtons();
+                        }
+                     }
+                  } catch (IOException e) {
+                     e.printStackTrace();
+                  }
+                  if (Backsnap.SINGLESNAPSHOT.get())
+                     break;
+               }
+         } finally {
+            if (gui != null)
+               gui.refreshGUI();
+            if (gui != null)
+               gui.getPanelMaintenance().updateButtons();
+            // SwingUtilities.invokeLater(()-> jButton.setEnabled(true));
+         }
+      });
+   }
    /**
     * löscht eines der Backups im Auftrag der GUI
     * 
     * @param s
     * @throws IOException
     */
+   @Deprecated
    static public void removeSnapshot(Snapshot s) throws IOException {
-      Path bmp=Pc.getBackupMount().mountPath();
-      Path rel=s.btrfsPath().getRoot().relativize(s.btrfsPath());
-      bmp=bmp.resolve(rel);
+      Path bmp=Pc.getBackupMount().mountPath().resolve(s.btrfsPath().getRoot().relativize(s.btrfsPath()));
       if (!bmp.toString().startsWith(Pc.TMP_BACKUP_ROOT.toString()) || bmp.toString().contains("../"))
          throw new SecurityException("I am not allowed to delete " + bmp.toString());
       StringBuilder removeSB=new StringBuilder(SUBVOLUME_DELETE).append(bmp);
