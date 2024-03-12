@@ -30,13 +30,13 @@ import de.uhingen.kielkopf.andreas.beans.Version;
 public class PanelSpace extends JPanel {
    static private ExecutorService     virtual         =Version.getVx();
    static private final long          serialVersionUID=-8473404478127990644L;
-   private JPanel            panel;
-   private JPanel            panel_c;
-   private Lbl               lblSpace;
-   private TxtFeld           txtDisabled;
-   private JSlider           sliderSpace;
-   private JCheckBox         chckSpace;
-   private JButton           btnSpace;
+   private JPanel                     panel;
+   private JPanel                     panel_c;
+   private Lbl                        lblSpace;
+   private TxtFeld                    txtDisabled;
+   private JSlider                    sliderSpace;
+   private JCheckBox                  chckSpace;
+   private JButton                    btnSpace;
    static public int                  DEFAULT_SPACE   =1999;
    AtomicBoolean                      needsAbgleich   =new AtomicBoolean(false);
    @NonNull final private BacksnapGui bsGui;
@@ -108,19 +108,19 @@ public class PanelSpace extends JPanel {
             labelTable.put(Integer.valueOf(i * 1000), new JLabel((i == 0) ? "0" : Integer.toString(i) + "T"));
          sliderSpace.setLabelTable(labelTable);
          sliderSpace.addChangeListener(e -> {
-                  String text=Integer.toString(getSliderSpace().getValue());
-                  getLblSpace().setText(text);
-                     Backsnap.DELETEOLD.setParameter(text);
+            String text=Integer.toString(getSliderSpace().getValue());
+            getLblSpace().setText(text);
+            Backsnap.DELETEOLD.setParameter(text);
             if (needsAbgleich.compareAndSet(false, true))
                virtual.execute(() -> {
-                     try {
+                  try {
                      Thread.sleep(50);
                      if (needsAbgleich.compareAndSet(true, false))
                         bsGui.abgleich();
                   } catch (IOException | InterruptedException ignore) {
                      ignore.printStackTrace();
-                     }
-            });
+                  }
+               });
          });
       }
       return sliderSpace;
@@ -147,7 +147,6 @@ public class PanelSpace extends JPanel {
    public void updateButtons() {
       getBtnSpace().setEnabled(PanelMeta.testLock(getChckSpace().isSelected()));
       getTxtDisabled().setVisible(PanelMeta.testLock(true));
-      // revalidate();
       repaint(50);
    }
 }
