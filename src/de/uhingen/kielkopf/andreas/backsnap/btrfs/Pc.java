@@ -89,7 +89,10 @@ public record Pc(String extern, // Marker für diesen PC
             String[] cmdList=cmds.toString().split(";");
             cmds.setLength(0);
             for (int i=0; i < cmdList.length; i++) // Für jeden Befehl
-               cmds.append(extern().equals(PKEXEC_) ? PKEXEC_ : SUDO_).append(cmdList[i]).append(";");// pkexec einfügen
+               if (cmdList[i].startsWith("cd "))
+                  cmds.append(cmdList[i]).append(";");// kein sudo bei cd !
+               else
+                  cmds.append(extern().equals(PKEXEC_) ? PKEXEC_ : SUDO_).append(cmdList[i]).append(";");// pkexec einfügen
             cmds.setLength(cmds.length() - 1);// ; entfernen
          }
       return cmds.toString();
@@ -129,11 +132,11 @@ public record Pc(String extern, // Marker für diesen PC
          BTRFS.readLock().lock();
          try (CmdStreams mountStream=CmdStreams.getDirectStream(mountCmd)) {
             mountStream.outBGerr().forEachOrdered(line -> {
-//               if (!line.isEmpty()) {
-                  mountList2.put(line, mountCache.containsKey(line)//
-                           ? mountCache.get(line) // reuse existing
-                           : new Mount(this, line));
-//               }
+               // if (!line.isEmpty()) {
+               mountList2.put(line, mountCache.containsKey(line)//
+                        ? mountCache.get(line) // reuse existing
+                        : new Mount(this, line));
+               // }
             }); // create new
             Optional<String> x=mountStream.errLines().filter(l -> (l.contains("No route to host")
                      || l.contains("Connection closed") || l.contains("connection unexpectedly closed"))).findAny();
@@ -160,8 +163,8 @@ public record Pc(String extern, // Marker für diesen PC
          BTRFS.readLock().lock();
          try (CmdStreams btrfsVersionStream=CmdStreams.getDirectStream(btrfsVersionCmd)) {
             btrfsVersionStream.outBGerr().forEach(line -> {
-//               if (!line.isEmpty())
-                  btrfsVersion.set(new Version("btrfs", line));
+               // if (!line.isEmpty())
+               btrfsVersion.set(new Version("btrfs", line));
             });
             Optional<String> x=btrfsVersionStream.errLines().filter(l -> (l.contains("No route to host")
                      || l.contains("Connection closed") || l.contains("connection unexpectedly closed"))).findAny();
@@ -186,8 +189,8 @@ public record Pc(String extern, // Marker für diesen PC
          Log.logln(versionCmd, LEVEL.COMMANDS);
          try (CmdStreams versionStream=CmdStreams.getDirectStream(versionCmd)) {
             versionStream.outBGerr().forEach(line -> {
-//               if (!line.isEmpty())
-                  kernelVersion.set(new Version("kernel", line));
+               // if (!line.isEmpty())
+               kernelVersion.set(new Version("kernel", line));
             });
             Optional<String> x=versionStream.errLines().filter(l -> (l.contains("No route to host")
                      || l.contains("Connection closed") || l.contains("connection unexpectedly closed"))).findAny();
