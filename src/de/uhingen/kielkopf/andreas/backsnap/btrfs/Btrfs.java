@@ -68,24 +68,29 @@ public class Btrfs {
                if (!deleteUnterbrechen.get()) {
                   try {
                      // Log.log(" " + snap.dirName(), LEVEL.DELETE);
-                     Path bmp=Pc.getBackupMount().mountPath()
-                              .resolve(snap.btrfsPath().getRoot().relativize(snap.btrfsPath()));
-                     if (!bmp.toString().startsWith(Pc.TMP_BACKUP_ROOT.toString()) || bmp.toString().contains("../"))
-                        throw new SecurityException("I am not allowed to delete " + bmp.toString());
-                     removeSB.append(bmp);
+                     Path cdP=Pc.getBackupMount().mountPath().resolve(snap.btrfsPath().subpath(0, 2));
+                     Path dP=snap.btrfsPath().subpath(2, 4);
+                     if (!cdP.toString().startsWith(Pc.TMP_BACKUP_ROOT.toString()) || cdP.toString().contains("../")
+                              || dP.toString().contains("../"))
+                        throw new SecurityException("I am not allowed to delete " + cdP + dP);
+                     removeSB.append(dP + " ");
                      dirList.append(" " + snap.dirName());
                      if (gui != null)
                         gui.mark(snap.received_uuid(), STATUS.INPROGRESS);// farbig anzeigen
-                     if (removeQueue.isEmpty() || removeSB.length() > 80) { // Do delete now
+                     if (removeQueue.isEmpty() || removeSB.length() > 128) { // Do delete now
                         if (gui != null)
                            gui.setDeleteInfo(dirList.toString());// Info einblenden
-                        dirList.setLength(0);
                         if (gui != null)
                            gui.getPanelMaintenance().updateButtons();
+                        removeSB.setLength(removeSB.length() - 1);
                         removeSB.insert(0, SUBVOLUME_DELETE);
+                        removeSB.insert(0, ";");
+                        removeSB.insert(0, cdP);
+                        removeSB.insert(0, "cd ");
                         String removeCmd=snap.mount().pc().getCmd(removeSB, true);
                         removeSB.setLength(0);
                         Log.logln(removeCmd, LEVEL.BTRFS);
+                        dirList.setLength(0);
                         BTRFS.writeLock().lock();
                         try (CmdStreams removeStream=CmdStreams.getDirectStream(removeCmd)) {
                            removeStream.outBGerr().forEach(line -> {
