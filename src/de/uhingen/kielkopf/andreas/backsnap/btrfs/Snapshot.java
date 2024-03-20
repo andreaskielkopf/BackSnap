@@ -402,7 +402,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
             e.printStackTrace();
          }
          for (Snapshot snapshot:snapshots) {
-            if (snapshot.received_uuid() instanceof String ru)
+            if (snapshot.received_uuid() instanceof @SuppressWarnings("unused") String ru)
                System.out.println(snapshot.dirName() + " => " + snapshot.toString());
          }
 //         CmdStreams.cleanup();

@@ -130,7 +130,7 @@ public class OnTheFly extends JPanel {
             Path local=Path.of("/etc/backsnap.d/local.conf");
             Log.logln("create " + local.toString(), LEVEL.CONFIG);
             Files.createFile(local);
-            if (Etc.getConfig("backsnap") instanceof Etc etc)
+            if (Etc.getConfig("backsnap") instanceof @SuppressWarnings("unused") Etc etc)
                etc=createLocalConf(local);
          } catch (IOException e) { /* */
             Log.errln(e.getMessage(), LEVEL.ERRORS);

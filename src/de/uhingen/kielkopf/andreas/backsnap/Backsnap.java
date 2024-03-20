@@ -329,7 +329,7 @@ public class Backsnap {
                bsGui.refreshGUI();
             });
          if (AUTO.get()) {
-            if ((bsGui != null) && (bsGui.frame instanceof Frame frame)) {
+            if (bsGui != null) {
                final float FAKTOR=2f;
                final int countdownStart=(int) (FAKTOR
                         * ((AUTO.getParameterOrDefault(10) instanceof Integer n) ? n : 10));
