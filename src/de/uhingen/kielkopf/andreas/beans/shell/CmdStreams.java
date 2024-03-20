@@ -166,16 +166,16 @@ public class CmdStreams implements AutoCloseable {
     */
    @Override
    public void close() { // waitFor();
-      try {
-         cmdOut.close();
-      } catch (IOException e) {/* erg wurde gelesen */
-         System.err.println(e);
-      }
-      try {
-         cmdErr.close();
-      } catch (IOException e) { /* errlist ist komplett jetzt */
-         System.err.println(e);
-      }
+      // try {
+      cmdOut.close();
+      // } catch (IOException e) {/* erg wurde gelesen */
+      // System.err.println(e);
+      // }
+      // try {
+      cmdErr.close();
+      // } catch (IOException e) { /* errlist ist komplett jetzt */
+      // System.err.println(e);
+      // }
       firstCmdClosed.set(false); // oder erst am ende ?
       cmdProcess.destroy();
    }

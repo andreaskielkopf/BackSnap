@@ -16,7 +16,7 @@ import java.util.stream.Stream;
  */
 public class CmdBufferedReader extends BufferedReader implements AutoCloseable {
    static final String                   UTF_8        ="UTF-8";                      // verwende UTF-8
-   static final int                      bSize        =0x100000;                      // 1M Buffer für jeden Stream
+   static final int                      bSize        =0x100000;                     // 1M Buffer für jeden Stream
    final String                          name;                                       // name nur fürs debugging
    private ConcurrentLinkedQueue<String> queue        =new ConcurrentLinkedQueue<>();
    /** Der erste Stream wurde angefangen zu lesen */
@@ -38,8 +38,7 @@ public class CmdBufferedReader extends BufferedReader implements AutoCloseable {
     */
    public CmdBufferedReader(String name0, InputStream in) throws UnsupportedEncodingException {
       super(new InputStreamReader(in, UTF_8), bSize);
-      name=name0;
-//      queue.add("");
+      name=name0; // queue.add("");
    }
    /**
     * Beim ersten Mal den echten Stream liefern. Später den aus der queue
@@ -90,12 +89,20 @@ public class CmdBufferedReader extends BufferedReader implements AutoCloseable {
          Thread.onSpinWait();
    }
    @Override
-   public void close() throws IOException {
+   public void close() {
       if (!usedFirst.get())
          waitFor();
       if (firstStream != null) { // stelle sicher dass der reale Stream genau 1x closed() wird
          firstStream.close();
          firstStream=null;
       }
+   }
+   public void cleanUp() {
+      close();
+      usedFirst.set(false);
+      streamCounter.set(0);
+      virtual.set(false);
+      closedFirst.set(false);
+      queue.clear();
    }
 }
