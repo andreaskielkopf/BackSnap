@@ -443,9 +443,9 @@ public class BacksnapGui implements MouseListener {
                      getPanelWork().repaint(50);
                      return;
                   }
-                  Log.errln("s3=" + s3.length + ":" + s3, LEVEL.ERRORS);
+                  Log.errln("s3=" + s3.length + ":" + s1[0], LEVEL.ERRORS);
                }
-               Log.errln("s1=" + s1.length + ":" + s1, LEVEL.ERRORS);
+               Log.errln("s1=" + s1.length + ":" + pvT, LEVEL.ERRORS);
             }
             getTextPv().setText("");
             getTextPv().repaint(50);
@@ -669,13 +669,27 @@ public class BacksnapGui implements MouseListener {
    }
    private TxtFeld getTxtSpeed() {
       if (txtSpeed == null) {
-         txtSpeed=new TxtFeld("-");
+         txtSpeed=new TxtFeld("-") {
+            private static final long serialVersionUID=2364260885372289422L;
+            @Override
+            public void setText(String t) {
+               if (!t.equals(getText()))
+                  super.setText(t);
+            }
+         };
       }
       return txtSpeed;
    }
    private TxtFeld getTxtWork() {
       if (txtWork == null) {
-         txtWork=new TxtFeld("-");
+         txtWork=new TxtFeld("-") {
+            private static final long serialVersionUID=5499434077533178894L;
+            @Override
+            public void setText(String t) {
+               if (!t.equals(getText()))
+                  super.setText(t);
+            }
+         };
          txtWork.setFont(SnapshotPanel.FONT_INFO_B);
          txtWork.setOpaque(true);
          txtWork.setBackground(SnapshotLabel.STATUS.INPROGRESS.color);
@@ -704,7 +718,14 @@ public class BacksnapGui implements MouseListener {
    }
    private TxtFeld getTxtTime() {
       if (txtTime == null) {
-         txtTime=new TxtFeld("-");
+         txtTime=new TxtFeld("-") {
+            private static final long serialVersionUID=2631561528082373501L;
+            @Override
+            public void setText(String t) {
+               if (!t.equals(getText()))
+                  super.setText(t);
+            }
+         };
       }
       return txtTime;
    }
@@ -716,7 +737,14 @@ public class BacksnapGui implements MouseListener {
    }
    private TxtFeld getTxtSize() {
       if (txtSize == null) {
-         txtSize=new TxtFeld("-");
+         txtSize=new TxtFeld("-") {
+            private static final long serialVersionUID=-8814013736375818564L;
+            @Override
+            public void setText(String t) {
+               if (!t.equals(getText()))
+                  super.setText(t);
+            }
+         };
       }
       return txtSize;
    }
