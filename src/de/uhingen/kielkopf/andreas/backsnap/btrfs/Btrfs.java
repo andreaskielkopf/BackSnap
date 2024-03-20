@@ -43,7 +43,7 @@ public class Btrfs {
    public static final String                     VERSION         ="btrfs version ";
    private static final String                    SEND            ="btrfs send ";
    public static final String                     RECEIVE         ="btrfs receive ";
-   private static final String                    SUBVOLUME_DELETE="btrfs subvolume delete -v ";
+   private static final String                    SUBVOLUME_DELETE="btrfs subvolume delete -v";
    private static final String                    SUBVOLUME_CREATE="btrfs subvolume create ";
    public static final String                     SUBVOLUME_LIST  ="btrfs subvolume list ";
    private static final Pattern                   STD_MIN_        =Pattern.compile(" [0-9]:[0-9][0-9]:");
@@ -67,38 +67,31 @@ public class Btrfs {
             while (removeQueue.poll() instanceof Snapshot snap)
                if (!deleteUnterbrechen.get()) {
                   try {
-                     // Log.log(" " + snap.dirName(), LEVEL.DELETE);
-                     Path cdP=Pc.getBackupMount().mountPath().resolve(snap.btrfsPath().subpath(0, 2));
-                     Path dP=snap.btrfsPath().subpath(2, 4);
-                     if (!cdP.toString().startsWith(Pc.TMP_BACKUP_ROOT.toString()) || cdP.toString().contains("../")
-                              || dP.toString().contains("../"))
-                        throw new SecurityException("I am not allowed to delete " + cdP + dP);
-                     removeSB.append(dP + " ");
+                     Path cd=Pc.getBackupMount().mountPath().resolve(snap.btrfsPath().subpath(0, 2)); // gemeinsam
+                     Path delete=snap.btrfsPath().subpath(2, 4);// individuell
+                     if (!cd.toString().startsWith(Pc.TMP_BACKUP_ROOT.toString()) // nur im Backupvolume
+                              || cd.toString().contains("../")// kein Pfad-traversal erlaubt
+                              || delete.toString().contains("../"))// "
+                        throw new SecurityException("I am not allowed to delete " + cd + delete);
+                     removeSB.append(" " + delete);
                      dirList.append(" " + snap.dirName());
                      if (gui != null)
-                        gui.mark(snap.received_uuid(), STATUS.INPROGRESS);// farbig anzeigen
-                     if (removeQueue.isEmpty() || removeSB.length() > 128) { // Do delete now
+                        gui.mark(snap.received_uuid(), STATUS.INPROGRESS);// snap blau anzeigen
+                     if (removeQueue.isEmpty() || removeSB.length() > 128) { // weiter sammeln oder jetzt ausführen
                         if (gui != null)
                            gui.setDeleteInfo(dirList.toString());// Info einblenden
                         if (gui != null)
                            gui.getPanelMaintenance().updateButtons();
-                        removeSB.setLength(removeSB.length() - 1);
-                        removeSB.insert(0, SUBVOLUME_DELETE);
-                        removeSB.insert(0, ";");
-                        removeSB.insert(0, cdP);
-                        removeSB.insert(0, "cd ");
-                        String removeCmd=snap.mount().pc().getCmd(removeSB, true);
-                        removeSB.setLength(0);
+                        // removeSB.setLength(removeSB.length() - 1);// letztes Zeichen entfernen
+                        removeSB.insert(0, "cd " + cd + ";" + SUBVOLUME_DELETE);// Befehl davorsetzen
+                        String removeCmd=snap.mount().pc().getCmd(removeSB, true); // Befehl ssh oder sudo
                         Log.logln(removeCmd, LEVEL.BTRFS);
-                        dirList.setLength(0);
                         BTRFS.writeLock().lock();
                         try (CmdStreams removeStream=CmdStreams.getDirectStream(removeCmd)) {
                            removeStream.outBGerr().forEach(line -> {
-                              // if (!line.isEmpty()) {
                               Log.logln(line, LEVEL.DELETE);
-                              if (Backsnap.bsGui instanceof BacksnapGui gui2)
-                                 gui2.lblPvSetText(line);
-                              // }
+                              if (gui != null)
+                                 gui.lblPvSetText(line);
                            });
                            removeStream.errPrintln();
                         } finally {
@@ -106,6 +99,8 @@ public class Btrfs {
                            if (gui != null)
                               gui.getPanelMaintenance().updateButtons();
                         }
+                        removeSB.setLength(0);
+                        dirList.setLength(0);
                      }
                   } catch (IOException e) {
                      e.printStackTrace();

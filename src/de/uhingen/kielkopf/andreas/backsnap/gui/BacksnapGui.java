@@ -411,40 +411,45 @@ public class BacksnapGui implements MouseListener {
       }
       return progressBar;
    }
-   public void lblPvSetText(final String s0) {
+   ConcurrentLinkedQueue<String> queuePvText=new ConcurrentLinkedQueue<>();
+   public void lblPvSetText(String pvText) {
+      queuePvText.offer(pvText);
       SwingUtilities.invokeLater(() -> {
-         final PvInfo pv=new PvInfo(s0);
-         if (!pv.progress().isEmpty()) {
-            // System.err.print(" pv");
-            getTxtSize().setText(pv.size());
-            getTxtTime().setText(pv.time());
-            getTxtSpeed().setText(pv.speed());
-            getTxtWork().setText(pv.progress());
-            getPanelWork().revalidate();
-            getTxtWork().repaint(5);
-            getPanelWork().repaint(5);
-            return;
-         }
-         // System.err.println(" pv2:"+s0);
-         if (s0.contains("<")) {
-            String[] s1=s0.trim().split("\\] \\[");
-            if (s1.length == 2) {
-               String[] s3=s1[0].replace(" B", "_B").replace("[ ", "[_").split(" ");
-               if (s3.length == 3) {
-                  getTxtSize().setText(s3[0].replace('_', ' '));
-                  getTxtTime().setText(s3[1]);
-                  getTxtSpeed().setText(s3[2].replace("[", ""));
-                  getTxtWork().setText(" " + s1[1].replace(' ', '.').replace("]", " "));
-                  getPanelWork().revalidate();
-                  getPanelWork().repaint(50);
-                  return;
-               }
-               Log.errln("s3=" + s3.length + ":" + s3, LEVEL.ERRORS);
+         String pvT=null;
+         while (!queuePvText.isEmpty()) {
+            pvT=queuePvText.poll(); // bis zur letzten Zeile holen
+            PvInfo pv=new PvInfo(pvT);
+            if (!pv.progress().isEmpty()) { // System.err.print(" pv");
+               getTxtSize().setText(pv.size());
+               getTxtTime().setText(pv.time());
+               getTxtSpeed().setText(pv.speed());
+               getTxtWork().setText(pv.progress());
+               getPanelWork().revalidate();
+               getTxtWork().repaint(50);
+               getPanelWork().repaint(50);
             }
-            Log.errln("s1=" + s1.length + ":" + s1, LEVEL.ERRORS);
          }
-         getTextPv().setText("");
-         getTextPv().repaint(50);
+         if (pvT != null) { // nur den letzten Fortschritt anzeigen
+            if (pvText.contains("<")) {
+               String[] s1=pvT.trim().split("\\] \\[");
+               if (s1.length == 2) {
+                  String[] s3=s1[0].replace(" B", "_B").replace("[ ", "[_").split(" ");
+                  if (s3.length == 3) {
+                     getTxtSize().setText(s3[0].replace('_', ' '));
+                     getTxtTime().setText(s3[1]);
+                     getTxtSpeed().setText(s3[2].replace("[", ""));
+                     getTxtWork().setText(" " + s1[1].replace(' ', '.').replace("]", " "));
+                     getPanelWork().revalidate();
+                     getPanelWork().repaint(50);
+                     return;
+                  }
+                  Log.errln("s3=" + s3.length + ":" + s3, LEVEL.ERRORS);
+               }
+               Log.errln("s1=" + s1.length + ":" + s1, LEVEL.ERRORS);
+            }
+            getTextPv().setText("");
+            getTextPv().repaint(50);
+         }
       });
    }
    private TxtFeld getTextPv() {
