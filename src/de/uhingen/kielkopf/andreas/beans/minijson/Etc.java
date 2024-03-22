@@ -8,6 +8,7 @@ import java.nio.file.*;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.stream.Stream;
 
 import org.eclipse.jdt.annotation.NonNull;
 
@@ -57,12 +58,12 @@ public class Etc {
     */
    public static Etc getConfig(@NonNull String directory) throws IOException {
       ConcurrentSkipListMap<Path, List<String>> map=new ConcurrentSkipListMap<>();
-      if (hasConfigDir(directory) instanceof Path p) {
-         List<Path> list=Files.list(p).filter(f -> f.getFileName().toString().endsWith(".conf")).toList();
-         for (Path path:list)
-            map.put(path, Files.readAllLines(path));
-         return new Etc(map);
-      }
+      if (hasConfigDir(directory) instanceof Path p)
+         try (Stream<Path> s=Files.list(p)) {
+            for (Path path:s.filter(f -> f.getFileName().toString().endsWith(".conf")).toList())
+               map.put(path, Files.readAllLines(path));           
+            return new Etc(map);
+         }
       return null;
    }
    /**
