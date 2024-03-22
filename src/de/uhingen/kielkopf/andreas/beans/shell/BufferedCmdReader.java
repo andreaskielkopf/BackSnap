@@ -28,7 +28,7 @@ public class BufferedCmdReader extends BufferedReader implements AutoCloseable {
    }
    @Override
    public Stream<String> lines() {
-      if (isClosed != null) { // nur einmalig erlauben
+      if (isClosed == null) { // nur einmalig erlauben
          isClosed=new AtomicBoolean(false);
          return super.lines().onClose(() -> isClosed.set(true));
       }
