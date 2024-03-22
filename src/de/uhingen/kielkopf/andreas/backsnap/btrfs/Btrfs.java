@@ -24,7 +24,7 @@ import de.uhingen.kielkopf.andreas.backsnap.config.Log;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
 import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotLabel.STATUS;
-import de.uhingen.kielkopf.andreas.beans.shell.CmdStreams;
+import de.uhingen.kielkopf.andreas.beans.shell.*;
 
 /**
  * @author Andreas Kielkopf
@@ -87,13 +87,16 @@ public class Btrfs {
                         String removeCmd=snap.mount().pc().getCmd(removeSB, true); // Befehl ssh oder sudo
                         Log.logln(removeCmd, LEVEL.BTRFS);
                         BTRFS.writeLock().lock();
-                        try (CmdStreams removeStream=CmdStreams.getDirectStream(removeCmd)) {
-                           removeStream.outBGerr().forEach(line -> {
+                        try (DirectCmdStreams removeStream=new DirectCmdStreams(removeCmd);
+                                 BufferedCmdReader out=removeStream.out();) {
+                           removeStream.print2Err();
+                           out.lines().forEach(line -> {
                               Log.logln(line, LEVEL.DELETE);
                               if (gui != null)
                                  gui.lblPvSetText(line);
-                           });
-                           removeStream.errPrintln();
+                           });                           
+                        } catch (Exception e) {
+                           e.printStackTrace();
                         } finally {
                            BTRFS.writeLock().unlock();
                            if (gui != null)
