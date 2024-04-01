@@ -36,8 +36,11 @@ public class BufferedCmdReader extends BufferedReader implements AutoCloseable {
    }
    @Override
    public void close() throws IOException {
-      try {
-         process.waitFor(); // warte auf jeden Fall bis der Prozess beendet ist
+      try { // process.waitFor(); // warte auf jeden Fall bis der Prozess beendet ist
+         while (process.isAlive()) {
+            Thread.sleep(1);
+            Thread.onSpinWait();
+         }
       } catch (InterruptedException e) {
          e.printStackTrace();
       }

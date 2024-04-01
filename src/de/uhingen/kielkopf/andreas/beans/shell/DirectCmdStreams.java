@@ -50,8 +50,11 @@ public class DirectCmdStreams extends Streams implements AutoCloseable {
    @Override
    public void close() throws IOException {
       System.out.print("¹");
-      try {
-         process.waitFor();
+      try {         // process.waitFor();
+         while (process.isAlive()) {
+            Thread.sleep(1);
+            Thread.onSpinWait();
+         }
       } catch (InterruptedException ignore) { /** */
       }
       System.out.print("²");
