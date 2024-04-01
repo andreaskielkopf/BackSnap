@@ -65,8 +65,8 @@ public record Usage(String size, String allocated, String unallcoated, String mi
       try (CmdStreams usageStream=CmdStreams.getDirectStream(usageCmd)) {
          StringBuilder usageLine=new StringBuilder();
          usageStream.outBGerr().forEach(line -> {
-//            if (!line.isEmpty())
-               usageLine.append(line).append('\n');
+            // if (!line.isEmpty())
+            usageLine.append(line).append('\n');
          });
          Optional<String> erg=usageStream.errLines().filter(line -> (line.contains("No route to host")
                   || line.contains("Connection closed") || line.contains("connection unexpectedly closed"))).findAny();
@@ -106,14 +106,24 @@ public record Usage(String size, String allocated, String unallcoated, String mi
          return Long.toString((long) z);
       }
    }
-   public boolean isFull() {
+   /**
+    * Wie nahe sind wir am Dissater ?
+    * 
+    * @return wie viel Bewegungsspielraum in GB hat btrfs noch ?
+    */
+   public double getFreeGB() {
       double ual=getZahl(unallcoated);
-      return ual < (10 * IB.GiB.f);
+      return ual / IB.GiB.f - 20;
    }
    public boolean needsBalance() {
-      return getFree() < 0.2d;
+      return (getFreeP() < 0.2d) || (getFreeGB() < 0); // lsblk
    }
-   public double getFree() {
+   /**
+    * Wie nahe sind wir am Dissater ?
+    * 
+    * @return wie viel Bewegungsspielraum in Prozent hat btrfs noch ?
+    */
+   public double getFreeP() {
       double s=getZahl(size);
       double u=getZahl(unallcoated);
       double f=u / s;

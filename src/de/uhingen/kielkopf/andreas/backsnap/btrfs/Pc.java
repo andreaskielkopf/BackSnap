@@ -279,7 +279,7 @@ public record Pc(String extern, // Marker für diesen PC
    }
    /* Liefert true, wenn wir wissen, dass gemountet ist */
    static public void mountBackupRoot(boolean doMount) {
-      if (OneBackup.backupId instanceof String uuid && uuid.length() >= 8 && OneBackup.backupPc instanceof Pc pc)
+      if (OneBackup.getBackupId() instanceof String uuid && uuid.length() >= 8 && OneBackup.backupPc instanceof Pc pc)
          pc.mountBackupRoot(OneBackup.backupPc, uuid, doMount);
    }
    private void mountBackupRoot(Pc pc, String uuid, boolean doMount) {

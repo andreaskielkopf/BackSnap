@@ -752,7 +752,7 @@ public class BacksnapGui implements MouseListener {
     * @param usage
     */
    public void setUsage(Usage usage) {
-      if (usage.isFull() || usage.needsBalance())
+      if ((usage.getFreeGB()<0) || usage.needsBalance())
          SwingUtilities.invokeLater(() -> {
             getTglPause().setSelected(false);
             getTglPause().doClick();

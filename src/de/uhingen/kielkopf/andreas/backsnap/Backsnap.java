@@ -58,7 +58,7 @@ public class Backsnap {
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
    static final Flag                   PEXEC          =new Flag('p', "pexec");                 // use pexec instead of sudo
    static public final String          SNAPSHOT       ="snapshot";
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.8.14 (2024/03/22)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.8.17 (2024/04/01)";
    static public final String          LF             =System.lineSeparator();
    static public void main(String[] args) {
       Flag.setArgs(args, "");
@@ -152,7 +152,7 @@ public class Backsnap {
                   speedBar.setString("doing Backups");
                });
             }
-            if (usage.isFull())
+            if (usage.getFreeGB()<0) // isFull
                throw new RuntimeException(
                         LF + "The backup volume has less than 10GiB unallocated: " + usage.unallcoated() + " of "
                                  + usage.size() + LF + "Please free some space on the backup volume");

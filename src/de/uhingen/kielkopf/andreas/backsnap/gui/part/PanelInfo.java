@@ -44,10 +44,10 @@ public class PanelInfo extends JPanel {
       getTextFree().setText(usage.free());
       getTextUnallocated().setText(usage.unallcoated());
          getLblWarning().setText(
-                  usage.isFull() ? "There doesn't seem to be more than 10GiB unallocated. Please clean up first."
+                  (usage.getFreeGB()<0) ? "There doesn't seem to be more than 10GiB unallocated. Please clean up first."
                         : usage.needsBalance() ? "It seems urgently advisable to balance the backup volume" : "");
       getLblWarning().setBackground(
-               usage.isFull() ? Color.RED : usage.needsBalance() ? Color.ORANGE : getLblWarning().getBackground());
+               (usage.getFreeGB()<0) ? Color.RED : usage.needsBalance() ? Color.ORANGE : getLblWarning().getBackground());
       revalidate();
       repaint(50);
       });
