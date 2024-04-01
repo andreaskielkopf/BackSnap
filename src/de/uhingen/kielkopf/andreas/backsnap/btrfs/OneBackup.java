@@ -21,7 +21,7 @@ import de.uhingen.kielkopf.andreas.beans.minijson.Etc;
 public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, String flags)
          implements Comparable<OneBackup> {
    public static Pc backupPc=null;
-   public static String backupId=null;
+   private static String backupId=null;
    /** sortierte Liste mit den vorgesehenen Backups */
    final public static ConcurrentSkipListMap<String, OneBackup> backupMap=new ConcurrentSkipListMap<>();
    private static Pattern linePattern=Pattern.compile("^( *[a-zA-Z0-9._]{2,80} *)=(.+)"); // Kommentare ausblenden
@@ -80,7 +80,7 @@ public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, 
                      case "backup_id":
                         if (backupPc == null)
                            backupPc=pc;
-                        if (backupId == null)
+                        if (getBackupId() == null)
                            backupId=b;
                         break;
                      case "flags":
@@ -102,7 +102,7 @@ public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, 
     */
    private static String getBasisText() {
       return new StringBuilder().append((backupPc == null) ? "no Pc" : backupPc.toString())
-               .append((backupId == null) ? " & no Id" : " & Id:" + backupId).toString();
+               .append((getBackupId() == null) ? " & no Id" : " & Id:" + getBackupId()).toString();
    }
    /**
     * @return
@@ -125,5 +125,8 @@ public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, 
          return ep;
       int sp=srcPath.compareTo(o.srcPath);// Pfad des Volume vergleichen
       return sp;
+   }
+   public static String getBackupId() {
+      return backupId;
    }
 }
