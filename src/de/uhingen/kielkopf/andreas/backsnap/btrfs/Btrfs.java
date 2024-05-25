@@ -8,8 +8,7 @@ import static de.uhingen.kielkopf.andreas.backsnap.config.Log.*;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -45,8 +44,12 @@ public class Btrfs {
    private static final String                    SUBVOLUME_DELETE="btrfs subvolume delete -v";
    private static final String                    SUBVOLUME_CREATE="btrfs subvolume create ";
    public static final String                     SUBVOLUME_LIST  ="btrfs subvolume list ";
+   public static final String                     BALANCE_START   ="btrfs balance start ";
+   public static final String                     BALANCE_STATUS  ="btrfs balance status ";
+   private static final String                    SYS_RECLAIM_1   ="/sys/fs/btrfs/";
+   private static final String                    SYS_RECLAIM_2   ="/allocation/data/bg_reclaim_threshold";
    private static final Pattern                   STD_MIN_        =Pattern.compile(" [0-9]:[0-9][0-9]:");
-   private static String                          std_min_;                                              // =" 0:00:";
+   private static String                          std_min_;                                                // =" 0:00:";
    public static final ReentrantReadWriteLock     BTRFS           =new ReentrantReadWriteLock(true);
    private static Boolean                         pvUsable        =null;
    private static int                             lastLine        =0;
@@ -216,6 +219,94 @@ public class Btrfs {
       }
       return false;
    }
+   public static int getReclaimBalance() {
+      if (OneBackup.getBackupId() instanceof String id && !id.isBlank()) {
+         try {
+            String reclaimpos=SYS_RECLAIM_1 + id + SYS_RECLAIM_2;
+            Mount bm=Pc.getBackupMount();
+            Pc pc=bm.pc();
+            String testCmd=pc.getCmd(new StringBuilder("cat ").append(reclaimpos), true);
+            Log.log(testCmd, LEVEL.BTRFS);
+            try (CmdStreams testStream=CmdStreams.getDirectStream(testCmd)) {
+               Optional<String> b=testStream.outBGerr().peek(line -> Log.log(line, LEVEL.ALLES)).findAny();
+               if (b.isPresent())
+                  return Integer.parseInt(b.get());
+            } catch (IOException e1) {
+               e1.printStackTrace();
+            }
+         } catch (IOException e) {
+            e.printStackTrace();
+         }
+      }
+      return 0;
+   }
+   public static void setReclaimBalance(int reclaim) {
+      if (OneBackup.getBackupId() instanceof String id && !id.isBlank()) {
+         try {
+            String reclaimpos=SYS_RECLAIM_1 + id + SYS_RECLAIM_2;
+            Mount bm=Pc.getBackupMount();
+            Pc pc=bm.pc();
+            String testCmd=pc.getCmd(new StringBuilder("echo ").append(reclaim).append(" > ").append(reclaimpos), true);
+            Log.log(testCmd, LEVEL.BTRFS);
+            try (CmdStreams testStream=CmdStreams.getDirectStream(testCmd)) {
+               Optional<String> b=testStream.outBGerr().peek(line -> Log.log(line, LEVEL.ALLES)).findAny();
+               if (b.isPresent())
+                  return;
+            } catch (IOException e1) {
+               e1.printStackTrace();
+            }
+         } catch (IOException e) {
+            e.printStackTrace();
+         }
+      }
+   }
+   public static boolean isBalanceRunning() {
+      // if (p instanceof Path backsnap && backsnap.equals(Pc.TMP_BACKSNAP)) {
+      try {
+         Mount bm=Pc.getBackupMount();
+         Pc pc=bm.pc();
+         String testCmd=pc.getCmd(new StringBuilder(BALANCE_STATUS).append(Pc.TMP_BACKUP_ROOT), true);
+         Log.log(testCmd, LEVEL.BTRFS);
+         BTRFS.readLock().lock();
+         try (CmdStreams testStream=CmdStreams.getDirectStream(testCmd)) {
+            return testStream.outBGerr().peek(line -> Log.log(line, LEVEL.ALLES))
+                     .anyMatch(line -> line.contains("is running"));
+         } catch (IOException e1) {
+            e1.printStackTrace();
+         } finally {
+            BTRFS.readLock().unlock();
+         }
+      } catch (IOException e) {
+         e.printStackTrace();
+      }
+      return false;
+   }
+   public static boolean startBalance(int percent, int max) {
+      if ((percent > 90) | (percent < 10) | isBalanceRunning())
+         return true;
+      try {
+         String usage="usage=" + Integer.toString(percent);
+         String limit=(max < 1) ? "" : ",limit=" + Integer.toString(max);
+         Pc pc=Pc.getBackupMount().pc();
+         String testCmd=pc.getCmd(new StringBuilder(BALANCE_START)/* .append("-m").append(usage) */ //
+                  .append("-d").append(usage).append(limit).append(" ").append(Pc.TMP_BACKUP_ROOT)/* .append(" &") */,
+                  true);// Background it ??
+         Log.log(testCmd, LEVEL.BTRFS);
+         Thread.ofPlatform().start(() -> {// Background it ??
+            try (CmdStreams testStream=CmdStreams.getDirectStream(testCmd)) {
+               @SuppressWarnings("unused")
+               boolean q=testStream.outBGerr().peek(line -> Log.log(line, LEVEL.ALLES))
+                        .anyMatch(line -> line.contains("chunks"));
+            } catch (IOException e1) {
+               e1.printStackTrace();
+            }
+         });
+         return true;
+      } catch (IOException e) {
+         e.printStackTrace();
+      }
+      return false;
+   }
    /**
     * 
     * @param oneBackup
@@ -265,13 +356,17 @@ public class Btrfs {
             bsGui.getPanelMaintenance().updateButtons();
          std_min_=" 0:00:";
          BTRFS.writeLock().lock();
-         try (DirectCmdStreams btrfsSendStream=new DirectCmdStreams(btrfsSendSB.toString());
-                  BufferedCmdReader err=btrfsSendStream.err();
-                  BufferedCmdReader out=btrfsSendStream.out()) {
-            Thread.ofVirtual().name(SEND).start(() -> out.lines().forEach(line -> extractOuput(line)));
-            err.lines().forEach(line -> extractPv(bsGui, line));// Ausgabe von pv kommt in err an ;-)
-         } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
+         try (CmdStreams btrfsSendStream=CmdStreams.getDirectStream(btrfsSendSB.toString())) {
+            Thread.ofVirtual().name(SEND).start(() -> btrfsSendStream.outLines().forEach(line -> extractOuput(line)));
+            btrfsSendStream.errLines().forEach(line -> extractPv(bsGui, line));
+            // try (DirectCmdStreams btrfsSendStream=new DirectCmdStreams(btrfsSendSB.toString());
+            // BufferedCmdReader err=btrfsSendStream.err();
+            // BufferedCmdReader out=btrfsSendStream.out()) {
+            // Thread.ofPlatform().name(SEND).start(() -> out.lines().forEach(line -> extractOuput(line)));
+            // Thread.ofPlatform().name(SEND).start(() -> err.lines().forEach(line -> extractPv(bsGui, line)));
+            // // err.lines().forEach(line -> extractPv(bsGui, line));// Ausgabe von pv kommt in err an ;-)
+            // } catch (InterruptedException | ExecutionException e) {
+            // e.printStackTrace();
          } finally {
             BTRFS.writeLock().unlock();
             Runtime r=Runtime.getRuntime();
