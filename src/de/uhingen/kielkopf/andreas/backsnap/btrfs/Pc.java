@@ -43,7 +43,7 @@ public record Pc(String extern, // Marker für diesen PC
    static public final String PKEXEC="pkexec";
    static public final String PKEXEC_="pkexec ";
    private static final Pattern ALLOW_EXTERN=Pattern.compile("[a-zA-Z_0-9]+@[a-zA-Z_0-9.]+|" + SUDO_ + "|" + PKEXEC_);
-   private static final String BACKUP_OPTIONS=",compress=zstd:9 ";
+   private static final String BACKUP_OPTIONS=",noatime,compress=zstd:9 ";
    private static final String MOUNT_BTRFS="mount -t btrfs ";
    /**
     * Sicherstellen, dass jeder Pc nur einmal erstellt wird
@@ -249,7 +249,7 @@ public record Pc(String extern, // Marker für diesen PC
          throw new UnknownHostException(
                   Backsnap.LF + "Not able to find the right device for: " + this + ":" + srcDir1.toString());
       }
-      mount(TMP_BTRFS_ROOT, mount.get().devicePath(), doMount, "");
+      mount(TMP_BTRFS_ROOT, mount.get().devicePath(), doMount, BACKUP_OPTIONS);
       getMountList(true);// liest erneut ein !
    }
    /**
