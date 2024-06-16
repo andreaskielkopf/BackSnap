@@ -42,23 +42,23 @@ public class Backsnap {
    static public BacksnapGui           bsGui          =null;
    static public OneBackup             actualBackup   =null;
    static private int                  skipCount      =0;
-   static final Flag                   HELP           =new Flag('h', "help");                  // show usage
-   static final Flag                   VERSION        =new Flag('x', "version");               // show date and version
-   static final Flag                   DRYRUN         =new Flag('d', "dryrun");                // do not do anythimg ;-)
+   static final Flag                   HELP           =new Flag('h', "help");                   // show usage
+   static final Flag                   VERSION        =new Flag('x', "version");                // show date and version
+   static final Flag                   DRYRUN         =new Flag('d', "dryrun");                 // do not do anythimg ;-)
    public static final Flag            VERBOSE        =new Flag('v', "verbose");
-   static public final Flag            SINGLESNAPSHOT =new Flag('s', "singlesnapshot");        // backup exactly one snapshot
+   static public final Flag            SINGLESNAPSHOT =new Flag('s', "singlesnapshot");         // backup exactly one snapshot
    // static public final Flag TIMESHIFT =new Flag('t', "timeshift");
-   static public final Flag            GUI            =new Flag('g', "gui");                   // enable gui (only with sudo)
-   static final Flag                   AUTO           =new Flag('a', "auto");                  // auto-close gui when ready
+   static public final Flag            GUI            =new Flag('g', "gui");                    // enable gui (only with sudo)
+   static final Flag                   AUTO           =new Flag('a', "auto");                   // auto-close gui when ready
    // static final Flag NOSYNC =new Flag('n', "nosync"); // no sync after every command
-   static final Flag                   COMPRESSED     =new Flag('c', "compressed");            // use protokoll 2
-   static final Flag                   INIT           =new Flag('i', "init");                  // init /etc/backsnap.d/local.conf
-   static public final Flag            DELETEOLD      =new Flag('o', "deleteold");             // mark old snapshots for deletion
-   static public final Flag            KEEP_MINIMUM   =new Flag('m', "keepminimum");           // mark all but minimum snapshots
+   static final Flag                   COMPRESSED     =new Flag('c', "compressed");             // use protokoll 2
+   static final Flag                   INIT           =new Flag('i', "init");                   // init /etc/backsnap.d/local.conf
+   static public final Flag            DELETEOLD      =new Flag('o', "deleteold");              // mark old snapshots for deletion
+   static public final Flag            KEEP_MINIMUM   =new Flag('m', "keepminimum");            // mark all but minimum snapshots
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
-   static final Flag                   PEXEC          =new Flag('p', "pexec");                 // use pexec instead of sudo
+   static final Flag                   PEXEC          =new Flag('p', "pexec");                  // use pexec instead of sudo
    static public final String          SNAPSHOT       ="snapshot";
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.8.18 (2024/05/25)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.8.20 (2024/06/16)";
    static public final String          LF             =System.lineSeparator();
    static public void main(String[] args) {
       Flag.setArgs(args, "");
@@ -104,6 +104,8 @@ public class Backsnap {
       }
       Log.logln(OneBackup.getConfigText(), LEVEL.CONFIG);
       OneBackup lastBackup=null;
+      if (HELP.get())
+         System.exit(2);
       for (OneBackup ob:OneBackup.backupMap.values()) {
          actualBackup=ob;
          if (!actualBackup.srcPc().isReachable())
@@ -152,7 +154,7 @@ public class Backsnap {
                   speedBar.setString("doing Backups");
                });
             }
-            if (usage.getFreeGB()<0) // isFull
+            if (usage.getFreeGB() < 0) // isFull
                throw new RuntimeException(
                         LF + "The backup volume has less than 10GiB unallocated: " + usage.unallcoated() + " of "
                                  + usage.size() + LF + "Please free some space on the backup volume");
