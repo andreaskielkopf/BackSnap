@@ -17,7 +17,7 @@ public class PanelBalance extends JPanel {
    private JPanel            panel;
    private JPanel            panel_1;
    private JPanel            panel_2;
-   private JPanel            panel_3;
+//   private JPanel            panel_3;
    private JPanel            panel_4;
    /**
     * Create the panel.

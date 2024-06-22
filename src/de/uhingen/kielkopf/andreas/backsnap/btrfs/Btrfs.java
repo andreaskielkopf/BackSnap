@@ -433,7 +433,7 @@ public class Btrfs {
                lnlog("?: " + line, LEVEL.PROGRESS);
             }
          } else {
-            lnlog("x: " + line, LEVEL.PROGRESS);
+            lnlog(line, LEVEL.PROGRESS);
          }
          show(line, bsGui);
       } catch (Exception e) {

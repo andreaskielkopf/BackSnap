@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
  * @author Andreas Kielkopf *
  */
 public record Version(String name, String version, String major, String minor, String patch) {
-   static final Pattern VERSION=Pattern.compile("[^0-9]*([-0-9.]+)");
+   static final Pattern VERSION=Pattern.compile("[^0-9]*([-ea0-9.]+)");//+ early-access
    static final Pattern MAYOR=Pattern.compile("[^0-9]*([0-9]+)");
    static final Pattern MINOR=Pattern.compile("[^0-9]*[0-9]+[.]([0-9]+)");
    static final Pattern PATCH=Pattern.compile("[^0-9]*[0-9]+[.][0-9]+[.]([0-9]+)");
