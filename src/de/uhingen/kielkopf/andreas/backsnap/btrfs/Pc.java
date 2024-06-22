@@ -173,7 +173,7 @@ public record Pc(String extern, // Marker für diesen PC
          } finally {
             BTRFS.readLock().unlock();
          }
-         Log.logln(this + " " + btrfsVersion.get(), LEVEL.CONFIG);
+         Log.lnlog(this + " " + btrfsVersion.get(), LEVEL.CONFIG);
       }
       return btrfsVersion.get();
    }
@@ -197,7 +197,7 @@ public record Pc(String extern, // Marker für diesen PC
             if (x.isPresent())
                throw new IOException(x.get());
          }
-         Log.logln(this + " " + kernelVersion.get(), LEVEL.CONFIG);
+         Log.lnlog(this + " " + kernelVersion.get(), LEVEL.CONFIG);
       }
       return kernelVersion.get();
    }
