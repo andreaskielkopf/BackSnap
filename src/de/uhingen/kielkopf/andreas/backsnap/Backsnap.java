@@ -58,7 +58,7 @@ public class Backsnap {
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
    static final Flag                   PEXEC          =new Flag('p', "pexec");                  // use pexec instead of sudo
    static public final String          SNAPSHOT       ="snapshot";
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.8.20 (2024/06/16)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.8.23 (2024/06/22)";
    static public final String          LF             =System.lineSeparator();
    static public void main(String[] args) {
       Flag.setArgs(args, "");

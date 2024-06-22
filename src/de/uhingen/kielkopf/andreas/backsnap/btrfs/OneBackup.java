@@ -129,4 +129,15 @@ public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, 
    public static String getBackupId() {
       return backupId;
    }
+   @Override
+   public final String toString() {
+      StringBuilder sb=new StringBuilder();
+      sb.append("OneBackup[").append(etcPath);
+      sb.append(", ").append(srcPc);
+      sb.append(":").append(srcPath);
+      sb.append(" (").append(backupLabel).append(")");
+      sb.append(" flags=").append(flags);
+      sb.append("]");
+      return sb.toString();
+   }
 }

@@ -400,9 +400,12 @@ public class Btrfs {
       try {
          if (lastLine != 0) {
             lastLine=0;
-            logln("", LEVEL.PROGRESS);
+            lnlog("d: ", LEVEL.PROGRESS);
          }
-         logln(s, LEVEL.PROGRESS); // TODO
+         if (s.equals("At snapshot snapshot"))
+            lnlog("", LEVEL.PROGRESS);
+         else
+            lnlog("e:" + s, LEVEL.PROGRESS); // TODO
       } catch (Exception e) {
          e.printStackTrace();
       }
@@ -414,43 +417,23 @@ public class Btrfs {
          if (line.contains("No route to host") || line.contains("Connection closed")
                   || line.contains("connection unexpectedly closed"))
             Backsnap.disconnectCount=10;
+         if (line.contains("At ")) {
+            lnlog(line, LEVEL.PROGRESS);
+         }
          if (line.contains("<=>")) { // from pv // log(line, LEVEL.PROGRESS);
             Matcher m1=STD_MIN_.matcher(line);
             if (m1.find()) {
-               if (m1.group().startsWith(std_min_)) {
-                  Owlog("o: " + line, LEVEL.PROGRESS);
-               } else {
+               Owlog(line, LEVEL.PROGRESS);
+               if (!m1.group().startsWith(std_min_)) {// Eine Minute abgelaufen
                   std_min_=m1.group();
                   lnlog("", LEVEL.PROGRESS);
-                  Owlog(">: " + line, LEVEL.PROGRESS);// Eine Minute abgelaufen
                }
             } else {
-               logln("?: " + line, LEVEL.PROGRESS);
+               lnlog("q:", LEVEL.PROGRESS);
+               lnlog("?: " + line, LEVEL.PROGRESS);
             }
-            // if (lastLine == 0)
-            // logln("l: " + line, LEVEL.PROGRESS);
-            // else {
-            // if (line.contains(":00 ")) {
-            // if (skip) {
-            // skip=false; // logln("m: " + line, LEVEL.PROGRESS);
-            // Backsnap.disconnectCount=0;
-            // } else {
-            // Owlog(">: " + line, LEVEL.PROGRESS);
-            // }
-            // } else {
-            // skip=true;
-            // Owlog("o: " + line, LEVEL.PROGRESS);
-            // }
-            // }
-            // show(line, bsGui);
-            // lastLine++;
          } else {
-            // if (lastLine != 0) {
-            // lastLine=0;
-            // logln(" ", LEVEL.PROGRESS);
-            // }
-            logln(" v ", LEVEL.PROGRESS);
-            logln("x: " + line, LEVEL.PROGRESS);
+            lnlog("x: " + line, LEVEL.PROGRESS);
          }
          show(line, bsGui);
       } catch (Exception e) {

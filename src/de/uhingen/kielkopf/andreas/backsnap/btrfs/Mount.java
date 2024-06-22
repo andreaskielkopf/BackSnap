@@ -103,7 +103,7 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
                            btrfsMap.put(btrfsPath1, snapshot);
                            otimeKeyMap.put(snapshot.keyO(), snapshot);
                         } else {
-                           System.out.println("Not visible: " + btrfsPath1);
+                           System.out.println("Not visible for populate: " + btrfsPath1);
                            if (snapshot != null)
                               otimeKeyMap.put(snapshot.keyO(), snapshot);
                         }
@@ -147,7 +147,7 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
                            btrfsMap.put(btrfsPath1, snapshot);
                            otimeKeyMap.put(snapshot.keyO(), snapshot);
                         } else {
-                           System.out.println("Not visible: " + btrfsPath1);
+                           System.out.println("Not visible for update: " + btrfsPath1);
                            if (snapshot != null)
                               otimeKeyMap.put(snapshot.keyO(), snapshot);
                         }
