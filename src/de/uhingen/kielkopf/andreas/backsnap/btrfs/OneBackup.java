@@ -132,7 +132,7 @@ public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, 
    @Override
    public final String toString() {
       StringBuilder sb=new StringBuilder();
-      sb.append("OneBackup[").append(etcPath);
+      sb.append("OneBackup[").append(etcPath.getFileName());
       sb.append(", ").append(srcPc);
       sb.append(":").append(srcPath);
       sb.append(" (").append(backupLabel).append(")");
