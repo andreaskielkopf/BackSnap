@@ -34,9 +34,12 @@ aber dringend empfohlen.
 #### Manjaro oder Arch:
 ```
 pamac install pv
-``` oder ```
+```
+```
 pacman -S pv
-``` oder ```
+```
+ oder 
+```
 trizen -S pv
 ```
 
