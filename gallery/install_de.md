@@ -38,7 +38,6 @@ pamac install pv
 ```
 pacman -S pv
 ```
- oder 
 ```
 trizen -S pv
 ```
@@ -63,14 +62,17 @@ von **root** als auch im `$PATH` deines **users** erreichbar ist.
 echo $PATH
 ```
 
-#### in `/usr/local/bin`
+### in `/usr/local/bin`
 Wenn `/usr/local/bin` in deinem Pfad enthalten ist, ist es das einfachste `backsnap` dort zu installieren.
 ```
 sudo wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/local/bin/backsnap
 ```
-Backsnap ausführbar machen: `sudo chmod a+x /usr/local/bin/backsnap`
+Backsnap ausführbar machen: 
+```
+sudo chmod a+x /usr/local/bin/backsnap
+```
 
-#### oder in `/usr/bin`
+### oder in `/usr/bin`
 Wenn `/usr/local/bin` nicht in deinem Pfad enthalten ist, ist es das einfachste BackSnap in `/usr/bin` zu installieren.
 ```
 sudo wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/bin/backsnap
