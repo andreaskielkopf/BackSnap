@@ -23,7 +23,8 @@ public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, 
    public static Pc backupPc=null;
    private static String backupId=null;
    /** sortierte Liste mit den vorgesehenen Backups */
-   final public static ConcurrentSkipListMap<String, OneBackup> backupMap=new ConcurrentSkipListMap<>();
+   final public static ConcurrentSkipListMap<String, OneBackup> unsortedMap=new ConcurrentSkipListMap<>();
+   final public static ConcurrentSkipListMap<String, OneBackup> sortedMap=new ConcurrentSkipListMap<>();
    private static Pattern linePattern=Pattern.compile("^( *[a-zA-Z0-9._]{2,80} *)=(.+)"); // Kommentare ausblenden
    /**
     * @throws IOException
@@ -89,8 +90,11 @@ public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, 
                      default:
                         Path label=Path.of(a); // relativ
                         Path pfad=Path.of(b); // absolut
-                        if (pfad.isAbsolute())
-                           backupMap.put(label.toString(), new OneBackup(entry.getKey(), pc, pfad, label, flags));
+                        if (pfad.isAbsolute()) {
+                           OneBackup o=new OneBackup(entry.getKey(), pc, pfad, label, flags);
+                           unsortedMap.put(label.toString(), o);
+                           sortedMap.put(entry.getKey().getFileName() + ":" + label, o);
+                        }
                         break;
                   }
                }
@@ -110,7 +114,7 @@ public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, 
    public static List<String> getConfigText() {
       ArrayList<String> l=new ArrayList<>();
       l.add(getBasisText());
-      for (OneBackup backup:backupMap.values())
+      for (OneBackup backup:sortedMap.values())
          l.add(backup.toString());
       return l;
    }

@@ -77,18 +77,21 @@ public class Backsnap {
          e.printStackTrace();
       }
       if (!Flag.getParameter(0).isBlank()) {// Wenn Parameter da sind, dann zuerst die auswerten
-         if (Flag.getParameter(0).endsWith("*") || OneBackup.backupMap.containsKey(Flag.getParameter(0))) {
+         if (Flag.getParameter(0).endsWith("*") || OneBackup.unsortedMap.containsKey(Flag.getParameter(0))) {
             List<String> pList=Flag.getParameterList(); // System.out.println("Treffer");
-            Keys: for (String key:OneBackup.backupMap.keySet()) {
+            Keys: for (String key:OneBackup.unsortedMap.keySet()) {
                for (String param:pList)
                   if (param.equals(key) || (param.endsWith("*") && (key.equals(param.substring(0, param.length() - 1))
                            || key.startsWith(param.substring(0, param.length() - 1) + "."))))
                      continue Keys; // System.out.println("+" + param + "=" + key);
-               OneBackup.backupMap.remove(key);
+               OneBackup value=OneBackup.unsortedMap.remove(key);
+               for (String sortedKey:OneBackup.sortedMap.keySet())
+                  OneBackup.sortedMap.remove(sortedKey, value);
             }
          } else
             if (!Flag.getParameter(1).isBlank()) { // Wenn 2 Parameter da sind, dann diese verwenden
-               OneBackup.backupMap.clear(); // Kommandozeile statt config, aber Basisconfig behalten
+               OneBackup.unsortedMap.clear(); // Kommandozeile statt config, aber Basisconfig behalten
+               OneBackup.sortedMap.clear();
                String[] source=Flag.getParameter(0).split("[:]"); // Parameter sammeln für SOURCE
                String[] backup=Flag.getParameter(1).split("[:]"); // BackupVolume ermitteln
                OneBackup.backupPc=(backup.length == 1) ? Pc.getPc(null) : Pc.getPc(backup[0]);
@@ -96,17 +99,18 @@ public class Backsnap {
                   bPc.setBackupLabel(Paths.get(backup[backup.length - 1]).getFileName());
                else
                   throw new RuntimeException(LF + "Could not find Backuplabel " + String.join(" : ", backup));
-               OneBackup.backupMap.put(OneBackup.backupPc.getBackupLabel().toString(),
-                        new OneBackup(Path.of(""), Pc.getPc(source[0]),
-                                 Path.of("/", source[source.length - 1].replace(Snapshot.DOT_SNAPSHOTS, "")),
-                                 OneBackup.backupPc.getBackupLabel(), null));
+               OneBackup o=new OneBackup(Path.of(""), Pc.getPc(source[0]),
+                        Path.of("/", source[source.length - 1].replace(Snapshot.DOT_SNAPSHOTS, "")),
+                        OneBackup.backupPc.getBackupLabel(), null);
+               OneBackup.unsortedMap.put(OneBackup.backupPc.getBackupLabel().toString(), o);
+               OneBackup.sortedMap.put(OneBackup.backupPc.getBackupLabel().toString(), o);
             }
       }
       Log.logln(OneBackup.getConfigText(), LEVEL.CONFIG);
       OneBackup lastBackup=null;
       if (HELP.get())
          System.exit(2);
-      for (OneBackup ob:OneBackup.backupMap.values()) {
+      for (OneBackup ob:OneBackup.sortedMap.values()) {
          actualBackup=ob;
          if (!actualBackup.srcPc().isReachable())
             continue;
@@ -195,7 +199,7 @@ public class Backsnap {
                Log.errln(e.getMessage(), LEVEL.ERRORS);
             else
                e.printStackTrace();
-            if (OneBackup.backupMap.size() <= 1) {
+            if (OneBackup.sortedMap.size() <= 1) {
                try {
                   if (lastBackup != null)
                      lastBackup.srcPc().mountBtrfsRoot(lastBackup.srcPath(), false);
