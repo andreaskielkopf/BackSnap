@@ -10,7 +10,7 @@ Falls sie doch die Scripte verwenden, müssen diese an die lokalen Gegebenheiten
 
 `BS_ID=03417033`
  Das muß ein erkennbarer Teil der UUID der Backup-Partition sein
-`backup /     manjaro18`
+`backup /     manjaro17`
  Der erste Parameter zeigt auf den mountpoint des Subvolumes dessen Snapshots gesichert werden sollen
  Der zweite Parameter benennt den Namen der Sicherung
 ### lokal
@@ -50,8 +50,8 @@ function backup {
 }
 
 # lokale Snapshots sichern
-backup /     manjaro18
-backup /home manjaro18.home
+backup /     manjaro17
+backup /home manjaro17.home
 # ... hier erweitern
 
 # Laufwerk unmounten:
@@ -101,8 +101,8 @@ function backup {
 }
 
 # lokale Snapshots sichern
-backup /     manjaro18
-backup /home manjaro18.home
+backup /     manjaro17
+backup /home manjaro17.home
 
 # server sichern
 backup root@server:/ server

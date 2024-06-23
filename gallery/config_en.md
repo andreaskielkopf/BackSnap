@@ -35,18 +35,18 @@ The compression zstd is set to level 9. Using a UUID reliably prevents anything 
 ```
 # use these flags for the following backups (optional)
 #flags = -gtc -v=1 -a=12 
-# backuplabel = manjaro18 for snapshots of /
-manjaro18 = /
+# backuplabel = manjaro17 for snapshots of /
+manjaro17 = /
 ```
-All snapshots of the subvolume mounted at **/** will be included in the backup at `/tmp/BackupRoot/**manjaro18**/`
+All snapshots of the subvolume mounted at **/** will be included in the backup at `/tmp/BackupRoot/**manjaro17**/`
 
 #### 4) Select options and a name for the next subvolume
 ```
 #flags = -gtc -v=1 -a=12 
-# backuplabel = manjaro18.home for snapshots of /home
-manjaro18.home = /home
+# backuplabel = manjaro17.home for snapshots of /home
+manjaro17.home = /home
 ```
-All snapshots of the subvolume mounted at **/home** will be included in the backup at `/tmp/BackupRoot/**manjaro18.home**/`
+All snapshots of the subvolume mounted at **/home** will be included in the backup at `/tmp/BackupRoot/**manjaro17.home**/`
 
 #### 5) And so forth ...
 You can add additional subvolumes here. Each with its own mount point and its own name.
