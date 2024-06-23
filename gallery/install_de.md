@@ -23,15 +23,17 @@ aber dringend empfohlen.
 `pamac install pv` oder `pacman -S pv` oder `trizen -S pv`
 
 ##### Test als `user` und als `root`:
-```pv -V```
 ```
+pv -V
+```
+`
 pv 1.8.0
 Copyright 2023 Andrew Wood
 License: GPLv3+ <https://www.gnu.org/licenses/gpl-3.0.html>
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
 Project web site: <https://www.ivarch.com/programs/pv.shtml>
-```
+`
 
 ## 3. Installiere `backsnap`
 Die Installation muß als root erfolgen (oder mit sudo). Sie sollte so erfolgen, dass `backsnap` sowohl im `$PATH` 
