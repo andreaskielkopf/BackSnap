@@ -5,7 +5,17 @@ BackSnap ist bewusst einfach zu installieren.
 Je nach verwendeter Distribution ist das ganz unterschiedlich. Bitte schau in der **Anleitung zu deiner Distribution** nach wie du java 21 installieren kannst, damit du das von Anfang an richtig machst. Ich empfehle die Verwendung von **`Java OpenJDK 21`**.
 
 #### Manjaro oder Arch:
-```pamac install jdk-openjdk``` oder `pacman -S jdk-openjdk` oder `trizen -S jdk-openjdk`
+```
+pamac install jdk-openjdk
+```
+oder
+```
+pacman -S jdk-openjdk
+``` 
+oder 
+```
+trizen -S jdk-openjdk
+```
 
 ##### Test als `user` und als `root`:
 ```
@@ -22,7 +32,13 @@ OpenJDK 64-Bit Server VM (build 21+35, mixed mode, sharing)
 aber dringend empfohlen.
 
 #### Manjaro oder Arch:
-`pamac install pv` oder `pacman -S pv` oder `trizen -S pv`
+```
+pamac install pv
+``` oder ```
+pacman -S pv
+``` oder ```
+trizen -S pv
+```
 
 ##### Test als `user` und als `root`:
 ```
