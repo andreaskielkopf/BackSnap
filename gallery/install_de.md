@@ -5,10 +5,12 @@ BackSnap ist bewusst einfach zu installieren.
 Je nach verwendeter Distribution ist das ganz unterschiedlich. Bitte schau in der **Anleitung zu deiner Distribution** nach wie du java 21 installieren kannst, damit du das von Anfang an richtig machst. Ich empfehle die Verwendung von **`Java OpenJDK 21`**.
 
 #### Manjaro oder Arch:
-`pamac install jdk-openjdk` oder `pacman -S jdk-openjdk` oder `trizen -S jdk-openjdk`
+```pamac install jdk-openjdk``` oder `pacman -S jdk-openjdk` oder `trizen -S jdk-openjdk`
 
 ##### Test als `user` und als `root`:
-`java -version`
+```
+java -version
+```
 ```
 openjdk version "21" 2023-09-19
 OpenJDK Runtime Environment (build 21+35)
@@ -26,37 +28,43 @@ aber dringend empfohlen.
 ```
 pv -V
 ```
-`
+```
 pv 1.8.0
 Copyright 2023 Andrew Wood
 License: GPLv3+ <https://www.gnu.org/licenses/gpl-3.0.html>
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
 Project web site: <https://www.ivarch.com/programs/pv.shtml>
-`
+```
 
 ## 3. Installiere `backsnap`
 Die Installation muß als root erfolgen (oder mit sudo). Sie sollte so erfolgen, dass `backsnap` sowohl im `$PATH` 
 von **root** als auch im `$PATH` deines **users** erreichbar ist.
-
-`echo $PATH`
+```
+echo $PATH
+```
 
 #### in `/usr/local/bin`
 Wenn `/usr/local/bin` in deinem Pfad enthalten ist, ist es das einfachste `backsnap` dort zu installieren.
-
-`sudo wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/local/bin/backsnap`
-
+```
+sudo wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/local/bin/backsnap
+```
 Backsnap ausführbar machen: `sudo chmod a+x /usr/local/bin/backsnap`
 
 #### oder in `/usr/bin`
 Wenn `/usr/local/bin` nicht in deinem Pfad enthalten ist, ist es das einfachste BackSnap in `/usr/bin` zu installieren.
-
-`sudo wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/bin/backsnap`
-
-Backsnap ausführbar machen:`sudo chmod a+x /usr/bin/backsnap`
+```
+sudo wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/bin/backsnap
+```
+Backsnap ausführbar machen:
+```
+sudo chmod a+x /usr/bin/backsnap
+```
 
 #### Test als `user` und als `root`:
-`backsnap -x`
+```
+backsnap -x
+```
 ```
 BackSnap Version 0.6.6.41 (2023/10/24)
 args >  -x 
