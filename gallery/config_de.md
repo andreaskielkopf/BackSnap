@@ -6,8 +6,8 @@ Im Folgenden wird davon ausgegangen, dass alles [installiert](install_de.md) und
 Backsnap muss wissen, **welche** Snapshots gesichert werden sollen und **wo** die Sicherungen gespeichert werden sollen. 
 Dies wird in den Konfigurationsdateien unter `/etc/backsnap.d/` festgelegt.
 
-Als Sie „sudo backsnap -gi“ gestartet haben, hat Backsnap zuerst „/etc/backsnap.d/“ erstellt und dann eine einfache 
-Konfigurationsdatei für den lokalen PC vorbereitet.
+Als Sie `sudo backsnap -gi` gestartet haben, hat Backsnap zuerst `/etc/backsnap.d/` erstellt und dann eine einfache 
+Konfigurationsdatei für diesen PC vorbereitet.
 
 ### /etc/backsnap.d/local.conf
 
@@ -20,28 +20,26 @@ pc = localhost
 ```
 Einer von:
 * **pc = localhost** ==> Dieser Pc (Backsnap verwendet **sudo** um btrfs aufzurufen)
-* **pc = user@ip** or **pc = user@name** = Der Pc ist per SSH erreichbar (Backsnap verwendet **ssh** um btrfs dort aufzurufen)
-
+* **pc = user@ip** or **pc = user@name** = Der Pc ist per SSH erreichbar (Backsnap verwendet **ssh** um btrfs 
+dort aufzurufen)
 #### 2) Wählen Sie die UUID für das **Backupvolume**
 ```
 # detect and mount backupvolume by scanning for this id (as part of the uuid)
 backup_id = 03417033-3645-4ae7-9451-efafcbb9124e
 ```
-Nur in **einer** Konfiguration dürfen Sie die UUID der Partition angeben, auf der Backups gespeichert werden sollen.
-Das Subvolume **@BackSnap** der Backup-Partition mit der besagten **UUID** wird während des Backups 
-in **/tmp/BackupRoot** gemountet. Die Komprimierung zstd ist auf Stufe 9 eingestellt. Durch die Verwendung einer 
-UUID wird zuverlässig verhindert, dass etwas falsch gemountet wird.
+Nur in **einer** Konfiguration darf die UUID der Partition angeben werden, auf der Backups gespeichert werden sollen.
+Das Subvolume **@BackSnap**  wird mit der angegebenen **UUID** in **/tmp/BackupRoot** gemountet. Die Komprimierung zstd 
+ist auf Stufe 9. Durch die Verwendung einer UUID wird zuverlässig verhindert, dass etwas falsch gemountet wird.
 
 #### 3) Wählen Sie die Optionen und einen Namen für das erste Subvolume
 ```
 # use these flags for the following subvolume (optional)
-#flags = -gtc -v=1 -a=12
+#flags = -gtc -v=1 -a=12 
 # backuplabel = manjaro17 for snapshots of /
 manjaro17 = /
 ```
-Alle Snapshots des unter **`/`** bereitgestellten Subvolumes werden in die Sicherung unter 
-`/tmp/BackupRoot/**manjaro17**/` einbezogen.
-
+Alle Snapshots des unter **`/`** gemounteten Subvolumes werden in die Sicherung unter `/tmp/BackupRoot/**manjaro17**/` 
+einbezogen.
 #### 4) Wählen Sie Optionen und einen Namen für das nächste Subvolume
 ```
 #flags = -gtc -v=1 -a=12 
@@ -52,7 +50,7 @@ Alle Snapshots des unter **/home** bereitgestellten Subvolumes werden in die Sic
 `/tmp/BackupRoot/**manjaro17.home**/` einbezogen.
 
 #### 5) Und so weiter ...
-Sie können weitere Subvolumes hinzufügen. Jedes mit seinem Mountpoint und einem eigenen Namen.
+Sie können weitere Subvolumes hinzufügen. Jedes mit seinem Mountpunkt und einem eigenen Namen.
 
 ### /etc/backsnap.d/laptop.conf
 Für jeden weiteren Pc der ins Backup eingebunden werden soll, müssen sie eine eigene Konfigurationsdatei erstellen.
@@ -68,7 +66,6 @@ notebook.home = /home
 Backsnap wird versuchen den PC per **ssh root@notebook**. zu erreichen. Wenn das fehlschlägt wird dieser pc übersprungen. 
 
 ### Jetzt gehts los
-
 ##### Sie können einen Probelauf machen
 In einem Terminal:
 ```
@@ -94,16 +91,16 @@ Bitte denken Sie daran, dass das je nach Anzahl der Snapshots wirklich lange dau
 davon ab, wie schnell ihr Backup-Laufwerk ist.
 
 ## Fertig
-Solange die Configdateien in /etc/backsnap existieren, reicht ein 
+Solange die Configdateien in `/etc/backsnap` existieren, reicht ein Befehl um ein backup auf das externe Laufwerk zu erstellen.
 ```
 sudo backsnap -gc 
 ```
-oder ein
+oder
 ```
 sudo backsnap
 ```
-um ein backup auf das externe Laufwerk zu erstellen.
-Die verfügbaren (und configurierten Optionen werden angezeigt mit  
+
+#### Die verfügbaren (und configurierten) Optionen werden angezeigt mit  
 ```
 sudo backsnap -h
 ```
@@ -112,15 +109,15 @@ BackSnap Version 0.6.8.27 (2024/06/22)
 args >  -h 
 java [version=23-ea, major=23, minor=null, patch=null]
 using ThreadPerTaskExecutor
-Pc![sudo ] & Id:03417033-3745-4ae7-9451-efafcbb9124e
+Pc[sudo ] & Id:03417033-3745-4ae7-9451-efafcbb9124e
 OneBackup[/etc/backsnap.d/gast.conf, Pc[root@gast]:/ (gast) flags=-c -a=5 -v=5 -o=500 -m=200]
 OneBackup[/etc/backsnap.d/gast.conf, Pc[root@gast]:/home (gast.home) flags=-c -a=5 -v=5 -o=500 -m=200]
 OneBackup[/etc/backsnap.d/jitsim1.conf, Pc[root@jitsim1]:/ (jitsim1) flags=-c -a=5 -v=5 -o=3500 -m=1000]
 OneBackup[/etc/backsnap.d/jitsim1.conf, Pc[root@jitsim1]:/home (jitsim1.home) flags=-c -a=5 -v=5 -o=3500 -m=1000]
 OneBackup[/etc/backsnap.d/jitsim1.conf, Pc[root@jitsim1]:/opt/hst (jitsim1.hst) flags=-c -a=5 -v=5 -o=3500 -m=1000]
 OneBackup[/etc/backsnap.d/jitsim1.conf, Pc[root@jitsim1]:/opt/hugo (jitsim1.hugo) flags=-c -a=5 -v=5 -o=3500 -m=1000]
-OneBackup[/etc/backsnap.d/local.conf, Pc[sudo ]:/ (manjaro18) flags=-c -v=5 -a=5 -o=4000 -m=1000]
-OneBackup[/etc/backsnap.d/local.conf, Pc[sudo ]:/home (manjaro18.home) flags=-c -v=5 -a=5 -o=4000 -m=1000]
+OneBackup[/etc/backsnap.d/local.conf, Pc[sudo ]:/ (manjaro19) flags=-c -v=5 -a=5 -o=4000 -m=1000]
+OneBackup[/etc/backsnap.d/local.conf, Pc[sudo ]:/home (manjaro19.home) flags=-c -v=5 -a=5 -o=4000 -m=1000]
 OneBackup[/etc/backsnap.d/laptop.conf, Pc[root@notebook]:/ (notebook) flags=null]
 OneBackup[/etc/backsnap.d/laptop.conf, Pc[root@notebook]:/home (notebook.home) flags=null]
 OneBackup[/etc/backsnap.d/0_server.conf, Pc[root@server]:/ (server) flags=-c -v=5 -a=5 -o=3000 -m=1000]
