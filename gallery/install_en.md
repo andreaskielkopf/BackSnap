@@ -96,6 +96,10 @@ using ThreadPerTaskExecutor
 
 ----
 
-See also: [archlinux wiki java](https://wiki.archlinux.org/title/java) , [manjaro pamac](https://wiki.manjaro.org/index.php/Pamac) , [manjaro pacman](https://wiki.manjaro.org/index.php/Pacman_Overview) , [manjaro trizen](https://wiki.archlinux.de/title/Trizen)
-Sontag, 23. Juni 2024 14:52 
+See also: [archlinux wiki java](https://wiki.archlinux.org/title/java) 
+, [manjaro pamac](https://wiki.manjaro.org/index.php/Pamac) 
+, [manjaro pacman](https://wiki.manjaro.org/index.php/Pacman_Overview) 
+, [manjaro trizen](https://wiki.archlinux.de/title/Trizen)
+
+Sontag, 23. Juni 2024 14:46
 
