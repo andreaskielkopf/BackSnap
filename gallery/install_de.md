@@ -16,13 +16,14 @@ OpenJDK 64-Bit Server VM (build 21+35, mixed mode, sharing)
 ```
 
 ## 2. Installiere `pv`
-**`pv`** zeigt den Fortschritt und die Geschwindigkeit der Snapshot-Übertragung an. Es ist nicht erforderlich, aber dringend empfohlen.
+**`pv`** zeigt den Fortschritt und die Geschwindigkeit der Snapshot-Übertragung an. Es ist nicht erforderlich, 
+aber dringend empfohlen.
 
 #### Manjaro oder Arch:
 `pamac install pv` oder `pacman -S pv` oder `trizen -S pv`
 
 ##### Test als `user` und als `root`:
-`pv -V`
+```pv -V```
 ```
 pv 1.8.0
 Copyright 2023 Andrew Wood
@@ -33,7 +34,8 @@ Project web site: <https://www.ivarch.com/programs/pv.shtml>
 ```
 
 ## 3. Installiere `backsnap`
-Die Installation muß als root erfolgen (oder mit sudo). Sie sollte so erfolgen, dass `backsnap` sowohl im `$PATH` von **root** als auch im `$PATH` des **users** erreichbar ist.
+Die Installation muß als root erfolgen (oder mit sudo). Sie sollte so erfolgen, dass `backsnap` sowohl im `$PATH` 
+von **root** als auch im `$PATH` deines **users** erreichbar ist.
 
 `echo $PATH`
 

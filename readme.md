@@ -8,47 +8,45 @@
 * This a Rework with somme **cached** commands
 * It works with **Snapper** and **Timeshift.**
 * It uses **btrfs compression** with send/receive 
-* It uses configfiles in `/etc/backsnap/*.conf`.
+* It uses config in `/etc/backsnap/*.conf`.
 
 ![BackSnap in action](./gallery/timeshift.png  "BackSnap gui")
 With BackSnap, regular backups for btrfs are no longer a burden, but an easy task.
 
 ## Goals of BackSnap:
-**Simple external backup** of complete (btrfs) subvolumes
+**Simple external backup** of (btrfs) subvolumes with all snapshots
 
 * Back up **all** snapshots
-* **Differential backup** of each snapshot (fast). If the backup is repeated after a few days/weeks/months
+* **Differential backup** of each snapshot (fast)
 * As **little space consumption** on the backup medium as possible
 * The backup medium can be used for **backups of different computers**
-* Command line program without GUI
-* KISS
-* GUI with -g clear representation of snapshots and existing backups
-* Assisted configuration with -gi
+* Command line program without GUI (KISS)
+* GUI (-g) with clear representation of snapshots and existing backups
+* Assisted configuration (-gi) to create **/etc/backsnap**
 * GUI controlled deletion of outdated backups
 * GUI controlled pruning of backups
 
 ##### No Goal:
 * No automatic management of backups by age
 * No automatically delete old backups when there is not enough space
-* No backup of the current state (this minute) of a subvolume
+* No backup of the current state of a subvolume (only snapshots of it)
 
 ##### Desirable side effects
-* The **backup strategy** is already defined in snapper or timeshift, and is involved here
-* The backup is compressed, but at the same time all snapshots in the backup are **always fully read-only accessible**
+* The **backup strategy** is already defined in snapper or timeshift
+* The backup is compressed, but at the same time **all backups are mountable**
 
 ## Requirements:
 * **Java 21** on the computer <img src="gallery/needsJava21.png" width=7% height=7%>
 * Recommended: **pv** installed
-* BTRFS both on the computer (recommended as **RAID 1** with 2 devices) and on the backup medium (single)
+* BTRFS both on the computer (recommended as **RAID 1** with 2 devices) and on the backup medium ( **RAID 0** )
 * **snapper**-layout of the snapshots or **timeshift**-layout
-* Recommended: external backup medium e.g. USB3 hard drive
+* Recommended: external backup medium e.g. USB3 hard drive with BTRFS
 
 # BackSnap:
 The Java program BackSnap backs up ALL snapshots from a specified directory to another directory on a backup medium. 
 To do this, it uses **btrfs send** and **btrfs receive**.
-You can use backsnap without any configuration as cli-programm, or you can create your configuration in `/etc/backsnap.d/*.conf` . Working with configfiles in /etc is way faster ;-)
 
-### With configuration in `/etc/backsnap.d/`
+### With configuration in `/etc/backsnap.d/` (recommendet)
 You only need to start backsnap in a terminal. It will look for configuration and flags in `/etc/backsnap.d/` 
 In a terminal: `sudo backsnap -gc -v=5 -a=5` 
 This is **way faster** then calling backsnap for each pc or subvolume, because the backup-disk will only be mounted once.
@@ -79,10 +77,8 @@ Each time the program is called, all snapshots of ONE subvolume can be backed up
 ### [Install backsnap de ->](./gallery/install_de)
 
 
-
-## Afterword
+### Afterword
 ###### A snapshot is not a backup!
-
 
 I've read that before. Basically true, but a BTRFS snapshot is **as good as any other system internal backup**.
 Btrfs can provide home users with a high level of security against data loss.
