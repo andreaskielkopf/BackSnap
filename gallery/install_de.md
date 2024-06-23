@@ -2,7 +2,9 @@
 BackSnap ist bewusst einfach zu installieren.
 
 ## 1. Installiere „JAVA 21“.
-Je nach verwendeter Distribution ist das ganz unterschiedlich. Bitte schau in der **Anleitung zu deiner Distribution** nach wie du java 21 installieren kannst, damit du das von Anfang an richtig machst. Ich empfehle die Verwendung von **`Java OpenJDK 21`**.
+Je nach verwendeter Distribution ist das ganz unterschiedlich. Bitte schau in der **Anleitung zu deiner Distribution** 
+nach wie du java 21 installieren kannst, damit du das von Anfang an richtig machst. Ich empfehle die Verwendung 
+von **`Java OpenJDK 21`**.
 
 #### Manjaro oder Arch:
 ```
@@ -87,14 +89,17 @@ sudo chmod a+x /usr/bin/backsnap
 backsnap -x
 ```
 ```
-BackSnap Version 0.6.6.41 (2023/10/24)
+BackSnap Version 0.6.8.27 (2024/06/22)
 args >  -x 
-java [version=21, major=21, minor=null, patch=null]
+java [version=23-ea, major=23, minor=null, patch=null]
 using ThreadPerTaskExecutor
 ```
 
 ### [weiter ->](device_de.md)
 ----
 
-Siehe auch [archlinux wiki java](https://wiki.archlinux.org/title/java) , [manjaro pamac](https://wiki.manjaro.org/index.php/Pamac) , [manjaro pacman](https://wiki.manjaro.org/index.php/Pacman_Overview) , [manjaro trizen](https://wiki.archlinux.de/title/Trizen)
-Montag, 30. Oktober 2023 08:28 
+Siehe auch [archlinux wiki java](https://wiki.archlinux.org/title/java) 
+, [manjaro pamac](https://wiki.manjaro.org/index.php/Pamac) 
+, [manjaro pacman](https://wiki.manjaro.org/index.php/Pacman_Overview) 
+, [manjaro trizen](https://wiki.archlinux.de/title/Trizen)
+Sontag, 23. Juni 2024 14:46 

@@ -1,14 +1,26 @@
 # Installation
-BackSnap is intentionally easy to install.
+BackSnap is easy to install.
 
 ## 1. Install `JAVA 21`
-This varies greatly depending on the distribution used. Please refer to your **distribution guide** on how to install java 21 so you do it right from the start. I recommend using **`Java OpenJDK 21`**.
+This varies greatly depending on the distribution used. Please refer to your **distribution guide** on how to 
+install java 21 so you do it right from the start. I recommend using **`Java OpenJDK 21`**.
 
 #### Manjaro or Arch:
-`pamac install jdk-openjdk` or `pacman -S jdk-openjdk` or `trizen -S jdk-openjdk`
-
+```
+pamac install jdk-openjdk
+```
+ or 
+```
+pacman -S jdk-openjdk
+```
+ or 
+```
+trizen -S jdk-openjdk
+```
 ##### Test as `user` and as `root`:
-`java -version`
+```
+java -version
+```
 ```
 openjdk version "21" 2023-09-19
 OpenJDK Runtime Environment (build 21+35)
@@ -19,10 +31,20 @@ OpenJDK 64-Bit Server VM (build 21+35, mixed mode, sharing)
 **`pv`** shows the progress and speed of the snapshot transfer. It is not required but recommended.
 
 #### Manjaro or Arch:
-`pamac install pv` or `pacman -S pv` or `trizen -S pv`
+```
+pamac install pv
+```
+```
+pacman -S pv
+```
+```
+trizen -S pv
+```
 
 ##### Test as `user` and as `root`:
-`pv -V`
+```
+pv -V
+```
 ```
 pv 1.8.0
 Copyright 2023 Andrew Wood
@@ -33,29 +55,40 @@ Project web site: <https://www.ivarch.com/programs/pv.shtml>
 ```
 
 ## 3. Install `backsnap`
-The installation must be done as root (or with sudo). It should be done in such a way that `backsnap` is accessible in both **root**'s `$PATH` and **user**'s `$PATH`.
-`echo $PATH`
+The installation must be done as root (or with sudo). It should be done in such a way that `backsnap` is accessible in 
+both **root**'s `$PATH` and **user**'s `$PATH`.
+```
+echo $PATH
+```
 
 #### in `/usr/local/bin`
 If `/usr/local/bin` is in your path, it's easiest to install backsnap there.
-
-`sudo wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/local/bin/backsnap`
-
-Make backsnap executable: `sudo chmod a+x /usr/local/bin/backsnap`
+```
+sudo wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/local/bin/backsnap
+```
+Make backsnap executable: 
+```
+sudo chmod a+x /usr/local/bin/backsnap
+```
 
 #### or in `/usr/bin`
 If `/usr/local/bin` is **not** in your path, the easiest way is to install backsnap in `/usr/bin`.
-
-`sudo wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/bin/backsnap`
-
-Make backsnap executable: `sudo chmod a+x /usr/bin/backsnap`
+```
+sudo wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/bin/backsnap
+```
+Make backsnap executable: 
+```
+sudo chmod a+x /usr/bin/backsnap
+```
 
 ### Test as `user` and as `root`:
-`backsnap -x`
 ```
-BackSnap Version 0.6.6.41 (2023/10/24)
+backsnap -x
+```
+```
+BackSnap Version 0.6.8.27 (2024/06/22)
 args >  -x 
-java [version=21, major=21, minor=null, patch=null]
+java [version=23-ea, major=23, minor=null, patch=null]
 using ThreadPerTaskExecutor
 ```
 
@@ -64,5 +97,5 @@ using ThreadPerTaskExecutor
 ----
 
 See also: [archlinux wiki java](https://wiki.archlinux.org/title/java) , [manjaro pamac](https://wiki.manjaro.org/index.php/Pamac) , [manjaro pacman](https://wiki.manjaro.org/index.php/Pacman_Overview) , [manjaro trizen](https://wiki.archlinux.de/title/Trizen)
-Montag, 30. Oktober 2023 08:31 
+Sontag, 23. Juni 2024 14:52 
 
