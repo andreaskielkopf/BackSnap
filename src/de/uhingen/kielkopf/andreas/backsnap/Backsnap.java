@@ -10,7 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.regex.Pattern;
+import java.util.regex.*;
 
 import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
@@ -36,29 +36,30 @@ import de.uhingen.kielkopf.andreas.beans.shell.CmdStreams;
  */
 public class Backsnap {
    static public final ExecutorService virtual        =Version.getVx();
-   public static String                cantFindParent;
+   static public String                cantFindParent =null;
    static public int                   disconnectCount=0;
    static Future<?>                    task           =null;
    static public BacksnapGui           bsGui          =null;
    static public OneBackup             actualBackup   =null;
    static private int                  skipCount      =0;
-   static final Flag                   HELP           =new Flag('h', "help");                   // show usage
-   static final Flag                   VERSION        =new Flag('x', "version");                // show date and version
-   static final Flag                   DRYRUN         =new Flag('d', "dryrun");                 // do not do anythimg ;-)
+   static final Flag                   HELP           =new Flag('h', "help");           // show usage
+   static final Flag                   VERSION        =new Flag('x', "version");        // show date and version
+   static final Flag                   DRYRUN         =new Flag('d', "dryrun");         // do not do anythimg ;-)
    public static final Flag            VERBOSE        =new Flag('v', "verbose");
-   static public final Flag            SINGLESNAPSHOT =new Flag('s', "singlesnapshot");         // backup exactly one snapshot
+   static public final Flag            SINGLESNAPSHOT =new Flag('s', "singlesnapshot"); // backup exactly one snapshot
    // static public final Flag TIMESHIFT =new Flag('t', "timeshift");
-   static public final Flag            GUI            =new Flag('g', "gui");                    // enable gui (only with sudo)
-   static final Flag                   AUTO           =new Flag('a', "auto");                   // auto-close gui when ready
+   static public final Flag            GUI            =new Flag('g', "gui");            // enable gui (only with sudo)
+   static final Flag                   AUTO           =new Flag('a', "auto");           // auto-close gui when ready
    // static final Flag NOSYNC =new Flag('n', "nosync"); // no sync after every command
-   static final Flag                   COMPRESSED     =new Flag('c', "compressed");             // use protokoll 2
-   static final Flag                   INIT           =new Flag('i', "init");                   // init /etc/backsnap.d/local.conf
-   static public final Flag            DELETEOLD      =new Flag('o', "deleteold");              // mark old snapshots for deletion
-   static public final Flag            KEEP_MINIMUM   =new Flag('m', "keepminimum");            // mark all but minimum snapshots
+   static final Flag                   COMPRESSED     =new Flag('c', "compressed");     // use protokoll 2
+   static final Flag                   INIT           =new Flag('i', "init");           // init /etc/backsnap.d/local.conf
+   static public final Flag            DELETEOLD      =new Flag('o', "deleteold");      // mark old snapshots for deletion
+   static public final Flag            KEEP_MINIMUM   =new Flag('m', "keepminimum");    // mark all but minimum snapshots
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
-   static final Flag                   PEXEC          =new Flag('p', "pexec");                  // use pexec instead of sudo
+   static final Flag                   PEXEC          =new Flag('p', "pexec");          // use pexec instead of sudo
    static public final String          SNAPSHOT       ="snapshot";
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.8.28 (2024/06/23)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.2"       //
+            + " (2024/06/23)";
    static public final String          LF             =System.lineSeparator();
    static public void main(String[] args) {
       Flag.setArgs(args, "");
@@ -77,18 +78,17 @@ public class Backsnap {
          e.printStackTrace();
       }
       if (!Flag.getParameter(0).isBlank()) {// Wenn Parameter da sind, dann zuerst die auswerten
-         if (Flag.getParameter(0).endsWith("*") || OneBackup.unsortedMap.containsKey(Flag.getParameter(0))) {
+         if (OneBackup.unsortedMap.containsKey(Flag.getParameter(0)) || Flag.getParameter(0).matches(".*[*+?|].*")) {
             List<String> pList=Flag.getParameterList(); // System.out.println("Treffer");
-            Keys: for (String key:OneBackup.unsortedMap.keySet()) {
-               for (String param:pList)
-                  if (param.equals(key) || (param.endsWith("*") && (key.equals(param.substring(0, param.length() - 1))
-                           || key.startsWith(param.substring(0, param.length() - 1) + "."))))
-                     continue Keys; // System.out.println("+" + param + "=" + key);
-               OneBackup value=OneBackup.unsortedMap.remove(key);
+            Keys: for (String key:OneBackup.unsortedMap.keySet()) {// für jedes OneBackup
+               for (String param:pList)// für jeden parameter
+                  if (parameterPasst(key, param))
+                     continue Keys;// in den Maps lassen !
+               OneBackup value=OneBackup.unsortedMap.remove(key); // mit key löschen
                for (String sortedKey:OneBackup.sortedMap.keySet())
-                  OneBackup.sortedMap.remove(sortedKey, value);
+                  OneBackup.sortedMap.remove(sortedKey, value); // mit value löschen
             }
-         } else
+         } else // legacy
             if (!Flag.getParameter(1).isBlank()) { // Wenn 2 Parameter da sind, dann diese verwenden
                OneBackup.unsortedMap.clear(); // Kommandozeile statt config, aber Basisconfig behalten
                OneBackup.sortedMap.clear();
@@ -223,6 +223,28 @@ public class Backsnap {
       ende("X");
       System.exit(-2);
    }// filaized
+   /**
+    * @param key
+    * @param param
+    * @return
+    */
+   private static boolean parameterPasst(String key, String param) {
+      // if (key.equals(param))
+      // return true;
+      try {// versuche Regular expression
+         if (key.matches(param))
+            return true;
+      } catch (PatternSyntaxException ignore) {
+         System.err.println(ignore);
+      }
+      if (param.endsWith("*")) {
+         // if (key.equals(param.substring(0, param.length() - 1)))
+         // return true;
+         if (key.startsWith(param.substring(0, param.length() - 1) + "."))
+            return true;
+      }
+      return false;
+   }
    static private Snapshot parentSnapshot=null;
    /**
     * Versuchen genau diesen einzelnen Snapshot zu sichern
