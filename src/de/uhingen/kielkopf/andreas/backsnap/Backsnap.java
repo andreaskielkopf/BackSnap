@@ -42,6 +42,7 @@ public class Backsnap {
    static public BacksnapGui           bsGui          =null;
    static public OneBackup             actualBackup   =null;
    static private int                  skipCount      =0;
+   static public final String          LF             =System.lineSeparator();
    static final Flag                   HELP           =new Flag('h', "help");           // show usage
    static final Flag                   VERSION        =new Flag('x', "version");        // show date and version
    static final Flag                   DRYRUN         =new Flag('d', "dryrun");         // do not do anythimg ;-)
@@ -50,17 +51,14 @@ public class Backsnap {
    // static public final Flag TIMESHIFT =new Flag('t', "timeshift");
    static public final Flag            GUI            =new Flag('g', "gui");            // enable gui (only with sudo)
    static final Flag                   AUTO           =new Flag('a', "auto");           // auto-close gui when ready
-   // static final Flag NOSYNC =new Flag('n', "nosync"); // no sync after every command
    static final Flag                   COMPRESSED     =new Flag('c', "compressed");     // use protokoll 2
    static final Flag                   INIT           =new Flag('i', "init");           // init /etc/backsnap.d/local.conf
    static public final Flag            DELETEOLD      =new Flag('o', "deleteold");      // mark old snapshots for deletion
    static public final Flag            KEEP_MINIMUM   =new Flag('m', "keepminimum");    // mark all but minimum snapshots
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
    static final Flag                   PEXEC          =new Flag('p', "pexec");          // use pexec instead of sudo
-   static public final String          SNAPSHOT       ="snapshot";
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.2"       //
-            + " (2024/06/23)";
-   static public final String          LF             =System.lineSeparator();
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.3"       //
+            + " (2024/06/29)";
    static public void main(String[] args) {
       Flag.setArgs(args, "");
       Log.setLoglevel(Backsnap.VERBOSE.getParameterOrDefault(LEVEL.PROGRESS.l));
@@ -168,7 +166,7 @@ public class Backsnap {
                counter++;
                if (cantFindParent != null) {
                   Log.errln("Please remove " + Pc.TMP_BACKSNAP + "/" + OneBackup.backupPc.getBackupLabel() + "/"
-                           + cantFindParent + "/" + SNAPSHOT + " !", LEVEL.ERRORS);
+                           + cantFindParent + "/" + Snapshot.SNAPSHOT + " !", LEVEL.ERRORS);
                   ende("X");
                   System.exit(-9);
                } else
@@ -277,7 +275,7 @@ public class Backsnap {
       }
       Path bDir=Pc.TMP_BACKSNAP.resolve(oneBackup.backupLabel()).resolve(srcSnapshot.dirName());
       Path bSnapDir=backupMap.mount().btrfsPath().resolve(backupMap.mount().mountPath().relativize(bDir))
-               .resolve(SNAPSHOT);
+               .resolve(Snapshot.SNAPSHOT);
       if (backupMap.btrfsPathMap().containsKey(bSnapDir)) {
          Log.logln("Der Snapshot scheint schon da zu sein ????", LEVEL.SNAPSHOTS);
          return true;
@@ -296,7 +294,8 @@ public class Backsnap {
    private static Usage    usage;
    private static SnapTree backupTree;
    static private void rsyncFiles(OneBackup oneBackup, Path sDir, Path bDir) throws IOException {
-      StringBuilder rsyncSB=new StringBuilder("rsync -vdcptgo --exclude \"@*\" --exclude \"" + SNAPSHOT + "\" ");
+      StringBuilder rsyncSB=new StringBuilder(
+               "rsync -vdcptgo --exclude \"@*\" --exclude \"" + Snapshot.SNAPSHOT + "\" ");
       if (DRYRUN.get())
          rsyncSB.append("--dry-run ");
       if (!oneBackup.isSamePc() && (oneBackup.isExtern()))

@@ -128,41 +128,6 @@ public class Btrfs {
          }
       });
    }
-   /**
-    * löscht eines der Backups im Auftrag der GUI
-    * 
-    * @param s
-    * @throws IOException
-    */
-   // @Deprecated
-   // static public void removeSnapshot(Snapshot s) throws IOException {
-   // Path bmp=Pc.getBackupMount().mountPath().resolve(s.btrfsPath().getRoot().relativize(s.btrfsPath()));
-   // if (!bmp.toString().startsWith(Pc.TMP_BACKUP_ROOT.toString()) || bmp.toString().contains("../"))
-   // throw new SecurityException("I am not allowed to delete " + bmp.toString());
-   // StringBuilder removeSB=new StringBuilder(SUBVOLUME_DELETE).append(bmp);
-   // String removeCmd=s.mount().pc().getCmd(removeSB, true);
-   // Log.log(removeCmd, LEVEL.BTRFS);
-   // if (Backsnap.bsGui instanceof BacksnapGui gui) {
-   // gui.setDeleteInfo(s);
-   // gui.getPanelMaintenance().updateButtons();
-   // gui.mark(s.received_uuid(), STATUS.INPROGRESS);
-   // }
-   // BTRFS.writeLock().lock();
-   // try (CmdStreams removeStream=CmdStreams.getDirectStream(removeCmd)) {
-   // removeStream.outBGerr().forEach(line -> {
-   // // if (!line.isEmpty()) {
-   // Log.logln(line, LEVEL.DELETE);
-   // if (Backsnap.bsGui instanceof BacksnapGui gui)
-   // gui.lblPvSetText(line);
-   // // }
-   // });
-   // removeStream.errPrintln();
-   // } finally {
-   // BTRFS.writeLock().unlock();
-   // }
-   // if (Backsnap.bsGui instanceof BacksnapGui gui)
-   // gui.getPanelMaintenance().updateButtons();
-   // }
    public static ConcurrentSkipListMap<String, Volume> show(Pc pc, boolean onlyMounted, boolean refresh) {
       ConcurrentSkipListMap<String, Volume> list=new ConcurrentSkipListMap<>();
       String volumeListCmd=pc.getCmd(new StringBuilder(FILESYSTEM_SHOW).append(onlyMounted ? " -m" : " -d"), true);
