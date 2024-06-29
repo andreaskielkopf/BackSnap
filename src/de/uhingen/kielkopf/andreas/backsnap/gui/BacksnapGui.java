@@ -340,7 +340,7 @@ public class BacksnapGui implements MouseListener {
    public void setBackup(SnapTree backupTree) throws IOException {
       ConcurrentSkipListMap<String, Snapshot> passendBackups=new ConcurrentSkipListMap<>();
       Path rest=Pc.TMP_BACKSNAP.resolve(Backsnap.actualBackup.backupLabel());
-      for (Snapshot snapshot:backupTree.dateMap().values()) // sortiert nach otime und NAME
+      for (Snapshot snapshot:backupTree.valuesByDate()) // sortiert nach otime und NAME
          if (snapshot.getBackupMountPath() instanceof Path pfad && pfad.startsWith(rest))
             passendBackups.put(snapshot.keyB(), snapshot);
       ConcurrentSkipListMap<String, Snapshot> neuList=getPanelBackup().setVolume(passendBackups.values());
@@ -354,7 +354,7 @@ public class BacksnapGui implements MouseListener {
       SnapshotPanel pb=getPanelBackup();
       SwingUtilities.invokeLater(() -> {
          pb.setTitle("Backup to Label " + Backsnap.actualBackup.backupLabel());
-         pb.setInfo(backupTree.mount());
+         pb.setInfo(backupTree.sMount());
       });
    }
    public JSplitPane getSplitPaneSnapshots() throws IOException {

@@ -61,7 +61,8 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    /**
     * @return Key um snapshot zu sortieren sofern im Pfad ein numerischer WERT steht
     */
-   public String key() {
+   @SuppressWarnings("unused")
+   private String key() {
       Matcher m=NUMERIC_DIRNAME.matcher(btrfsPath.toString());
       if (m.find())
          return dir2key(m.group(1)) + btrfsPath.toString(); // ??? numerisch sortieren ;-)

@@ -57,7 +57,7 @@ public class Backsnap {
    static public final Flag            KEEP_MINIMUM   =new Flag('m', "keepminimum");    // mark all but minimum snapshots
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
    static final Flag                   PEXEC          =new Flag('p', "pexec");          // use pexec instead of sudo
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.3"       //
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.4"       //
             + " (2024/06/29)";
    static public void main(String[] args) {
       Flag.setArgs(args, "");
@@ -254,14 +254,15 @@ public class Backsnap {
     * @throws IOException
     * @return false bei Misserfolg
     */
-   static private boolean backup(OneBackup oneBackup, Snapshot srcSnapshot, SnapTree backupMap) throws IOException {
+   static private boolean backup(OneBackup oneBackup, Snapshot srcSnapshot, SnapTree backupSnapTree)
+            throws IOException {
       if (bsGui instanceof BacksnapGui gui)
          gui.setBackupInfo(srcSnapshot, parentSnapshot);
       if (srcSnapshot.isBackup()) {
          lnlog("Ignore:" + srcSnapshot.dirName(), LEVEL.CONFIG);
          return false;
       }
-      if (backupMap.rUuidMap().containsKey(srcSnapshot.uuid())) {
+      if (backupSnapTree.containsBackupOf(srcSnapshot)) {
          if (skipCount == 0)
             lnlog("Skip:", LEVEL.SNAPSHOTS);
          Log.log(" " + srcSnapshot.dirName(), LEVEL.SNAPSHOTS);
@@ -274,9 +275,10 @@ public class Backsnap {
          Log.logln("", LEVEL.SNAPSHOTS);
       }
       Path bDir=Pc.TMP_BACKSNAP.resolve(oneBackup.backupLabel()).resolve(srcSnapshot.dirName());
-      Path bSnapDir=backupMap.mount().btrfsPath().resolve(backupMap.mount().mountPath().relativize(bDir))
-               .resolve(Snapshot.SNAPSHOT);
-      if (backupMap.btrfsPathMap().containsKey(bSnapDir)) {
+      Path bSnapDir=backupSnapTree.getSnapPath(bDir);
+      // sMount().btrfsPath().resolve(backupSnapTree.sMount().mountPath().relativize(bDir))
+      // .resolve(Snapshot.SNAPSHOT);
+      if (backupSnapTree.containsPath(bSnapDir)) {
          Log.logln("Der Snapshot scheint schon da zu sein ????", LEVEL.SNAPSHOTS);
          return true;
       }

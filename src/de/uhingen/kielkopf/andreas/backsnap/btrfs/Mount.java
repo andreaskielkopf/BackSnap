@@ -79,37 +79,37 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
     */
    public void populate() throws IOException {
       SnapTree snapTree=SnapTree.getSnapTree(this);
-      boolean snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.dateMap().isEmpty() : false;
+      boolean snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.isEmpty() : false;
       StringBuilder subvolumeShowSB=new StringBuilder(Btrfs.SUBVOLUME_SHOW).append(mountPath);
       String subvolumeSchowCmd=pc.getCmd(subvolumeShowSB, true);
       Log.logln(subvolumeSchowCmd, LEVEL.BTRFS);
       BTRFS.readLock().lock();
       try (CmdStreams snapshotStream=CmdStreams.getCachedStream(subvolumeSchowCmd, keyM())) {
          snapshotStream.outBGerr().forEach(line -> {
-//            if (!line.isEmpty()) {
-               Log.logln(line, LEVEL.BTRFS_ANSWER);
-               Matcher mn=NAME.matcher(line);
-               if (mn.find())
-                  name.add("/" + mn.group(1));// store Name: ...
-               else
-                  if (snapTreeVorhanden) {
-                     Matcher ms=SNAPSHOT.matcher(line);
-                     if (ms.find()) {
-                        Path btrfsPath1=Path.of("/", ms.group(1));
-                        Snapshot snapshot=snapTree.btrfsPathMap().get(btrfsPath1);
-                        if ((snapshot != null) && (snapshot.mount() != null)) {
-                           if (!snapshot.mount().mountPath.startsWith(this.mountPath))
-                              Log.errln("Mount passt nicht für: " + this + " -> " + snapshot, LEVEL.ERRORS);
-                           btrfsMap.put(btrfsPath1, snapshot);
+            // if (!line.isEmpty()) {
+            Log.logln(line, LEVEL.BTRFS_ANSWER);
+            Matcher mn=NAME.matcher(line);
+            if (mn.find())
+               name.add("/" + mn.group(1));// store Name: ...
+            else
+               if (snapTreeVorhanden) {
+                  Matcher ms=SNAPSHOT.matcher(line);
+                  if (ms.find()) {
+                     Path btrfsPath1=Path.of("/", ms.group(1));
+                     Snapshot snapshot=snapTree.getByPath(btrfsPath1);
+                     if ((snapshot != null) && (snapshot.mount() != null)) {
+                        if (!snapshot.mount().mountPath.startsWith(this.mountPath))
+                           Log.errln("Mount passt nicht für: " + this + " -> " + snapshot, LEVEL.ERRORS);
+                        btrfsMap.put(btrfsPath1, snapshot);
+                        otimeKeyMap.put(snapshot.keyO(), snapshot);
+                     } else {
+                        System.out.println("Not visible for populate: " + btrfsPath1);
+                        if (snapshot != null)
                            otimeKeyMap.put(snapshot.keyO(), snapshot);
-                        } else {
-                           System.out.println("Not visible for populate: " + btrfsPath1);
-                           if (snapshot != null)
-                              otimeKeyMap.put(snapshot.keyO(), snapshot);
-                        }
                      }
                   }
-//            }
+               }
+            // }
          });
          if (name.isEmpty())
             name.add("/");
@@ -123,37 +123,37 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
    }
    public void updateSnapshots() throws IOException {
       SnapTree snapTree=SnapTree.getSnapTree(this);
-      boolean snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.dateMap().isEmpty() : false;
+      boolean snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.isEmpty() : false;
       StringBuilder subvolumeShowSB=new StringBuilder(Btrfs.SUBVOLUME_SHOW).append(mountPath);
       String subvolumeShowCmd=pc.getCmd(subvolumeShowSB, true);
       Log.logln(subvolumeShowCmd, LEVEL.BTRFS);
       BTRFS.readLock().lock();
       try (CmdStreams snapshotStream=CmdStreams.getCachedStream(subvolumeShowCmd, keyM())) {
          snapshotStream.outBGerr().forEach(line -> {
-//            if (!line.isEmpty()) {
-               Log.logln(line, LEVEL.BTRFS_ANSWER);
-               Matcher mn=NAME.matcher(line);
-               if (mn.find())
-                  name.add("/" + mn.group(1));// store Name: ...
-               else
-                  if (snapTreeVorhanden) {
-                     Matcher ms=SNAPSHOT.matcher(line);
-                     if (ms.find()) {
-                        Path btrfsPath1=Path.of("/", ms.group(1));
-                        Snapshot snapshot=snapTree.btrfsPathMap().get(btrfsPath1);
-                        if ((snapshot != null) && (snapshot.mount() != null)) {
-                           if (!snapshot.mount().mountPath.startsWith(this.mountPath))
-                              Log.errln("Mount passt nicht für: " + this + " -> " + snapshot, LEVEL.ERRORS);
-                           btrfsMap.put(btrfsPath1, snapshot);
+            // if (!line.isEmpty()) {
+            Log.logln(line, LEVEL.BTRFS_ANSWER);
+            Matcher mn=NAME.matcher(line);
+            if (mn.find())
+               name.add("/" + mn.group(1));// store Name: ...
+            else
+               if (snapTreeVorhanden) {
+                  Matcher ms=SNAPSHOT.matcher(line);
+                  if (ms.find()) {
+                     Path btrfsPath1=Path.of("/", ms.group(1));
+                     Snapshot snapshot=snapTree.getByPath(btrfsPath1);
+                     if ((snapshot != null) && (snapshot.mount() != null)) {
+                        if (!snapshot.mount().mountPath.startsWith(this.mountPath))
+                           Log.errln("Mount passt nicht für: " + this + " -> " + snapshot, LEVEL.ERRORS);
+                        btrfsMap.put(btrfsPath1, snapshot);
+                        otimeKeyMap.put(snapshot.keyO(), snapshot);
+                     } else {
+                        System.out.println("Not visible for update: " + btrfsPath1);
+                        if (snapshot != null)
                            otimeKeyMap.put(snapshot.keyO(), snapshot);
-                        } else {
-                           System.out.println("Not visible for update: " + btrfsPath1);
-                           if (snapshot != null)
-                              otimeKeyMap.put(snapshot.keyO(), snapshot);
-                        }
                      }
                   }
-//            }
+               }
+            // }
          });
          if (name.isEmpty())
             name.add("/");

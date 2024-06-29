@@ -261,15 +261,13 @@ public record Pc(String extern, // Marker für diesen PC
       ConcurrentSkipListMap<String, Mount> ml=getMountList(false);
       for (Mount m:ml.values()) {
          SnapTree st=m.getSnapTree();
-         Optional<Snapshot> first=st.btrfsPathMap().values().stream()
-                  .filter(s -> s.btrfsPath().toString().equals(m.btrfsPath().toString())).findFirst();
+         Optional<Snapshot> first=st.getFirstByPath(m);
          if (first.isPresent()) { // ein subVolume
             Snapshot subVolume=first.get();
             if (subVolume.isPlainSnapshot())
                continue;
             // gibt es einen Snapshot von diesem SubVolume ?
-            Optional<Snapshot> any=st.btrfsPathMap().values().stream()
-                     .filter(s -> s.parent_uuid().equals(subVolume.uuid())).findAny();
+            Optional<Snapshot> any=st.getAnyBackupOf(subVolume);
             if (any.isPresent())
                if (any.get().mount() instanceof Mount mount)
                   l.add(new SnapConfig(m, mount));
