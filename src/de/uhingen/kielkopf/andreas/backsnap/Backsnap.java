@@ -57,8 +57,8 @@ public class Backsnap {
    static public final Flag            KEEP_MINIMUM   =new Flag('m', "keepminimum");    // mark all but minimum snapshots
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
    static final Flag                   PEXEC          =new Flag('p', "pexec");          // use pexec instead of sudo
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.4"       //
-            + " (2024/06/29)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.5"       //
+            + " (2024/06/30)";
    static public void main(String[] args) {
       Flag.setArgs(args, "");
       Log.setLoglevel(Backsnap.VERBOSE.getParameterOrDefault(LEVEL.PROGRESS.l));
@@ -141,7 +141,7 @@ public class Backsnap {
                         + "Please select another partition for the backup");
             Log.logln("Try to use backupDir  " + backupMount.keyM(), LEVEL.SNAPSHOTS);
             usage=new Usage(backupMount, false);
-            backupTree=SnapTree.getSnapTree(backupMount);
+            backupTree=SnapTree.getSnapTree(backupMount, false);
             if (disconnectCount > 0) {
                Log.errln("no SSH Connection", LEVEL.ERRORS);
                ende("X");
@@ -294,7 +294,7 @@ public class Backsnap {
    }
    static StringBuilder    pv=new StringBuilder("- Info -");
    private static Usage    usage;
-   private static SnapTree backupTree;
+   private static SnapTree backupTree=null;
    static private void rsyncFiles(OneBackup oneBackup, Path sDir, Path bDir) throws IOException {
       StringBuilder rsyncSB=new StringBuilder(
                "rsync -vdcptgo --exclude \"@*\" --exclude \"" + Snapshot.SNAPSHOT + "\" ");

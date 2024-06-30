@@ -803,7 +803,7 @@ public class BacksnapGui implements MouseListener {
             if (refreshGUIcKey == null) // refreshBackupPc=backupPc;
                refreshGUIcKey=OneBackup.backupPc.extern() + ":" + Pc.getBackupMount(/* true */).devicePath();
             CmdStreams.removeFromCache(refreshGUIcKey); // umgeht den cache
-            setBackup(new SnapTree(Pc.getBackupMount(/* true */)));
+            setBackup(SnapTree.getSnapTree(Pc.getBackupMount(), true));
             if (Instant.now().isAfter(refreshUsage)) {
                getPanelMaintenance().setUsage(new Usage(Pc.getBackupMount(/* true */), false));
                refreshUsage=Instant.now().plusSeconds(60);

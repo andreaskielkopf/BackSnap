@@ -260,7 +260,7 @@ public record Pc(String extern, // Marker für diesen PC
       ArrayList<SnapConfig> l=new ArrayList<>();
       ConcurrentSkipListMap<String, Mount> ml=getMountList(false);
       for (Mount m:ml.values()) {
-         SnapTree st=m.getSnapTree();
+         SnapTree st=SnapTree.getSnapTree(m, true);
          Optional<Snapshot> first=st.getFirstByPath(m);
          if (first.isPresent()) { // ein subVolume
             Snapshot subVolume=first.get();

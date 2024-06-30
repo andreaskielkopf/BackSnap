@@ -35,9 +35,9 @@ public record SnapTree(Mount sMount, ConcurrentSkipListMap<String, Snapshot> sUu
    public SnapTree(Mount mount) throws IOException {
       this(mount, new ConcurrentSkipListMap<>(), new ConcurrentSkipListMap<>(), new ConcurrentSkipListMap<>(),
                new ConcurrentSkipListMap<>());
-      populate();
+      // populate();
    }
-   private void populate() throws IOException {// otime kommt nur bei snapshots
+   private SnapTree populate() throws IOException {// otime kommt nur bei snapshots
       // mit -a bekommt man alle Snapshots für dieses Device
       StringBuilder svListCommand=new StringBuilder(Btrfs.SUBVOLUME_LIST_2).append(sMount.mountPath());
       String svListCmd=sMount.pc().getCmd(svListCommand, true);
@@ -64,21 +64,30 @@ public record SnapTree(Mount sMount, ConcurrentSkipListMap<String, Snapshot> sUu
       } finally {
          BTRFS.readLock().unlock();
       }
+      return this;
    }
    private void add(Snapshot snapshot) {
+      if (sUuidMap.get(snapshot.uuid()) instanceof Snapshot old)
+         remove(old);
       sUuidMap.put(snapshot.uuid(), snapshot);
       btrfsPathMap.put(snapshot.btrfsPath(), snapshot);// nach pfad sortiert
       dateMap.put(snapshot.keyO(), snapshot);
       if (snapshot.isBackup())
          rUuidMap.put(snapshot.received_uuid(), snapshot);
    }
-   @SuppressWarnings("unused")
    private void remove(Snapshot snapshot) {
       sUuidMap.remove(snapshot.uuid(), snapshot);
       btrfsPathMap.remove(snapshot.btrfsPath(), snapshot);// nach pfad sortiert
       dateMap.remove(snapshot.keyO(), snapshot);
       if (snapshot.isBackup())
          rUuidMap.remove(snapshot.received_uuid(), snapshot);
+   }
+   private SnapTree clear() {
+      sUuidMap.clear();
+      btrfsPathMap.clear();
+      dateMap.clear();
+      rUuidMap.clear();
+      return this;
    }
    /**
     * Look for Snapshots of the specified mounted subvolume (But we get all snapshots of the underlying Volume, so this is worth caching)
@@ -89,13 +98,16 @@ public record SnapTree(Mount sMount, ConcurrentSkipListMap<String, Snapshot> sUu
     * @return a SnapTree
     * @throws IOException
     */
-   static public SnapTree getSnapTree(Mount mount2) throws IOException {
+   static public SnapTree getSnapTree(Mount mount2, boolean refresh) throws IOException {
       String deviceKey=mount2.keyD();
       if (!snapTreeCache.containsKey(deviceKey)) {
-         snapTreeCache.put(deviceKey, new SnapTree(mount2));
+         snapTreeCache.put(deviceKey, new SnapTree(mount2).populate());
          Log.logln("set " + deviceKey + " into treeCache", LEVEL.CACHE);
-      } else
+      } else {
+         if (refresh)
+            snapTreeCache.get(deviceKey).clear().populate();
          Log.logln("take " + deviceKey + " from treeCache", LEVEL.CACHE);
+      }
       return snapTreeCache.get(deviceKey);
    }
    @Override

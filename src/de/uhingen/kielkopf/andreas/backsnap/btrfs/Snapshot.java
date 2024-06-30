@@ -31,6 +31,7 @@ import de.uhingen.kielkopf.andreas.beans.shell.CmdStreams;
  */
 public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integer parent, Integer top_level, //
          String otime, String parent_uuid, String received_uuid, String uuid, Path btrfsPath, Boolean[] readonly) {
+   /** Eine Reihe von Pattern um die Ausgabe von BTRFS zu analysieren */
    private static final Pattern ID=createPatternFor("ID");
    private static final Pattern GEN=createPatternFor("gen");
    private static final Pattern CGEN=createPatternFor("cgen");
@@ -44,6 +45,13 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
    private static final Pattern NUMERIC_DIRNAME=Pattern.compile("([0-9]+)/snapshot$");
    private static final Pattern DIRNAME=Pattern.compile("([^/]+)/snapshot$");
    // private static final Pattern SUBVOLUME=Pattern.compile("^(@[0-9a-zA-Z.]+)/.*[0-9]+/snapshot$");
+   /**
+    * Macht aus eine Zeile die btrfs liefert ein Snapshot-Objekt
+    * 
+    * @param mount
+    * @param from_btrfs
+    * @throws IOException
+    */
    public Snapshot(Mount mount, String from_btrfs) throws IOException {
       this(getMount(mount, getPath(BTRFS_PATH.matcher(from_btrfs))), getInt(ID.matcher(from_btrfs)),
                getInt(GEN.matcher(from_btrfs)), getInt(CGEN.matcher(from_btrfs)), getInt(PARENT.matcher(from_btrfs)),
@@ -54,13 +62,18 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       if ((btrfsPath == null) || (mount == null))
          throw new FileNotFoundException("btrfs-path is missing for snapshot: " + mount + from_btrfs);
    }
+   /**
+    * Erstellt beim Start wiederverwendbare Pattern für bestimmte Strings
+    * 
+    * @param s
+    * @return
+    */
    static private Pattern createPatternFor(String s) {
       return Pattern.compile("^(?:.*[ \\[])?" + s + "[ =]([^ ,\\]]+)");
    }
-   static public final int SORT_LEN=10; // reichen 100 Jahre ???
-   /**
-    * @return Key um snapshot zu sortieren sofern im Pfad ein numerischer WERT steht
-    */
+   /* reichen 100 Jahre ??? */
+   static public final int SORT_LEN=10;
+   /** @return Key um snapshot zu sortieren sofern im Pfad ein numerischer WERT steht */
    @SuppressWarnings("unused")
    private String key() {
       Matcher m=NUMERIC_DIRNAME.matcher(btrfsPath.toString());

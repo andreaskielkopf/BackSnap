@@ -78,8 +78,8 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
     * @throws IOException
     */
    public void populate() throws IOException {
-      SnapTree snapTree=SnapTree.getSnapTree(this);
-      boolean snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.isEmpty() : false;
+      SnapTree snapTree=SnapTree.getSnapTree(this, false);
+      // boolean snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.isEmpty() : false;
       StringBuilder subvolumeShowSB=new StringBuilder(Btrfs.SUBVOLUME_SHOW).append(mountPath);
       String subvolumeSchowCmd=pc.getCmd(subvolumeShowSB, true);
       Log.logln(subvolumeSchowCmd, LEVEL.BTRFS);
@@ -92,7 +92,7 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
             if (mn.find())
                name.add("/" + mn.group(1));// store Name: ...
             else
-               if (snapTreeVorhanden) {
+               if (!snapTree.isEmpty()) {
                   Matcher ms=SNAPSHOT.matcher(line);
                   if (ms.find()) {
                      Path btrfsPath1=Path.of("/", ms.group(1));
@@ -122,8 +122,8 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
       }
    }
    public void updateSnapshots() throws IOException {
-      SnapTree snapTree=SnapTree.getSnapTree(this);
-      boolean snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.isEmpty() : false;
+      SnapTree snapTree=SnapTree.getSnapTree(this, false);
+//      boolean snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.isEmpty() : false;
       StringBuilder subvolumeShowSB=new StringBuilder(Btrfs.SUBVOLUME_SHOW).append(mountPath);
       String subvolumeShowCmd=pc.getCmd(subvolumeShowSB, true);
       Log.logln(subvolumeShowCmd, LEVEL.BTRFS);
@@ -136,7 +136,7 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
             if (mn.find())
                name.add("/" + mn.group(1));// store Name: ...
             else
-               if (snapTreeVorhanden) {
+               if (!snapTree.isEmpty()) {
                   Matcher ms=SNAPSHOT.matcher(line);
                   if (ms.find()) {
                      Path btrfsPath1=Path.of("/", ms.group(1));
@@ -174,12 +174,5 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
       sb.append(":").append(btrfsMap.size()).append(")").append("]");
       return sb.toString();
    }
-   /**
-    * @return
-    * @throws IOException
-    * 
-    */
-   public SnapTree getSnapTree() throws IOException {
-      return new SnapTree(this);
-   }
+  
 }
