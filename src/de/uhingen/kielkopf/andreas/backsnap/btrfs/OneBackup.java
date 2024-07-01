@@ -9,6 +9,8 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import de.uhingen.kielkopf.andreas.backsnap.config.Log;
+import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 import de.uhingen.kielkopf.andreas.beans.Version;
 import de.uhingen.kielkopf.andreas.beans.minijson.Etc;
 
@@ -16,9 +18,17 @@ import de.uhingen.kielkopf.andreas.beans.minijson.Etc;
  * Konfiguration für ein Backup von einem Subvolume
  * 
  * @author Andreas Kielkopf
- *
+ * @param etcPath
+ *           wo die Konfiguration herkommt
+ * @param srcPc
+ *           Der Pc von dem das Backup germacht werden soll
+ * @param srcPath
+ *           Der Pfad auf diesem PC *
+ * @param backupLabel
+ * @param flags
+ * @param backupTree[]
  */
-public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, String flags)
+public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, String flags, SnapTree[] backupTree)
          implements Comparable<OneBackup> {
    public static Pc backupPc=null;
    private static String backupId=null;
@@ -91,7 +101,7 @@ public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, 
                         Path label=Path.of(a); // relativ
                         Path pfad=Path.of(b); // absolut
                         if (pfad.isAbsolute()) {
-                           OneBackup o=new OneBackup(entry.getKey(), pc, pfad, label, flags);
+                           OneBackup o=new OneBackup(entry.getKey(), pc, pfad, label, flags, new SnapTree[1]);
                            unsortedMap.put(label.toString(), o);
                            sortedMap.put(entry.getKey().getFileName() + ":" + label, o);
                         }
@@ -133,6 +143,22 @@ public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, 
    public static String getBackupId() {
       return backupId;
    }
+   /**
+    * @return
+    */
+   public SnapConfig getSnapConfig() throws IOException {
+      for (SnapConfig sc:srcPc().getSnapConfigs()) {
+         if (sc.volumeMount().mountPath().equals(srcPath())) {
+            Log.logln(sc.toString(), LEVEL.BTRFS);
+            return sc;
+         }
+         if (sc.snapshotMount().mountPath().equals(srcPath())) {
+            Log.errln("Treffer: snapshotMount " + srcPath(), LEVEL.ERRORS);
+            return sc;
+         }
+      }
+      throw new RuntimeException(System.lineSeparator() + "Could not find any snapshots for srcDir: " + srcPath());
+   }
    @Override
    public final String toString() {
       StringBuilder sb=new StringBuilder();
@@ -141,6 +167,8 @@ public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, 
       sb.append(":").append(srcPath);
       sb.append(" (").append(backupLabel).append(")");
       sb.append(" flags=").append(flags);
+      if (backupTree[0] != null)
+         sb.append(backupTree[0].sMount());
       sb.append("]");
       return sb.toString();
    }

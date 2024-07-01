@@ -57,7 +57,7 @@ public class Backsnap {
    static public final Flag            KEEP_MINIMUM   =new Flag('m', "keepminimum");    // mark all but minimum snapshots
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
    static final Flag                   PEXEC          =new Flag('p', "pexec");          // use pexec instead of sudo
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.5"       //
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.6"       //
             + " (2024/06/30)";
    static public void main(String[] args) {
       Flag.setArgs(args, "");
@@ -75,35 +75,9 @@ public class Backsnap {
       } catch (IOException e) {
          e.printStackTrace();
       }
-      if (!Flag.getParameter(0).isBlank()) {// Wenn Parameter da sind, dann zuerst die auswerten
-         if (OneBackup.unsortedMap.containsKey(Flag.getParameter(0)) || Flag.getParameter(0).matches(".*[*+?|].*")) {
-            List<String> pList=Flag.getParameterList(); // System.out.println("Treffer");
-            Keys: for (String key:OneBackup.unsortedMap.keySet()) {// für jedes OneBackup
-               for (String param:pList)// für jeden parameter
-                  if (parameterPasst(key, param))
-                     continue Keys;// in den Maps lassen !
-               OneBackup value=OneBackup.unsortedMap.remove(key); // mit key löschen
-               for (String sortedKey:OneBackup.sortedMap.keySet())
-                  OneBackup.sortedMap.remove(sortedKey, value); // mit value löschen
-            }
-         } else // legacy
-            if (!Flag.getParameter(1).isBlank()) { // Wenn 2 Parameter da sind, dann diese verwenden
-               OneBackup.unsortedMap.clear(); // Kommandozeile statt config, aber Basisconfig behalten
-               OneBackup.sortedMap.clear();
-               String[] source=Flag.getParameter(0).split("[:]"); // Parameter sammeln für SOURCE
-               String[] backup=Flag.getParameter(1).split("[:]"); // BackupVolume ermitteln
-               OneBackup.backupPc=(backup.length == 1) ? Pc.getPc(null) : Pc.getPc(backup[0]);
-               if (OneBackup.backupPc instanceof Pc bPc) // Btrfs.BTRFS.lock();
-                  bPc.setBackupLabel(Paths.get(backup[backup.length - 1]).getFileName());
-               else
-                  throw new RuntimeException(LF + "Could not find Backuplabel " + String.join(" : ", backup));
-               OneBackup o=new OneBackup(Path.of(""), Pc.getPc(source[0]),
-                        Path.of("/", source[source.length - 1].replace(Snapshot.DOT_SNAPSHOTS, "")),
-                        OneBackup.backupPc.getBackupLabel(), null);
-               OneBackup.unsortedMap.put(OneBackup.backupPc.getBackupLabel().toString(), o);
-               OneBackup.sortedMap.put(OneBackup.backupPc.getBackupLabel().toString(), o);
-            }
-      }
+      // Wenn Parameter da sind, dann zuerst die auswerten
+      if (!Flag.getParameter(0).isBlank())
+         processParameters();
       Log.logln(OneBackup.getConfigText(), LEVEL.CONFIG);
       OneBackup lastBackup=null;
       if (HELP.get())
@@ -114,22 +88,22 @@ public class Backsnap {
             continue;
          BTRFS.writeLock().lock();
          try {
+            // Passe die Flags an
             if (actualBackup.flags() instanceof String s) {
                String a=String.join(" ", args).concat(" ").concat(s);
                Flag.setArgs(a.split(" "), "");
             } else
                Flag.setArgs(args, "");
-            if (lastBackup != null)
-               if (actualBackup.srcPc() != lastBackup.srcPc())
-                  try {
-                     lastBackup.srcPc().mountBtrfsRoot(lastBackup.srcPath(), false);// umount
-                  } catch (IOException e) {/*  */ } // umount
-            actualBackup.mountBtrfsRoot();
+            if (lastBackup instanceof OneBackup last && actualBackup.srcPc() != last.srcPc())
+               try {
+                  last.srcPc().mountBtrfsRoot(last.srcPath(), false);// umount
+               } catch (IOException e) {/*  */ }
+            actualBackup.mountBtrfsRoot();// mount
             if (!actualBackup.srcPc().isReachable())
                continue;
             lastBackup=actualBackup;
             // Start collecting information
-            SnapConfig srcConfig=SnapConfig.getConfig(actualBackup);
+            SnapConfig srcConfig=actualBackup.getSnapConfig();
             srcConfig.volumeMount().populate();
             Log.logln("Backup snapshots from " + srcConfig.volumeMount().keyM(), LEVEL.SNAPSHOTS);
             Pc.mountBackupRoot(true);
@@ -141,14 +115,14 @@ public class Backsnap {
                         + "Please select another partition for the backup");
             Log.logln("Try to use backupDir  " + backupMount.keyM(), LEVEL.SNAPSHOTS);
             usage=new Usage(backupMount, false);
-            backupTree=SnapTree.getSnapTree(backupMount, false);
+            actualBackup.backupTree()[0]=SnapTree.getSnapTree(backupMount, false);
             if (disconnectCount > 0) {
                Log.errln("no SSH Connection", LEVEL.ERRORS);
                ende("X");
                System.exit(0);
             }
             if (GUI.get())
-               bsGui=BacksnapGui.getGui(srcConfig, backupTree, usage);
+               bsGui=BacksnapGui.getGui(srcConfig, actualBackup.backupTree()[0], usage);
             if (bsGui instanceof BacksnapGui g) {
                final JProgressBar speedBar=g.getSpeedBar();
                SwingUtilities.invokeLater(() -> {
@@ -178,8 +152,10 @@ public class Backsnap {
                try {
                   if (bsGui instanceof BacksnapGui gui)
                      gui.updateProgressbar(counter, srcConfig.volumeMount().otimeKeyMap().size());
-                  if (!backup(actualBackup, sourceSnapshot, backupTree))
+                  // -------------------------------------------------
+                  if (!backup(actualBackup, sourceSnapshot))
                      continue;
+                  // -------------------------------------------------
                   // Anzeige im Progressbar anpassen
                   if (bsGui instanceof BacksnapGui gui)
                      gui.refreshGUI();
@@ -222,6 +198,39 @@ public class Backsnap {
       System.exit(-2);
    }// filaized
    /**
+    * Bearbeite die übergebenen Parameter und wähle die entsprechenden Backups aus
+    */
+   private static void processParameters() {
+      if (OneBackup.unsortedMap.containsKey(Flag.getParameter(0)) || Flag.getParameter(0).matches(".*[*+?|].*")) {
+         List<String> pList=Flag.getParameterList(); // System.out.println("Treffer");
+         Keys: for (String key:OneBackup.unsortedMap.keySet()) {// für jedes OneBackup
+            for (String param:pList)// für jeden parameter
+               if (parameterPasst(key, param))
+                  continue Keys;// in den Maps lassen !
+            OneBackup value=OneBackup.unsortedMap.remove(key); // mit key löschen
+            for (String sortedKey:OneBackup.sortedMap.keySet())
+               OneBackup.sortedMap.remove(sortedKey, value); // mit value löschen
+         }
+      } else // legacy
+         if (!Flag.getParameter(1).isBlank()) { // Wenn 2 Parameter da sind, dann diese verwenden
+            OneBackup.unsortedMap.clear(); // Kommandozeile statt config, aber Basisconfig behalten
+            OneBackup.sortedMap.clear();
+            String[] source=Flag.getParameter(0).split("[:]"); // Parameter sammeln für SOURCE
+            String[] backup=Flag.getParameter(1).split("[:]"); // BackupVolume ermitteln
+            OneBackup.backupPc=(backup.length == 1) ? Pc.getPc(null) : Pc.getPc(backup[0]);
+            if (OneBackup.backupPc instanceof Pc bPc) // Btrfs.BTRFS.lock();
+               bPc.setBackupLabel(Paths.get(backup[backup.length - 1]).getFileName());
+            else
+               throw new RuntimeException(LF + "Could not find Backuplabel " + String.join(" : ", backup));
+            OneBackup o=new OneBackup(Path.of(""), Pc.getPc(source[0]),
+                     Path.of("/", source[source.length - 1].replace(Snapshot.DOT_SNAPSHOTS, "")),
+                     OneBackup.backupPc.getBackupLabel(), null, new SnapTree[1]);
+            OneBackup.unsortedMap.put(OneBackup.backupPc.getBackupLabel().toString(), o);
+            OneBackup.sortedMap.put(OneBackup.backupPc.getBackupLabel().toString(), o);
+         }
+      // Ansonsten alle Backups durchführen
+   }
+   /**
     * @param key
     * @param param
     * @return
@@ -247,22 +256,22 @@ public class Backsnap {
    /**
     * Versuchen genau diesen einzelnen Snapshot zu sichern
     * 
-    * @param snapConfigs
-    * @param sourceKey
-    * @param sMap
-    * @param dMap
+    * @param oneBackup
+    *           Das aktuell durchzuführende Backup
+    * @param srcSnapshot
+    *           Der nächste Snapshot der dran ist
+    * @param backupSnapTree
     * @throws IOException
     * @return false bei Misserfolg
     */
-   static private boolean backup(OneBackup oneBackup, Snapshot srcSnapshot, SnapTree backupSnapTree)
-            throws IOException {
+   static private boolean backup(OneBackup oneBackup, Snapshot srcSnapshot) throws IOException {
       if (bsGui instanceof BacksnapGui gui)
          gui.setBackupInfo(srcSnapshot, parentSnapshot);
       if (srcSnapshot.isBackup()) {
          lnlog("Ignore:" + srcSnapshot.dirName(), LEVEL.CONFIG);
          return false;
       }
-      if (backupSnapTree.containsBackupOf(srcSnapshot)) {
+      if (oneBackup.backupTree()[0].containsBackupOf(srcSnapshot)) {
          if (skipCount == 0)
             lnlog("Skip:", LEVEL.SNAPSHOTS);
          Log.log(" " + srcSnapshot.dirName(), LEVEL.SNAPSHOTS);
@@ -275,10 +284,10 @@ public class Backsnap {
          Log.logln("", LEVEL.SNAPSHOTS);
       }
       Path bDir=Pc.TMP_BACKSNAP.resolve(oneBackup.backupLabel()).resolve(srcSnapshot.dirName());
-      Path bSnapDir=backupSnapTree.getSnapPath(bDir);
+      Path bSnapDir=oneBackup.backupTree()[0].getSnapPath(bDir);
       // sMount().btrfsPath().resolve(backupSnapTree.sMount().mountPath().relativize(bDir))
       // .resolve(Snapshot.SNAPSHOT);
-      if (backupSnapTree.containsPath(bSnapDir)) {
+      if (oneBackup.backupTree()[0].containsPath(bSnapDir)) {
          Log.logln("Der Snapshot scheint schon da zu sein ????", LEVEL.SNAPSHOTS);
          return true;
       }
@@ -292,9 +301,8 @@ public class Backsnap {
          parentSnapshot=srcSnapshot;
       return true;
    }
-   static StringBuilder    pv=new StringBuilder("- Info -");
-   private static Usage    usage;
-   private static SnapTree backupTree=null;
+   static StringBuilder pv=new StringBuilder("- Info -");
+   private static Usage usage;
    static private void rsyncFiles(OneBackup oneBackup, Path sDir, Path bDir) throws IOException {
       StringBuilder rsyncSB=new StringBuilder(
                "rsync -vdcptgo --exclude \"@*\" --exclude \"" + Snapshot.SNAPSHOT + "\" ");
