@@ -57,8 +57,8 @@ public class Backsnap {
    static public final Flag            KEEP_MINIMUM   =new Flag('m', "keepminimum");    // mark all but minimum snapshots
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
    static final Flag                   PEXEC          =new Flag('p', "pexec");          // use pexec instead of sudo
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.6"       //
-            + " (2024/06/30)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.7"       //
+            + " (2024/07/01)";
    static public void main(String[] args) {
       Flag.setArgs(args, "");
       Log.setLoglevel(Backsnap.VERBOSE.getParameterOrDefault(LEVEL.PROGRESS.l));
@@ -82,7 +82,7 @@ public class Backsnap {
       OneBackup lastBackup=null;
       if (HELP.get())
          System.exit(2);
-      for (OneBackup ob:OneBackup.sortedMap.values()) {
+      for (OneBackup ob:OneBackup.getSortedBackups()) {
          actualBackup=ob;
          if (!actualBackup.srcPc().isReachable())
             continue;
@@ -173,7 +173,7 @@ public class Backsnap {
                Log.errln(e.getMessage(), LEVEL.ERRORS);
             else
                e.printStackTrace();
-            if (OneBackup.sortedMap.size() <= 1) {
+            if (OneBackup.size() <= 1) {
                try {
                   if (lastBackup != null)
                      lastBackup.srcPc().mountBtrfsRoot(lastBackup.srcPath(), false);
