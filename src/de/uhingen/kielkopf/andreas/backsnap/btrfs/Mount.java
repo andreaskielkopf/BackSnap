@@ -86,7 +86,6 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
       BTRFS.readLock().lock();
       try (CmdStreams snapshotStream=CmdStreams.getCachedStream(subvolumeSchowCmd, keyM())) {
          snapshotStream.outBGerr().forEach(line -> {
-            // if (!line.isEmpty()) {
             Log.logln(line, LEVEL.BTRFS_ANSWER);
             Matcher mn=NAME.matcher(line);
             if (mn.find())
@@ -109,7 +108,6 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
                      }
                   }
                }
-            // }
          });
          if (name.isEmpty())
             name.add("/");
@@ -123,7 +121,7 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
    }
    public void updateSnapshots() throws IOException {
       SnapTree snapTree=SnapTree.getSnapTree(this, false);
-//      boolean snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.isEmpty() : false;
+      // boolean snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.isEmpty() : false;
       StringBuilder subvolumeShowSB=new StringBuilder(Btrfs.SUBVOLUME_SHOW).append(mountPath);
       String subvolumeShowCmd=pc.getCmd(subvolumeShowSB, true);
       Log.logln(subvolumeShowCmd, LEVEL.BTRFS);
@@ -174,5 +172,4 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
       sb.append(":").append(btrfsMap.size()).append(")").append("]");
       return sb.toString();
    }
-  
 }

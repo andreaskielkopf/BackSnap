@@ -35,7 +35,6 @@ public record SnapTree(Mount sMount, ConcurrentSkipListMap<String, Snapshot> sUu
    public SnapTree(Mount mount) throws IOException {
       this(mount, new ConcurrentSkipListMap<>(), new ConcurrentSkipListMap<>(), new ConcurrentSkipListMap<>(),
                new ConcurrentSkipListMap<>());
-      // populate();
    }
    private SnapTree populate() throws IOException {// otime kommt nur bei snapshots
       // mit -a bekommt man alle Snapshots für dieses Device

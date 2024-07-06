@@ -2,8 +2,7 @@ package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.regex.Matcher;
@@ -159,6 +158,9 @@ public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, 
       }
       throw new RuntimeException(System.lineSeparator() + "Could not find any snapshots for srcDir: " + srcPath());
    }
+   public static Collection<OneBackup> getSortedBackups() {
+      return sortedMap.values();
+   }
    @Override
    public final String toString() {
       StringBuilder sb=new StringBuilder();
@@ -171,5 +173,11 @@ public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, 
          sb.append(backupTree[0].sMount());
       sb.append("]");
       return sb.toString();
+   }
+   /**
+    * @return
+    */
+   public static int size() {
+      return sortedMap.size();
    }
 }
