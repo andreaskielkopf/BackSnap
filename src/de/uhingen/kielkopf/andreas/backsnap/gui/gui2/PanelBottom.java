@@ -4,7 +4,6 @@
 package de.uhingen.kielkopf.andreas.backsnap.gui.gui2;
 
 import javax.swing.JPanel;
-import java.awt.FlowLayout;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import javax.swing.border.TitledBorder;

@@ -8,7 +8,6 @@ import java.io.IOException;
 
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
-import javax.swing.border.TitledBorder; 
 
 /**
  * @author Andreas Kielkopf
@@ -50,6 +49,7 @@ public class PanelTab extends JPanel {
    private JSplitPane getSplitPane() throws IOException {
       if (splitPane == null) {
          splitPane=new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, getPanel_1(), getPanel_2());
+         splitPane.setResizeWeight(0.4);
          splitPane.setOneTouchExpandable(true);
          splitPane.setDividerLocation(150);
       }
@@ -58,7 +58,7 @@ public class PanelTab extends JPanel {
    private SnapshotPanel2 getPanel_1() throws IOException {
       if (panel_1 == null) {
          panel_1=new SnapshotPanel2();
-         panel_1.setMinimumSize(new Dimension(100, 50));
+         panel_1.setMinimumSize(new Dimension(200, 200));
          panel_1.setTitle("Snapshots");
          // panel_1.setLayout(new BorderLayout(0, 0));
       }
@@ -67,7 +67,7 @@ public class PanelTab extends JPanel {
    private SnapshotPanel2 getPanel_2() throws IOException {
       if (panel_2 == null) {
          panel_2=new SnapshotPanel2();
-         panel_2.setMinimumSize(new Dimension(100, 50));
+         panel_2.setMinimumSize(new Dimension(300, 200));
          panel_2.setTitle("Backups");
          // panel_2.setLayout(new BorderLayout(0, 0));
       }

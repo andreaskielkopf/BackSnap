@@ -5,9 +5,9 @@
 module backsnap {
    exports de.uhingen.kielkopf.andreas.backsnap.btrfs;
    exports de.uhingen.kielkopf.andreas.backsnap;
-   exports de.uhingen.kielkopf.andreas.backsnap.gui;   
+   exports de.uhingen.kielkopf.andreas.backsnap.gui;
    exports de.uhingen.kielkopf.andreas.backsnap.gui.element;
-   exports de.uhingen.kielkopf.andreas.backsnap.gui.part;   
+   exports de.uhingen.kielkopf.andreas.backsnap.gui.part;
    exports de.uhingen.kielkopf.andreas.beans.cli;
    exports de.uhingen.kielkopf.andreas.beans.gui;
    exports de.uhingen.kielkopf.andreas.beans.data;

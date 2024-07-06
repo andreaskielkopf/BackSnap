@@ -13,11 +13,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
-import de.uhingen.kielkopf.andreas.backsnap.btrfs.Mount;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.Snapshot;
-import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
-import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
-import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotDetail;
 import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotLabel;
 
 /**
@@ -28,7 +24,7 @@ public class SnapshotPanel2 extends JPanel implements ComponentListener, MouseLi
    static public final Font                            FONT_INFO           =new Font("Noto Sans", Font.PLAIN, 16);
    static public final Font                            FONT_INFO_B         =new Font("Noto Sans", Font.BOLD, 16);
    private JPanel                                      panelView;
-   private SnapshotDetail                              panelDetail;
+   // private SnapshotDetail panelDetail;
    private JPanel                                      panelSnapshots;
    private JScrollPane                                 scrollPane;
    public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_UUID      =new ConcurrentSkipListMap<>();
@@ -39,15 +35,15 @@ public class SnapshotPanel2 extends JPanel implements ComponentListener, MouseLi
    public ArrayList<SnapshotLabel>                     mixedList           =new ArrayList<>();
    private TitledBorder                                tBorder             =new TitledBorder(null, "Snapshots of ...",
             TitledBorder.LEADING, TitledBorder.TOP, null, null);
-   private JPanel                                      panelInfo;
-   private Lbl                                         lblPc;
-   private Lbl                                         lblVolume;
-   private Lbl                                         lblSubvolume;
-   private Lbl                                         lblMountPoint;
-   private TxtFeld                                     infoPc;
-   private TxtFeld                                     infoVolume;
-   private TxtFeld                                     infoSubvolume;
-   private TxtFeld                                     infoMountPoint;
+   // private JPanel panelInfo;
+   // private Lbl lblPc;
+   // private Lbl lblVolume;
+   // private Lbl lblSubvolume;
+   // private Lbl lblMountPoint;
+   // private TxtFeld infoPc;
+   // private TxtFeld infoVolume;
+   // private TxtFeld infoSubvolume;
+   // private TxtFeld infoMountPoint;
    private JSplitPane                                  splitPane;
    public SnapshotPanel2() throws IOException {
       setBorder(tBorder);
@@ -55,9 +51,9 @@ public class SnapshotPanel2 extends JPanel implements ComponentListener, MouseLi
    }
    private void initialize() throws IOException {
       setLayout(new BorderLayout(0, 0));
-      add(getPanelInfo(), BorderLayout.NORTH);
+      // add(getPanelInfo(), BorderLayout.NORTH);
       getPanelView().add(SnapshotLabel.getSnapshotLabel(null));
-//      add(getSplitPane(), BorderLayout.CENTER);
+      // add(getSplitPane(), BorderLayout.CENTER);
       add(getScrollPane(), BorderLayout.CENTER);
    }
    public JPanel getPanelView() {
@@ -78,18 +74,18 @@ public class SnapshotPanel2 extends JPanel implements ComponentListener, MouseLi
                   int w=getWidth();
                   for (SnapshotLabel snap:labelTree_UUID.values())
                      if (labelTree_UUID.get(snap.snapshot.parent_uuid()) instanceof SnapshotLabel parent) {
-                        Rectangle s      =snap.getBounds();
-                        Rectangle p      =parent.getBounds();
-                        int       px     =p.x;
-                        int       pw     =p.width;
-                        int       py     =p.y;
-                        int       ph     =p.height;
-                        int       sx     =s.x;
-                        int       sy     =s.y;
-                        int       sh     =s.height;
-                        int       abstand=px + pw - sx;
-                        boolean   t      =(abstand + s.getWidth() * 2 > w);
-                        boolean   m      =(Math.abs(abstand) < s.getWidth());
+                        Rectangle s=snap.getBounds();
+                        Rectangle p=parent.getBounds();
+                        int px=p.x;
+                        int pw=p.width;
+                        int py=p.y;
+                        int ph=p.height;
+                        int sx=s.x;
+                        int sy=s.y;
+                        int sh=s.height;
+                        int abstand=px + pw - sx;
+                        boolean t=(abstand + s.getWidth() * 2 > w);
+                        boolean m=(Math.abs(abstand) < s.getWidth());
                         if (t) {
                            g2d.setColor(Color.BLACK);
                            int y=(int) ((p.getCenterY() + s.getCenterY()) / 2);
@@ -101,10 +97,10 @@ public class SnapshotPanel2 extends JPanel implements ComponentListener, MouseLi
                               g2d.drawLine(px + pw, py + ph / 2, sx, sy + sh / 2);
                            } else {
                               g2d.setColor(Color.BLUE);
-                              g2d.fillOval(px + pw - bolla2-2, py + ph - bolla2-2, bolla2, bolla2);
+                              g2d.fillOval(px + pw - bolla2 - 2, py + ph - bolla2 - 2, bolla2, bolla2);
                               g2d.drawLine(px + pw - bolla1 - 2, py + ph - bolla1 - 2, sx + bolla1 + 2,
                                        sy + bolla1 + 2);
-                              g2d.drawOval(sx+2, sy+2, bolla2, bolla2);
+                              g2d.drawOval(sx + 2, sy + 2, bolla2, bolla2);
                            }
                      }
                }
@@ -117,12 +113,12 @@ public class SnapshotPanel2 extends JPanel implements ComponentListener, MouseLi
       }
       return panelView;
    }
-   private SnapshotDetail getPanelDetail() {
-      if (panelDetail == null) {
-         panelDetail=new SnapshotDetail();
-      }
-      return panelDetail;
-   }
+   // private SnapshotDetail getPanelDetail() {
+   // if (panelDetail == null) {
+   // panelDetail=new SnapshotDetail();
+   // }
+   // return panelDetail;
+   // }
    /**
     * @param receivedSnapshots
     * @param srcVolume
@@ -170,8 +166,8 @@ public class SnapshotPanel2 extends JPanel implements ComponentListener, MouseLi
       SwingUtilities.invokeLater(() -> {
          pv.revalidate();
          pv.repaint(100);
-      componentResized(null);
-      repaint(100);
+         componentResized(null);
+         repaint(100);
       });
       return neuList;
    }
@@ -199,11 +195,11 @@ public class SnapshotPanel2 extends JPanel implements ComponentListener, MouseLi
       if (w == 0)
          return;
       final JPanel pv=getPanelView();
-      long         v =pv.getComponentCount() * 2000L;
-      final int    c =(int) (v / w);
+      long v=pv.getComponentCount() * 2000L;
+      final int c=(int) (v / w);
       SwingUtilities.invokeLater(() -> {
-            pv.setPreferredSize(new Dimension(w, c));
-            pv.revalidate();
+         pv.setPreferredSize(new Dimension(w, c));
+         pv.revalidate();
       });
    }
    /**
@@ -226,17 +222,17 @@ public class SnapshotPanel2 extends JPanel implements ComponentListener, MouseLi
    public void mouseReleased(MouseEvent e) { /* noop */ }
    @Override
    public void mouseEntered(MouseEvent e) {
-      if (e.getSource() instanceof SnapshotLabel sl) {
-         Snapshot       sn=sl.snapshot;
-         SnapshotDetail pd=getPanelDetail();
-         JSplitPane     sp=getSplitPane();
-         pd.setInfo("Snapshot " + sn.dirName() + ":", sn.getInfo());
-         if (sp.getBottomComponent() == null) {
-            pd.setMinimumSize(new Dimension(300, 160));
-            sp.setBottomComponent(pd);
-            sp.setDividerLocation(0.85d);
-         }
+      // if (e.getSource() instanceof SnapshotLabel sl) {
+      // Snapshot sn=sl.snapshot;
+      // SnapshotDetail pd=getPanelDetail();
+      JSplitPane sp=getSplitPane();
+      // pd.setInfo("Snapshot " + sn.dirName() + ":", sn.getInfo());
+      if (sp.getBottomComponent() == null) {
+         // pd.setMinimumSize(new Dimension(300, 160));
+         // sp.setBottomComponent(pd);
+         sp.setDividerLocation(0.85d);
       }
+      // }
    }
    @Override
    public void mouseExited(MouseEvent e) { /* noop */ }
@@ -246,85 +242,85 @@ public class SnapshotPanel2 extends JPanel implements ComponentListener, MouseLi
    public void setTitle(String string) {
       tBorder.setTitle(string);
    }
-   private JPanel getPanelInfo() {
-      if (panelInfo == null) {
-         panelInfo=new JPanel();
-         panelInfo.setVisible(false);
-         FlowLayout fl_panelInfo=new FlowLayout(FlowLayout.LEFT, 2, 1);
-         fl_panelInfo.setAlignOnBaseline(true);
-         panelInfo.setLayout(fl_panelInfo);
-         panelInfo.add(getLblPc());
-         panelInfo.add(getInfoPc());
-         panelInfo.add(getLblVolume());
-         panelInfo.add(getInfoVolume());
-         panelInfo.add(getLblSubvolume());
-         panelInfo.add(getInfoSubvolume());
-         panelInfo.add(getLblMountPoint());
-         panelInfo.add(getInfoMountPoint());
-      }
-      return panelInfo;
-   }
-   private Lbl getLblPc() {
-      if (lblPc == null) {
-         lblPc=new Lbl("Pc:");
-      }
-      return lblPc;
-   }
-   private Lbl getLblVolume() {
-      if (lblVolume == null) {
-         lblVolume=new Lbl("Vol:");
-      }
-      return lblVolume;
-   }
-   private Lbl getLblSubvolume() {
-      if (lblSubvolume == null) {
-         lblSubvolume=new Lbl("Subvol:");
-      }
-      return lblSubvolume;
-   }
-   private Lbl getLblMountPoint() {
-      if (lblMountPoint == null) {
-         lblMountPoint=new Lbl("at:");
-      }
-      return lblMountPoint;
-   }
-   public TxtFeld getInfoPc() {
-      if (infoPc == null) {
-         infoPc=new TxtFeld("local");
-      }
-      return infoPc;
-   }
-   public TxtFeld getInfoVolume() {
-      if (infoVolume == null) {
-         infoVolume=new TxtFeld("/dev/sdz");
-      }
-      return infoVolume;
-   }
-   public TxtFeld getInfoSubvolume() {
-      if (infoSubvolume == null) {
-         infoSubvolume=new TxtFeld("/@");
-      }
-      return infoSubvolume;
-   }
-   public TxtFeld getInfoMountPoint() {
-      if (infoMountPoint == null) {
-         infoMountPoint=new TxtFeld("/");
-      }
-      return infoMountPoint;
-   }
+   // private JPanel getPanelInfo() {
+   // if (panelInfo == null) {
+   // panelInfo=new JPanel();
+   // panelInfo.setVisible(false);
+   // FlowLayout fl_panelInfo=new FlowLayout(FlowLayout.LEFT, 2, 1);
+   // fl_panelInfo.setAlignOnBaseline(true);
+   // panelInfo.setLayout(fl_panelInfo);
+   // panelInfo.add(getLblPc());
+   // panelInfo.add(getInfoPc());
+   // panelInfo.add(getLblVolume());
+   // panelInfo.add(getInfoVolume());
+   // panelInfo.add(getLblSubvolume());
+   // panelInfo.add(getInfoSubvolume());
+   // panelInfo.add(getLblMountPoint());
+   // panelInfo.add(getInfoMountPoint());
+   // }
+   // return panelInfo;
+   // }
+   // private Lbl getLblPc() {
+   // if (lblPc == null) {
+   // lblPc=new Lbl("Pc:");
+   // }
+   // return lblPc;
+   // }
+   // private Lbl getLblVolume() {
+   // if (lblVolume == null) {
+   // lblVolume=new Lbl("Vol:");
+   // }
+   // return lblVolume;
+   // }
+   // private Lbl getLblSubvolume() {
+   // if (lblSubvolume == null) {
+   // lblSubvolume=new Lbl("Subvol:");
+   // }
+   // return lblSubvolume;
+   // }
+   // private Lbl getLblMountPoint() {
+   // if (lblMountPoint == null) {
+   // lblMountPoint=new Lbl("at:");
+   // }
+   // return lblMountPoint;
+   // }
+   // public TxtFeld getInfoPc() {
+   // if (infoPc == null) {
+   // infoPc=new TxtFeld("local");
+   // }
+   // return infoPc;
+   // }
+   // public TxtFeld getInfoVolume() {
+   // if (infoVolume == null) {
+   // infoVolume=new TxtFeld("/dev/sdz");
+   // }
+   // return infoVolume;
+   // }
+   // public TxtFeld getInfoSubvolume() {
+   // if (infoSubvolume == null) {
+   // infoSubvolume=new TxtFeld("/@");
+   // }
+   // return infoSubvolume;
+   // }
+   // public TxtFeld getInfoMountPoint() {
+   // if (infoMountPoint == null) {
+   // infoMountPoint=new TxtFeld("/");
+   // }
+   // return infoMountPoint;
+   // }
    /**
     * @param srcConfig
     */
-   public void setInfo(Mount mount) {
-      SwingUtilities.invokeLater(() -> {
-      getInfoPc().setText(mount.pc().extern());
-      getInfoVolume().setText(mount.devicePath().toString());
-      getInfoSubvolume().setText(mount.btrfsPath().toString());
-      getInfoMountPoint().setText(mount.mountPath().toString());
-         getPanelInfo().revalidate();
-         getPanelInfo().repaint(100);
-      });
-   }
+   // public void setInfo(Mount mount) {
+   // SwingUtilities.invokeLater(() -> {
+   // getInfoPc().setText(mount.pc().extern());
+   // getInfoVolume().setText(mount.devicePath().toString());
+   // getInfoSubvolume().setText(mount.btrfsPath().toString());
+   // getInfoMountPoint().setText(mount.mountPath().toString());
+   // getPanelInfo().revalidate();
+   // getPanelInfo().repaint(100);
+   // });
+   // }
    private JSplitPane getSplitPane() {
       if (splitPane == null) {
          // Das 2.Panel erst eintragen, wenn es dargestellt werden muss !

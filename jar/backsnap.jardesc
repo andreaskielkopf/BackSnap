@@ -12,6 +12,7 @@
     </manifest>
     <selectedElements exportClassFiles="true" exportJavaFiles="true" exportOutputFolder="false">
         <folder path="/backsnap/etc"/>
+        <folder path="/backsnap/modules"/>
         <file path="/backsnap/LICENSE.txt"/>
         <file path="/backsnap/SECURITY.md"/>
         <file path="/backsnap/WieEsFunktioniert.md"/>

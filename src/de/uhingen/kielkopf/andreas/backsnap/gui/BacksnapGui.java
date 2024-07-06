@@ -360,7 +360,8 @@ public class BacksnapGui implements MouseListener {
    public JSplitPane getSplitPaneSnapshots() throws IOException {
       if (splitPaneSnapshots == null) {
          splitPaneSnapshots=new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, getPanelSrc(), getPanelBackup());
-         splitPaneSnapshots.setDividerLocation(.3d);
+         splitPaneSnapshots.setDividerLocation(.4d);
+         splitPaneSnapshots.setResizeWeight(.4d);
       }
       return splitPaneSnapshots;
    }
@@ -433,7 +434,7 @@ public class BacksnapGui implements MouseListener {
             if (pvText.contains("<")) {
                String[] s1=pvT.trim().split("\\] \\[");
                if (s1.length == 2) {
-                  String[] s3=s1[0].replace(" B", "_B").replace("[ ", "[_").split(" ");
+                  String[] s3=s1[0].replace(" B", "_B").replace(" _B", "_B").replace("[ ", "[_").split(" ");
                   if (s3.length == 3) {
                      getTxtSize().setText(s3[0].replace('_', ' '));
                      getTxtTime().setText(s3[1]);

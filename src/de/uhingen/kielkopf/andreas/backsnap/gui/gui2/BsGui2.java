@@ -6,15 +6,10 @@ package de.uhingen.kielkopf.andreas.backsnap.gui.gui2;
 import java.awt.EventQueue;
 
 import javax.swing.JFrame;
-import javax.swing.JPanel;
+
 import java.awt.BorderLayout;
-import javax.swing.border.TitledBorder;
 
 import java.awt.Color;
-import java.awt.FlowLayout;
-import javax.swing.BoxLayout;
-import javax.swing.JTextField;
-import javax.swing.JLabel;
 
 /**
  * @author Andreas Kielkopf
@@ -31,6 +26,7 @@ public class BsGui2 {
     */
    public static void main(String[] args) {
       EventQueue.invokeLater(new Runnable() {
+         @Override
          public void run() {
             try {
                if (bsGui2 == null)

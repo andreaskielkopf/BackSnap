@@ -57,8 +57,8 @@ public class Backsnap {
    static public final Flag            KEEP_MINIMUM   =new Flag('m', "keepminimum");    // mark all but minimum snapshots
    static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
    static final Flag                   PEXEC          =new Flag('p', "pexec");          // use pexec instead of sudo
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.7"       //
-            + " (2024/07/01)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.10"       //
+            + " (2024/07/06)";
    static public void main(String[] args) {
       Flag.setArgs(args, "");
       Log.setLoglevel(Backsnap.VERBOSE.getParameterOrDefault(LEVEL.PROGRESS.l));

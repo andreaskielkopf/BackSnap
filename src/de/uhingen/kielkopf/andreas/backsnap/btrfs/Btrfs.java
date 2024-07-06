@@ -96,7 +96,7 @@ public class Btrfs {
                         Log.logln(removeCmd, LEVEL.BTRFS);
                         BTRFS.writeLock().lock();
                         try (DirectCmdStreams removeStream=new DirectCmdStreams(removeCmd);
-                                 BufferedCmdReader out=removeStream.out();) {
+                                 BufferedCmdReader out=removeStream.out()) {
                            removeStream.print2Err();
                            out.lines().forEach(line -> {
                               Log.logln(line, LEVEL.DELETE);
