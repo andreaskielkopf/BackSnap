@@ -30,7 +30,6 @@ import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
 import de.uhingen.kielkopf.andreas.backsnap.gui.part.*;
 import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotLabel.STATUS;
 import de.uhingen.kielkopf.andreas.beans.Version;
-import de.uhingen.kielkopf.andreas.beans.cli.Flag;
 import de.uhingen.kielkopf.andreas.beans.gui.Prefs;
 import de.uhingen.kielkopf.andreas.beans.gui.Rotator;
 import de.uhingen.kielkopf.andreas.beans.shell.CmdStreams;
@@ -95,13 +94,13 @@ public class BacksnapGui implements MouseListener {
       UIManager.put("ProgressBar.selectionForeground", Color.black);
       UIManager.put("ProgressBar.selectionBackground", Color.black);
       initialize();
-      getPanelMaintenance().getPanelMeta().getSliderMeta()
-               .setValue(Flag.parseIntOrDefault(Backsnap.KEEP_MINIMUM.getParameter(), PanelMeta.DEFAULT_META));
-      if (Backsnap.KEEP_MINIMUM.get())
+      getPanelMaintenance().getPanelMeta().getSliderMeta().setValue(Backsnap.flags
+               .parseIntOrDefault(Backsnap.flags.f(Backsnap.KEEPMINIMUM).getParameter(), PanelMeta.DEFAULT_META));
+      if (Backsnap.flags.get(Backsnap.KEEPMINIMUM))
          getPanelMaintenance().getPanelMeta().flagMeta();
-      getPanelMaintenance().getPanelSpace().getSliderSpace()
-               .setValue(Flag.parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), PanelSpace.DEFAULT_SPACE));
-      if (Backsnap.DELETEOLD.get())
+      getPanelMaintenance().getPanelSpace().getSliderSpace().setValue(Backsnap.flags
+               .parseIntOrDefault(Backsnap.flags.f(Backsnap.DELETEOLD).getParameter(), PanelSpace.DEFAULT_SPACE));
+      if (Backsnap.flags.get(Backsnap.DELETEOLD))
          getPanelMaintenance().getPanelSpace().flagSpace();
    }
    /** Zum Speichern der Fensterkoordinaten */
@@ -132,7 +131,7 @@ public class BacksnapGui implements MouseListener {
       if (backSnapGui == null) {
          backSnapGui=new BacksnapGui();
          main2(null); // zeigt die GUI an
-         backSnapGui.setArgs(Flag.getArgs());
+         backSnapGui.setArgs(Backsnap.flags.getArgs());
          backSnapGui.setSrc(srcConfig);
          backSnapGui.setBackup(backupTree);
          backSnapGui.setUsage(usage);
@@ -143,7 +142,7 @@ public class BacksnapGui implements MouseListener {
          });
          backSnapGui.getPanelMaintenance().updateButtons();
       } else {
-         backSnapGui.setArgs(Flag.getArgs());
+         backSnapGui.setArgs(Backsnap.flags.getArgs());
          backSnapGui.setSrc(srcConfig);
          backSnapGui.setBackup(backupTree);
          backSnapGui.setUsage(usage);
@@ -184,8 +183,9 @@ public class BacksnapGui implements MouseListener {
       ArrayList<SnapshotLabel> backupMixedList=getPanelBackup().mixedList;
       return virtual.submit(() -> {
          ConcurrentNavigableMap<String, SnapshotLabel> toDeleteOld=new ConcurrentSkipListMap<>();
-         if (Backsnap.DELETEOLD.get()) { // sollen alte Snapshots gelöscht werden ?
-            int deleteOld=Flag.parseIntOrDefault(Backsnap.DELETEOLD.getParameter(), PanelSpace.DEFAULT_SPACE);
+         if (Backsnap.flags.get(Backsnap.DELETEOLD)) { // sollen alte Snapshots gelöscht werden ?
+            int deleteOld=Backsnap.flags.parseIntOrDefault(Backsnap.flags.f(Backsnap.DELETEOLD).getParameter(),
+                     PanelSpace.DEFAULT_SPACE);
             if (srcLast instanceof Entry<String, SnapshotLabel> lastEntry) {
                Snapshot lastSnapshot=lastEntry.getValue().snapshot;
                Instant q=lastSnapshot.stunden();
@@ -208,7 +208,8 @@ public class BacksnapGui implements MouseListener {
                         }
                      }
                   } else {
-                     int firstNr=Flag.parseIntOrDefault(lastSnapshot.dirName(), deleteOld) - deleteOld;
+                     int firstNr=Backsnap.flags.parseIntOrDefault(lastSnapshot.dirName(), deleteOld) - deleteOld;
+                     /* @BUG ? */
                      if (firstNr > 0) {
                         toDeleteOld=backupLabels_DirName.headMap(Integer.toString(firstNr));
                      }
@@ -231,8 +232,9 @@ public class BacksnapGui implements MouseListener {
          }
          // KEEP_MINIMUM
          int minimum=PanelMeta.DEFAULT_META;
-         if (Backsnap.KEEP_MINIMUM.get())
-            minimum=Flag.parseIntOrDefault(Backsnap.KEEP_MINIMUM.getParameter(), PanelMeta.DEFAULT_META);
+         if (Backsnap.flags.get(Backsnap.KEEPMINIMUM))
+            minimum=Backsnap.flags.parseIntOrDefault(Backsnap.flags.f(Backsnap.KEEPMINIMUM).getParameter(),
+                     PanelMeta.DEFAULT_META);
          ArrayList<SnapshotLabel> mixedList2;
          synchronized (backupMixedList) {
             mixedList2=new ArrayList<>(backupMixedList);

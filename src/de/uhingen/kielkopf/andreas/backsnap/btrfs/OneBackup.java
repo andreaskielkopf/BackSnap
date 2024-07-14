@@ -27,8 +27,8 @@ import de.uhingen.kielkopf.andreas.beans.minijson.Etc;
  * @param flags
  * @param backupTree[]
  */
-public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, String flags, SnapTree[] backupTree)
-         implements Comparable<OneBackup> {
+public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, String flags, SnapTree[] backupTree,
+         DataSet[] dataSet) implements Comparable<OneBackup> {
    public static Pc backupPc=null;
    private static String backupId=null;
    /** sortierte Liste mit den vorgesehenen Backups */
@@ -100,7 +100,8 @@ public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, 
                         Path label=Path.of(a); // relativ
                         Path pfad=Path.of(b); // absolut
                         if (pfad.isAbsolute()) {
-                           OneBackup o=new OneBackup(entry.getKey(), pc, pfad, label, flags, new SnapTree[1]);
+                           OneBackup o=new OneBackup(entry.getKey(), pc, pfad, label, flags, new SnapTree[1],
+                                    new DataSet[1]);
                            unsortedMap.put(label.toString(), o);
                            sortedMap.put(entry.getKey().getFileName() + ":" + label, o);
                         }

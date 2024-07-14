@@ -29,14 +29,14 @@ import de.uhingen.kielkopf.andreas.beans.Version;
 public class PanelMeta extends JPanel {
    static private ExecutorService     virtual         =Version.getVx();
    static private final long          serialVersionUID=-8829953253542936677L;
-   private JCheckBox   chckMeta;
-   private JButton     btnMeta;
+   private JCheckBox                  chckMeta;
+   private JButton                    btnMeta;
    static public int                  DEFAULT_META    =499;
-   private JSlider     sliderMeta;
-   private Lbl         lblMeta;
-   private JPanel      panel;
-   private JPanel      panel_c;
-   private TxtFeld     xtxDisabled;
+   private JSlider                    sliderMeta;
+   private Lbl                        lblMeta;
+   private JPanel                     panel;
+   private JPanel                     panel_c;
+   private TxtFeld                    xtxDisabled;
    AtomicBoolean                      needsAbgleich   =new AtomicBoolean(false);
    @NonNull private final BacksnapGui bsGui;
    /**
@@ -69,7 +69,7 @@ public class PanelMeta extends JPanel {
    public void flagMeta() {
       boolean s=getChckMeta().isSelected();
       Log.log("-------------- getChckMeta() actionPerformed", LEVEL.DEBUG);
-      Backsnap.KEEP_MINIMUM.set(s);
+      Backsnap.flags.f(Backsnap.KEEPMINIMUM).set(s);
       getSliderMeta().setEnabled(s);
       getBtnMeta().setEnabled(testLock(s));
       if (s && !bsGui.getTglPause().isSelected())
@@ -87,10 +87,10 @@ public class PanelMeta extends JPanel {
    }
    public JCheckBox getChckMeta() {
       if (chckMeta == null) {
-         chckMeta=new JCheckBox("-m, --keepminimum");
+         chckMeta=new JCheckBox("-m, --" + Backsnap.KEEPMINIMUM);
          chckMeta.setHorizontalTextPosition(SwingConstants.LEADING);
          chckMeta.addActionListener(e -> flagMeta());
-         chckMeta.setSelected(Backsnap.KEEP_MINIMUM.get());
+         chckMeta.setSelected(Backsnap.flags.get(Backsnap.KEEPMINIMUM));
       }
       return chckMeta;
    }
@@ -105,19 +105,19 @@ public class PanelMeta extends JPanel {
          sliderMeta.setPaintTicks(true);
          sliderMeta.setValue(DEFAULT_META - 1);
          sliderMeta.addChangeListener(e -> {
-                  String text=Integer.toString(getSliderMeta().getValue());
-                  getLblMeta().setText(text);
-                     Backsnap.KEEP_MINIMUM.setParameter(text);
+            String text=Integer.toString(getSliderMeta().getValue());
+            getLblMeta().setText(text);
+            Backsnap.flags.f(Backsnap.KEEPMINIMUM).setParameter(text);
             if (needsAbgleich.compareAndSet(false, true))
                virtual.execute(() -> {
-                     try {
+                  try {
                      Thread.sleep(50);
                      if (needsAbgleich.compareAndSet(true, false))
                         bsGui.abgleich();
                   } catch (IOException | InterruptedException ignore) {
                      ignore.printStackTrace();
-                     }
-            });
+                  }
+               });
          });
       }
       return sliderMeta;

@@ -21,7 +21,8 @@ import de.uhingen.kielkopf.andreas.backsnap.config.OnTheFly;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
 import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotLabel.STATUS;
 import de.uhingen.kielkopf.andreas.beans.Version;
-import de.uhingen.kielkopf.andreas.beans.cli.Flag;
+
+import de.uhingen.kielkopf.andreas.beans.cli.Flags;
 import de.uhingen.kielkopf.andreas.beans.minijson.Etc;
 import de.uhingen.kielkopf.andreas.beans.shell.CmdStreams;
 
@@ -35,6 +36,17 @@ import de.uhingen.kielkopf.andreas.beans.shell.CmdStreams;
  * @see https://forum.manjaro.org/t/howto-hilfsprogramm-fur-backup-btrfs-snapshots-mit-send-recieve timeshift ssh
  */
 public class Backsnap {
+   static final String                 HELP           ="help";
+   static final String                 GUI            ="gui";
+   public static final String          KEEPMINIMUM    ="keepminimum";
+   public static final String          DELETEOLD      ="deleteold";
+   static final String                 INIT           ="init";
+   static final String                 SINGLESNAPSHOT ="singlesnapshot";
+   static final String                 AUTO           ="auto";
+   static final String                 VERSION        ="version";
+   static final String                 VERBOSE        ="verbose";
+   public static final String          DRYRUN         ="dryrun";
+   public static final String          COMPRESSED     ="compressed";
    static public final ExecutorService virtual        =Version.getVx();
    static public String                cantFindParent =null;
    static public int                   disconnectCount=0;
@@ -43,44 +55,45 @@ public class Backsnap {
    static public OneBackup             actualBackup   =null;
    static private int                  skipCount      =0;
    static public final String          LF             =System.lineSeparator();
-   static final Flag                   HELP           =new Flag('h', "help");           // show usage
-   static final Flag                   VERSION        =new Flag('x', "version");        // show date and version
-   static final Flag                   DRYRUN         =new Flag('d', "dryrun");         // do not do anythimg ;-)
-   public static final Flag            VERBOSE        =new Flag('v', "verbose");
-   static public final Flag            SINGLESNAPSHOT =new Flag('s', "singlesnapshot"); // backup exactly one snapshot
+   static public final Flags           flags          =new Flags();
    // static public final Flag TIMESHIFT =new Flag('t', "timeshift");
-   static public final Flag            GUI            =new Flag('g', "gui");            // enable gui (only with sudo)
-   static final Flag                   AUTO           =new Flag('a', "auto");           // auto-close gui when ready
-   static final Flag                   COMPRESSED     =new Flag('c', "compressed");     // use protokoll 2
-   static final Flag                   INIT           =new Flag('i', "init");           // init /etc/backsnap.d/local.conf
-   static public final Flag            DELETEOLD      =new Flag('o', "deleteold");      // mark old snapshots for deletion
-   static public final Flag            KEEP_MINIMUM   =new Flag('m', "keepminimum");    // mark all but minimum snapshots
-   static final Flag                   ECLIPSE        =new Flag('z', "eclipse");
-   static final Flag                   PEXEC          =new Flag('p', "pexec");          // use pexec instead of sudo
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.10"       //
-            + " (2024/07/06)";
+   // static final Flags.F ECLIPSE =flags.add('z', "eclipse");
+   // static final Flags.F PEXEC =flags.add('p', "pexec"); // use pexec instead of sudo
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.11"   //
+            + " (2024/07/07)";
    static public void main(String[] args) {
-      Flag.setArgs(args, "");
-      Log.setLoglevel(Backsnap.VERBOSE.getParameterOrDefault(LEVEL.PROGRESS.l));
+      flags.create('h', HELP) // show usage
+               .create('c', COMPRESSED) // use protokoll 2
+               .create('d', DRYRUN) // do not do anythimg ;-)
+               .create('v', VERBOSE)// controll loglevel
+               .create('x', VERSION) // show date and version
+               .create('g', GUI) // enable gui (only with sudo)
+               .create('a', AUTO) // auto-close gui when ready
+               .create('s', SINGLESNAPSHOT) // backup exactly one snapshot
+               .create('i', INIT) // init /etc/backsnap.d/local.conf
+               .create('o', DELETEOLD) // mark old snapshots for deletion
+               .create('m', KEEPMINIMUM); // mark all but minimum snapshots
+      flags.setArgs(args, "");
+      Log.setLoglevel(flags.f(VERBOSE).getParameterOrDefault(LEVEL.PROGRESS.l));
       Log.logln(BS_VERSION, LEVEL.BASIC);
-      Log.logln("args > " + Flag.getArgs(), LEVEL.BASIC);
+      Log.logln("args > " + flags.getArgs(), LEVEL.BASIC);
       Log.logln(Version.getJava().toString(), LEVEL.BASIC);
       Log.logln(Version.getVxText(), LEVEL.BASIC);
-      if (VERSION.get())
+      if (flags.get(VERSION))
          System.exit(0);
-      if (DRYRUN.get())
+      if (flags.get(DRYRUN))
          Log.logln("Doing a dry run ! ", LEVEL.BASIC);
       try { // Wenn notwendig initialisieren und configuration laden
-         OneBackup.setConfig((INIT.get() ? OnTheFly.prepare() : Etc.getConfig("backsnap")));
+         OneBackup.setConfig((flags.get(INIT) ? OnTheFly.prepare() : Etc.getConfig("backsnap")));
       } catch (IOException e) {
          e.printStackTrace();
       }
       // Wenn Parameter da sind, dann zuerst die auswerten
-      if (!Flag.getParameter(0).isBlank())
+      if (!flags.getParameter(0).isBlank())
          processParameters();
       Log.logln(OneBackup.getConfigText(), LEVEL.CONFIG);
       OneBackup lastBackup=null;
-      if (HELP.get())
+      if (flags.get(HELP))
          System.exit(2);
       for (OneBackup ob:OneBackup.getSortedBackups()) {
          actualBackup=ob;
@@ -91,9 +104,9 @@ public class Backsnap {
             // Passe die Flags an
             if (actualBackup.flags() instanceof String s) {
                String a=String.join(" ", args).concat(" ").concat(s);
-               Flag.setArgs(a.split(" "), "");
+               flags.setArgs(a.split(" "), "");
             } else
-               Flag.setArgs(args, "");
+               flags.setArgs(args, "");
             if (lastBackup instanceof OneBackup last && actualBackup.srcPc() != last.srcPc())
                try {
                   last.srcPc().mountBtrfsRoot(last.srcPath(), false);// umount
@@ -121,7 +134,7 @@ public class Backsnap {
                ende("X");
                System.exit(0);
             }
-            if (GUI.get())
+            if (flags.get(GUI))
                bsGui=BacksnapGui.getGui(srcConfig, actualBackup.backupTree()[0], usage);
             if (bsGui instanceof BacksnapGui g) {
                final JProgressBar speedBar=g.getSpeedBar();
@@ -159,7 +172,7 @@ public class Backsnap {
                   // Anzeige im Progressbar anpassen
                   if (bsGui instanceof BacksnapGui gui)
                      gui.refreshGUI();
-                  if (SINGLESNAPSHOT.get())// nur einen Snapshot übertragen und dann abbrechen
+                  if (flags.get(SINGLESNAPSHOT))// nur einen Snapshot übertragen und dann abbrechen
                      break;
                } catch (NullPointerException n) {
                   n.printStackTrace();
@@ -201,8 +214,8 @@ public class Backsnap {
     * Bearbeite die übergebenen Parameter und wähle die entsprechenden Backups aus
     */
    private static void processParameters() {
-      if (OneBackup.unsortedMap.containsKey(Flag.getParameter(0)) || Flag.getParameter(0).matches(".*[*+?|].*")) {
-         List<String> pList=Flag.getParameterList(); // System.out.println("Treffer");
+      if (OneBackup.unsortedMap.containsKey(flags.getParameter(0)) || flags.getParameter(0).matches(".*[*+?|].*")) {
+         List<String> pList=flags.getParameterList(); // System.out.println("Treffer");
          Keys: for (String key:OneBackup.unsortedMap.keySet()) {// für jedes OneBackup
             for (String param:pList)// für jeden parameter
                if (parameterPasst(key, param))
@@ -212,11 +225,11 @@ public class Backsnap {
                OneBackup.sortedMap.remove(sortedKey, value); // mit value löschen
          }
       } else // legacy
-         if (!Flag.getParameter(1).isBlank()) { // Wenn 2 Parameter da sind, dann diese verwenden
+         if (!flags.getParameter(1).isBlank()) { // Wenn 2 Parameter da sind, dann diese verwenden
             OneBackup.unsortedMap.clear(); // Kommandozeile statt config, aber Basisconfig behalten
             OneBackup.sortedMap.clear();
-            String[] source=Flag.getParameter(0).split("[:]"); // Parameter sammeln für SOURCE
-            String[] backup=Flag.getParameter(1).split("[:]"); // BackupVolume ermitteln
+            String[] source=flags.getParameter(0).split("[:]"); // Parameter sammeln für SOURCE
+            String[] backup=flags.getParameter(1).split("[:]"); // BackupVolume ermitteln
             OneBackup.backupPc=(backup.length == 1) ? Pc.getPc(null) : Pc.getPc(backup[0]);
             if (OneBackup.backupPc instanceof Pc bPc) // Btrfs.BTRFS.lock();
                bPc.setBackupLabel(Paths.get(backup[backup.length - 1]).getFileName());
@@ -224,7 +237,7 @@ public class Backsnap {
                throw new RuntimeException(LF + "Could not find Backuplabel " + String.join(" : ", backup));
             OneBackup o=new OneBackup(Path.of(""), Pc.getPc(source[0]),
                      Path.of("/", source[source.length - 1].replace(Snapshot.DOT_SNAPSHOTS, "")),
-                     OneBackup.backupPc.getBackupLabel(), null, new SnapTree[1]);
+                     OneBackup.backupPc.getBackupLabel(), null, new SnapTree[1], new DataSet[1]);
             OneBackup.unsortedMap.put(OneBackup.backupPc.getBackupLabel().toString(), o);
             OneBackup.sortedMap.put(OneBackup.backupPc.getBackupLabel().toString(), o);
          }
@@ -260,7 +273,7 @@ public class Backsnap {
     *           Das aktuell durchzuführende Backup
     * @param srcSnapshot
     *           Der nächste Snapshot der dran ist
-    * @param backupSnapTree
+    * 
     * @throws IOException
     * @return false bei Misserfolg
     */
@@ -295,9 +308,9 @@ public class Backsnap {
                + (parentSnapshot instanceof Snapshot ps ? " based on " + ps.dirName() : ""), LEVEL.SNAPSHOTS);
       mkDirs(bDir);
       rsyncFiles(oneBackup, srcSnapshot.getSnapshotMountPath(), bDir);
-      if (GUI.get())
+      if (flags.get(GUI))
          bsGui.mark(srcSnapshot.uuid(), STATUS.INPROGRESS); // Pc backupPc=backupMap.mount().pc();
-      if (Btrfs.send_pv_receive(oneBackup, srcSnapshot, parentSnapshot, bDir, bsGui, DRYRUN.get(), COMPRESSED.get()))
+      if (Btrfs.send_pv_receive(oneBackup, srcSnapshot, parentSnapshot, bDir, bsGui))
          parentSnapshot=srcSnapshot;
       return true;
    }
@@ -306,7 +319,7 @@ public class Backsnap {
    static private void rsyncFiles(OneBackup oneBackup, Path sDir, Path bDir) throws IOException {
       StringBuilder rsyncSB=new StringBuilder(
                "rsync -vdcptgo --exclude \"@*\" --exclude \"" + Snapshot.SNAPSHOT + "\" ");
-      if (DRYRUN.get())
+      if (flags.get(DRYRUN))
          rsyncSB.append("--dry-run ");
       if (!oneBackup.isSamePc() && (oneBackup.isExtern()))
          rsyncSB.append(oneBackup.extern()).append(":");
@@ -339,7 +352,7 @@ public class Backsnap {
       if (bdir.isAbsolute()) {
          String mkdirCmd=OneBackup.backupPc.getCmd(new StringBuilder("mkdir -pv ").append(bdir), true);
          Log.log(mkdirCmd, LEVEL.BASIC);
-         if (DRYRUN.get())
+         if (flags.get(DRYRUN))
             return;
          if (!OneBackup.isBackupExtern()) {
             if (bdir.toFile().isDirectory())
@@ -359,17 +372,17 @@ public class Backsnap {
       throw new FileNotFoundException("Could not create dir: " + bdir);
    }
    static private final void pause() {
-      if (GUI.get()) {
+      if (flags.get(GUI)) {
          if (bsGui != null)
             SwingUtilities.invokeLater(() -> {
                bsGui.getSpeedBar().setString("Ready"); // sl.repaint(100);
                bsGui.refreshGUI();
             });
-         if (AUTO.get()) {
+         if (flags.get(AUTO)) {
             if (bsGui != null) {
                final float FAKTOR=2f;
                final int countdownStart=(int) (FAKTOR
-                        * ((AUTO.getParameterOrDefault(10) instanceof Integer n) ? n : 10));
+                        * ((flags.f(AUTO).getParameterOrDefault(10) instanceof Integer n) ? n : 10));
                final JProgressBar speedBar=bsGui.getSpeedBar();
                SwingUtilities.invokeLater(() -> speedBar.setMaximum(countdownStart));
                int countdown=countdownStart;
@@ -414,17 +427,17 @@ public class Backsnap {
       Log.log(t, LEVEL.BASIC);
       if (t.startsWith("X")) {
          Log.log(" ready", LEVEL.BASIC);
-         if (GUI.get()) {
+         if (flags.get(GUI)) {
             if (bsGui != null)
                SwingUtilities.invokeLater(() -> {
                   JProgressBar sl=bsGui.getSpeedBar();
                   sl.setString("Ready to exit".toString()); // sl.repaint(100);
                });
-            if (AUTO.get()) {
+            if (flags.get(AUTO)) {
                if ((bsGui != null) && (bsGui.frame instanceof Frame frame)) {
                   final float FAKTOR=2f;
                   final int countdownStart=(int) (FAKTOR
-                           * ((AUTO.getParameterOrDefault(10) instanceof Integer n) ? n : 10));
+                           * ((flags.f(AUTO).getParameterOrDefault(10) instanceof Integer n) ? n : 10));
                   final JProgressBar speedBar=bsGui.getSpeedBar();
                   SwingUtilities.invokeLater(() -> speedBar.setMaximum(countdownStart));
                   int countdown=countdownStart;
@@ -465,7 +478,7 @@ public class Backsnap {
          Log.log("it", LEVEL.BASIC);
          CmdStreams.cleanup();
          Log.logln(" java", LEVEL.BASIC);
-         if (AUTO.get())
+         if (flags.get(AUTO))
             System.exit(0);
       }
       // logln(4, "");

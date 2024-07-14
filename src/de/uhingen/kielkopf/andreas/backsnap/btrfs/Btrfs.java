@@ -116,8 +116,8 @@ public class Btrfs {
                   } catch (IOException e) {
                      e.printStackTrace();
                   }
-                  if (Backsnap.SINGLESNAPSHOT.get())
-                     break;
+                  // if (SINGLESNAPSHOT.get())
+                  // break;
                }
          } finally {
             if (gui != null)
@@ -285,11 +285,11 @@ public class Btrfs {
     * @throws IOException
     */
    static public boolean send_pv_receive(OneBackup oneBackup, Snapshot s, Snapshot parent, Path bDir, //
-            BacksnapGui bsGui, boolean dryrun, boolean compressed) throws IOException {
+            BacksnapGui bsGui) throws IOException {
       if (bsGui instanceof BacksnapGui gui)
          gui.setBackupInfo(s, parent);
       StringBuilder btrfsSendSB=new StringBuilder(SEND);
-      if (compressed && oneBackup.compressionPossible())
+      if (Backsnap.flags.get(Backsnap.COMPRESSED) && oneBackup.compressionPossible())
          btrfsSendSB.append("--compressed-data ");
       if (parent instanceof Snapshot p)
          btrfsSendSB.append("-p ").append(p.getSnapshotMountPath()).append(" ");
@@ -316,7 +316,7 @@ public class Btrfs {
       if (OneBackup.isBackupExtern())
          btrfsSendSB.append("'");
       Log.logln(btrfsSendSB.toString(), LEVEL.BTRFS);
-      if (!dryrun) {
+      if (!Backsnap.flags.get(Backsnap.DRYRUN)) {
          if (bsGui != null)
             bsGui.getPanelMaintenance().updateButtons();
          std_min_=" 0:00:";

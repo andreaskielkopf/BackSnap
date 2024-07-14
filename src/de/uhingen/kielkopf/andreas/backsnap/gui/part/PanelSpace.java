@@ -96,7 +96,7 @@ public class PanelSpace extends JPanel {
    public JSlider getSliderSpace() {
       if (sliderSpace == null) {
          sliderSpace=new JSlider();
-         sliderSpace.setEnabled(Backsnap.DELETEOLD.get());
+         sliderSpace.setEnabled(Backsnap.flags.get(Backsnap.DELETEOLD));
          sliderSpace.setMaximum(5000);
          sliderSpace.setMajorTickSpacing(1000);
          sliderSpace.setMinorTickSpacing(200);
@@ -110,7 +110,7 @@ public class PanelSpace extends JPanel {
          sliderSpace.addChangeListener(e -> {
             String text=Integer.toString(getSliderSpace().getValue());
             getLblSpace().setText(text);
-            Backsnap.DELETEOLD.setParameter(text);
+            Backsnap.flags.f(Backsnap.DELETEOLD).setParameter(text);
             if (needsAbgleich.compareAndSet(false, true))
                virtual.execute(() -> {
                   try {
@@ -127,17 +127,17 @@ public class PanelSpace extends JPanel {
    }
    public JCheckBox getChckSpace() {
       if (chckSpace == null) {
-         chckSpace=new JCheckBox("-o, --deleteold");
+         chckSpace=new JCheckBox("-o, --" + Backsnap.DELETEOLD);
          chckSpace.setHorizontalTextPosition(SwingConstants.LEADING);
          chckSpace.addActionListener(e -> flagSpace());
-         chckSpace.setSelected(Backsnap.DELETEOLD.get());
+         chckSpace.setSelected(Backsnap.flags.get(Backsnap.DELETEOLD));
       }
       return chckSpace;
    }
    public void flagSpace() {
       boolean s=getChckSpace().isSelected();
       Log.logln("--------------- getChckSpace() actionPerformed", LEVEL.DEBUG);
-      Backsnap.DELETEOLD.set(s);
+      Backsnap.flags.f(Backsnap.DELETEOLD).set(s);
       getSliderSpace().setEnabled(s);
       getBtnSpace().setEnabled(PanelMeta.testLock(s));
       if (s && !bsGui.getTglPause().isSelected())
