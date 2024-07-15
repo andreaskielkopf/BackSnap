@@ -1,4 +1,4 @@
-#!/bin/env -S bash
+#!/bin/env -S ${SHELL}
 # ©2024 Andreas Kielkopf
 # License: `GNU General Public License v3.0`
 export SSH_ASKPASS_REQUIRE=prefer
