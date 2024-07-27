@@ -6,118 +6,133 @@ package de.uhingen.kielkopf.andreas.beans.shell;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.Callable;
-
-import javax.print.DocFlavor.STRING;
 
 /**
- * Ausführen beliebiger Commands aus java herraus durch Benutzung der SHell ($SHELL)
+ * Ausführen beliebiger Commands aus java heraus durch Benutzung der SHell ($SHELL)
  * 
  * @author Andreas Kielkopf
  *
  */
-public class Do<V> implements Runnable {
+public class Do implements Runnable {
    /** Welche Shell soll verwendet werden */
-   public static String  SHELL  ="/bin/sh"; // ermitteln mit which $(cat /proc/$$/comm) ???
-   public static Boolean iamroot=null;
+   public static String SHELL;      // ="/bin/sh"; // ermitteln mit which $(cat /proc/$$/comm) ???
+   public static String username="";
    static {
       shell();
       root();
    }
+   /** Finde herraus welche Shell benutzt werden soll */
    static void shell() {
+      if (SHELL == null) {
+         SHELL="/bin/sh";
+         SHELL=doGetFirstOr(List.of("-c", "echo ${SHELL}"), "/bin/sh");
+         System.out.print("$SHELL=" + SHELL);
+      }
+   }
+   /** bin ich root ? */
+   static boolean root() {
+      if (username.isBlank()) {
+         username=doGetFirstOr(List.of("whoami"), "");
+         System.out.println(", user=" + username);
+      }
+      return username.equals("root"); // System.out.println(SHELL);
+   }
+   /**
+    * Liefert die erste Zeile die dieses Command ausspuckt, oder den Ersatz dafür
+    * 
+    * @param l
+    *           Command
+    * @param or
+    *           Ersatz
+    * @return
+    */
+   private static String doGetFirstOr(List<String> l, String or) {
+      List<String> tmp=doGetList(l);
+      return (tmp.isEmpty()) ? or : tmp.getFirst();
+   }
+   /**
+    * Lifert den kompletten Output dieses Commands und gibt den err-stream an die Console weiter
+    * 
+    * @param l
+    * @return
+    */
+   private static void doCmd(List<String> l) {
+      new Do(l, Worker.stdInp, Worker.stdErr).executePlatform();
+   }
+   private static List<String> doGetList(List<String> l) {
       ArrayList<String> tmp=new ArrayList<>();
-      String e=new Do<String>(List.of("-c", "echo ${SHELL}"), new Worker() {
+      return new Do(l, new Worker() {
          @Override
          public void processLine(String line) {
             tmp.add(line);
          }
       }) {
          @Override
-         public String get() {
+         public List<String> get() {
             executePlatform();
-            return (tmp.isEmpty()) ? "" : tmp.getFirst();
+            return tmp;
          }
       }.get();
-      SHELL=(e.isEmpty()) ? "/bin/sh" : e;
-      System.out.print("$SHELL=" + SHELL);
-   }
-   static boolean root() {
-      if (iamroot == null) {
-         ArrayList<String> erg=new ArrayList<>();
-         String e=new Do<String>(List.of("whoami"), new Worker() {
-            @Override
-            public void processLine(String line) {
-               erg.add(line);
-            }
-         }) {
-            @Override
-            public String get() {
-               executePlatform();
-               return (erg.isEmpty()) ? "" : erg.getFirst();
-            }
-         }.get();
-         System.out.println(", user=" + e);
-         iamroot=Boolean.valueOf(e.equals("root")); // System.out.println(SHELL);
-      }
-      return iamroot;
    }
    public static void main(String[] args) {
-      // String befehl="cat /etc/fstab|grep btrfs";
-      // List<String> list=Arrays.asList(befehl.split(" "));
-      // Do<String> d=new Do<String>(List.of("which $(cat /proc/$$/comm)"));
-      // Thread.ofPlatform().start(d);
-      // d.waitFor();
+      System.out.println(doGetFirstOr(List.of("whoami", "5"), "Fehlertest ;-)"));
+      doGetFirstOr(List.of("whoami", "5"), "Nur den Fehlertext ausgeben");
+      doCmd(List.of("ls", "-lA")); // alles über stdout ausgeben
+      doCmd(List.of("ls", "-lA s")); // alles über sterr ausgeben
    }
    // public Do(String... s) { this(Arrays.asList(s)); }
-   public Do(List<String> list) {
-      this(list, Worker.stdInp, Worker.stdErr);
+   public Do(String... list1) {
+      this(Worker.collectInp(), Worker.stdErr, list1);
    }
-   public Do(List<String> list, Worker oWorker) {
-      this(list, oWorker, Worker.stdErr);
+   public Do(Worker oWorker, String... list1) {
+      this(oWorker, Worker.stdErr, list1);
    }
-   final private Worker         inpWorker;
-   final private Worker         errWorker;
-   final private ProcessBuilder builder;
-   private Process              process;
-   private boolean              done=false;
-   private V                    v;
+   public Do(List<String> list1) {
+      this(list1, Worker.collectInp(), Worker.stdErr);
+   }
+   public Do(List<String> list1, Worker oWorker) {
+      this(list1, oWorker, Worker.stdErr);
+   }
+   Worker               inpWorker;
+   Worker               errWorker;
+   final ProcessBuilder builder;
+   Process              process;
+   boolean              done=false;
+   ArrayList<String>    list;
+   public Do(Worker iWorker, Worker eWorker, String... list1) {
+      this(new ArrayList<String>(Arrays.asList(list1)), iWorker, eWorker);
+   }
    /**
     * @param oWorker
     * @param eWorker
     * @param list
     */
-   @SuppressWarnings("null")
    public Do(List<String> l, Worker iWorker, Worker eWorker) {
       if (l.isEmpty())
          throw new NullPointerException("Es wurde kein Befehl übergeben");
-      ArrayList<String> list=new ArrayList<>(l);
-      inpWorker=(iWorker != null) ? iWorker : Worker.nullWorker;
-      errWorker=(eWorker != null) ? eWorker : Worker.nullWorker;
+      inpWorker=iWorker; // (iWorker != null) ? iWorker : Worker.collectInp();
+      errWorker=eWorker;// (eWorker != null) ? eWorker : Worker.stdErr;
+      list=new ArrayList<>(l);
       if (list.getFirst().equals("-c"))
          list.addFirst(SHELL);
       builder=new ProcessBuilder(list);
    }
-   /**
-    * 
-    */
-   private void waitFor() {
-      try {
-         while (done == false) {
-            Thread.onSpinWait();
-            Thread.sleep(1L);
-         }
-      } catch (InterruptedException e) {
-         e.printStackTrace();
-      }
-   }
    @Override
    public void run() {
       try {
-         process=builder.start();
+         if (done)
+            return;
+         if (process == null)
+            process=builder.start();
          try (BufferedReader err=process.errorReader(); BufferedReader inp=process.inputReader();) {
             while (process.isAlive())
                readAll(err, inp);
             readAll(err, inp);
+            int x=process.exitValue();
+            if (x != 0) {
+               System.err.print(list);
+               System.err.println(" exit with " + x);
+            }
          }
       } catch (IOException e) {
          e.printStackTrace();
@@ -125,28 +140,77 @@ public class Do<V> implements Runnable {
          done=true;
       }
    }
-   private void readAll(BufferedReader err, BufferedReader inp) throws IOException {
+   void readAll(BufferedReader err, BufferedReader inp) throws IOException {
       try {
          Thread.sleep(1L);
-         while (inp.ready())
-            inpWorker.processLine(inp.readLine());
-         while (err.ready())
-            errWorker.processLine(err.readLine());
+         if (inpWorker instanceof Worker) // bei null ignorieren
+            while (inp.ready())
+               inpWorker.processLine(inp.readLine());
+         if (errWorker instanceof Worker) // bei null ignorieren
+            while (err.ready())
+               errWorker.processLine(err.readLine());
       } catch (InterruptedException ignoree) { /* */ }
    }
-   public Do<V> executePlatform() {
+   /** Warte bis der Prozess zu ende ist, aber verschwende keine Leistung dabei */
+   private void waitFor() {
+      try {
+         while (done == false) {
+            Thread.onSpinWait();
+            Thread.sleep(1L);
+         }
+      } catch (InterruptedException ignore) {/* */ }
+   }
+   Worker getInpWorker() {
+      return inpWorker;
+   }
+   Worker getErrWorker() {
+      return errWorker;
+   }
+   public Do executePlatform() {
       if (process == null)
          Thread.ofPlatform().start(this);
       waitFor();
-      return (Do<V>) this;
+      return (Do) this;
    }
-   @SuppressWarnings("null")
-   public V get() {
+   static public Do executePlatform(List<String> l) {
+      return new Do(l).executePlatform();
+   }
+   public List<String> get() {
       executePlatform();
-      return (V) null;
+      if (inpWorker instanceof Worker w)
+         return w.get();
+      return null;
    }
-   // private V erg;
-   // private V getErg() {
-   // return erg;
-   // }
+   static public Do toPipe(String... list) {
+      return toPipe(new ArrayList<String>(Arrays.asList(list)));
+   }
+   static public Do toPipe(List<String> l) {
+      return new Do(l, null, null) {
+         @Override
+         public void run() {/* wird automatisch an die Pipe angehängt */}
+      };
+   }
+   static public Do toWorker(String... list) {
+      return toWorker(new ArrayList<String>(Arrays.asList(list)));
+   }
+   static public Do toWorker(List<String> l) {
+      return new Do(l, Worker.collectInp(), Worker.collectErr());
+   }
+   static public Do toConsole(List<String> l) {
+      return new Do(l, Worker.stdInp, Worker.stdErr);
+   }
+   public Do clean() {
+      done=false;
+      process=null;
+      if (inpWorker instanceof Worker w)
+         w.clean();
+      if (inpWorker instanceof Worker w)
+         w.clean();
+      return this;
+   }
+   @Override
+   public String toString() {
+      return new StringBuilder(" Do").append(list).append(" ").append(inpWorker).append(" ").append(errWorker)
+               .append(" ").toString();
+   }
 }
