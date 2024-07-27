@@ -68,7 +68,7 @@ public class PanelMeta extends JPanel {
    }
    public void flagMeta() {
       boolean s=getChckMeta().isSelected();
-      Log.log("-------------- getChckMeta() actionPerformed", LEVEL.DEBUG);
+      Log.lfLog("-------------- getChckMeta() actionPerformed", LEVEL.DEBUG);
       Backsnap.flags.f(Backsnap.KEEPMINIMUM).set(s);
       getSliderMeta().setEnabled(s);
       getBtnMeta().setEnabled(testLock(s));

@@ -155,12 +155,12 @@ public class BacksnapGui implements MouseListener {
     * @throws IOException
     */
    public void setSrc(SnapConfig srcConfig) throws IOException {
-      Log.log("Snap:", LEVEL.SNAPSHOTS);
+      Log.lfLog("Snap:", LEVEL.SNAPSHOTS);
       ConcurrentSkipListMap<String, Snapshot> neuList=getPanelSrc()
                .setVolume(srcConfig.volumeMount().otimeKeyMap().values());
       for (Snapshot snap:neuList.values())
          Log.log(" " + snap.dirName(), LEVEL.SNAPSHOTS);
-      Log.logln("", LEVEL.SNAPSHOTS);
+//      Log.logln("", LEVEL.SNAPSHOTS);
       abgleich();
       getPanelSrc().setInfo(srcConfig.volumeMount());
    }
@@ -348,10 +348,10 @@ public class BacksnapGui implements MouseListener {
       ConcurrentSkipListMap<String, Snapshot> neuList=getPanelBackup().setVolume(passendBackups.values());
       for (SnapshotLabel label:getPanelBackup().getLabels().values())
          SwingUtilities.invokeLater(() -> label.addMouseListener(this));
-      Log.log("Backup:", LEVEL.GUI);
+      Log.lfLog("Backup:", LEVEL.GUI);
       for (Snapshot snap:neuList.values())
          Log.log(" " + snap.dirName(), LEVEL.GUI);
-      Log.logln("", LEVEL.GUI);
+//      Log.logln("", LEVEL.GUI);
       abgleich(); // läuft virtuell
       SnapshotPanel pb=getPanelBackup();
       SwingUtilities.invokeLater(() -> {
@@ -370,7 +370,7 @@ public class BacksnapGui implements MouseListener {
    @Override
    public void mouseClicked(MouseEvent e) {
       if (e.getSource() instanceof SnapshotLabel sl) {
-         Log.log("click-" + sl, LEVEL.DELETE);
+         Log.lfLog("click-" + sl, LEVEL.DELETE);
          if (!manualDelete.containsValue(sl))
             manualDelete.put(sl.getText(), sl);
          else

@@ -160,10 +160,10 @@ public class Btrfs {
    public static void createSubvolume(Pc pc, Path p) throws IOException {
       if (p instanceof Path backsnap && backsnap.equals(Pc.TMP_BACKSNAP)) {
          String createCmd=pc.getCmd(new StringBuilder(SUBVOLUME_CREATE).append(backsnap), true);
-         Log.log(createCmd, LEVEL.BTRFS);
+         Log.lfLog(createCmd, LEVEL.BTRFS);
          BTRFS.writeLock().lock();
          try (CmdStreams createStream=CmdStreams.getCachedStream(createCmd)) {
-            createStream.outBGerr().forEach(line -> Log.log(line, LEVEL.BTRFS));
+            createStream.outBGerr().forEach(line -> Log.lfLog(line, LEVEL.BTRFS));
             createStream.errPrintln();
          } finally {
             BTRFS.writeLock().unlock();
@@ -173,10 +173,10 @@ public class Btrfs {
    public static boolean testSubvolume(Pc pc, Path p) throws IOException {
       if (p instanceof Path backsnap && backsnap.equals(Pc.TMP_BACKSNAP)) {
          String testCmd=pc.getCmd(new StringBuilder(SUBVOLUME_LIST).append(backsnap), true);
-         Log.log(testCmd, LEVEL.BTRFS);
+         Log.lfLog(testCmd, LEVEL.BTRFS);
          BTRFS.readLock().lock();
          try (CmdStreams testStream=CmdStreams.getDirectStream(testCmd)) {
-            return testStream.outBGerr().peek(line -> Log.log(line, LEVEL.ALLES))
+            return testStream.outBGerr().peek(line -> Log.lfLog(line, LEVEL.ALLES))
                      .anyMatch(line -> line.endsWith(Pc.TMP_BACKSNAP.getFileName().toString()));
          } finally {
             BTRFS.readLock().unlock();
@@ -191,9 +191,9 @@ public class Btrfs {
             Mount bm=Pc.getBackupMount();
             Pc pc=bm.pc();
             String testCmd=pc.getCmd(new StringBuilder("cat ").append(reclaimpos), true);
-            Log.log(testCmd, LEVEL.BTRFS);
+            Log.lfLog(testCmd, LEVEL.BTRFS);
             try (CmdStreams testStream=CmdStreams.getDirectStream(testCmd)) {
-               Optional<String> b=testStream.outBGerr().peek(line -> Log.log(line, LEVEL.ALLES)).findAny();
+               Optional<String> b=testStream.outBGerr().peek(line -> Log.lfLog(line, LEVEL.ALLES)).findAny();
                if (b.isPresent())
                   return Integer.parseInt(b.get());
             } catch (IOException e1) {
@@ -212,9 +212,9 @@ public class Btrfs {
             Mount bm=Pc.getBackupMount();
             Pc pc=bm.pc();
             String testCmd=pc.getCmd(new StringBuilder("echo ").append(reclaim).append(" > ").append(reclaimpos), true);
-            Log.log(testCmd, LEVEL.BTRFS);
+            Log.lfLog(testCmd, LEVEL.BTRFS);
             try (CmdStreams testStream=CmdStreams.getDirectStream(testCmd)) {
-               Optional<String> b=testStream.outBGerr().peek(line -> Log.log(line, LEVEL.ALLES)).findAny();
+               Optional<String> b=testStream.outBGerr().peek(line -> Log.lfLog(line, LEVEL.ALLES)).findAny();
                if (b.isPresent())
                   return;
             } catch (IOException e1) {
@@ -231,10 +231,10 @@ public class Btrfs {
          Mount bm=Pc.getBackupMount();
          Pc pc=bm.pc();
          String testCmd=pc.getCmd(new StringBuilder(BALANCE_STATUS).append(Pc.TMP_BACKUP_ROOT), true);
-         Log.log(testCmd, LEVEL.BTRFS);
+         Log.lfLog(testCmd, LEVEL.BTRFS);
          BTRFS.readLock().lock();
          try (CmdStreams testStream=CmdStreams.getDirectStream(testCmd)) {
-            return testStream.outBGerr().peek(line -> Log.log(line, LEVEL.ALLES))
+            return testStream.outBGerr().peek(line -> Log.lfLog(line, LEVEL.ALLES))
                      .anyMatch(line -> line.contains("is running"));
          } catch (IOException e1) {
             e1.printStackTrace();
@@ -256,11 +256,11 @@ public class Btrfs {
          String testCmd=pc.getCmd(new StringBuilder(BALANCE_START)/* .append("-m").append(usage) */ //
                   .append("-d").append(usage).append(limit).append(" ").append(Pc.TMP_BACKUP_ROOT)/* .append(" &") */,
                   true);// Background it ??
-         Log.log(testCmd, LEVEL.BTRFS);
+         Log.lfLog(testCmd, LEVEL.BTRFS);
          Thread.ofPlatform().start(() -> {// Background it ??
             try (CmdStreams testStream=CmdStreams.getDirectStream(testCmd)) {
                @SuppressWarnings("unused")
-               boolean q=testStream.outBGerr().peek(line -> Log.log(line, LEVEL.ALLES))
+               boolean q=testStream.outBGerr().peek(line -> Log.lfLog(line, LEVEL.ALLES))
                         .anyMatch(line -> line.contains("chunks"));
             } catch (IOException e1) {
                e1.printStackTrace();
@@ -339,7 +339,7 @@ public class Btrfs {
             System.err.println("free(" + r.freeMemory() / n + "),max(" + r.maxMemory() / n + "),total("
                      + r.totalMemory() / n + ")");
             System.gc();
-            lnlog("", LEVEL.PROGRESS);
+            lfLog("", LEVEL.PROGRESS);
          }
          if (bsGui != null)
             bsGui.getPanelMaintenance().updateButtons();
@@ -365,40 +365,40 @@ public class Btrfs {
       try {
          if (lastLine != 0) {
             lastLine=0;
-            lnlog("d: ", LEVEL.PROGRESS);
+            lfLog("d: ", LEVEL.PROGRESS);
          }
          if (s.equals("At snapshot snapshot"))
-            lnlog("", LEVEL.PROGRESS);
+            lfLog("", LEVEL.PROGRESS);
          else
-            lnlog("e:" + s, LEVEL.PROGRESS); // TODO
+            lfLog("e:" + s, LEVEL.PROGRESS); // TODO
       } catch (Exception e) {
          e.printStackTrace();
       }
    }
    private static void extractPv(final BacksnapGui bsGui, String line) {
-      try { // lnlog(line, LEVEL.PROGRESS);
+      try { // lfLog(line, LEVEL.PROGRESS);
          if (line.contains("ERROR: cannot find parent subvolume"))
             Backsnap.cantFindParent=line;
          if (line.contains("No route to host") || line.contains("Connection closed")
                   || line.contains("connection unexpectedly closed"))
             Backsnap.disconnectCount=10;
          if (line.contains("At ")) {
-            lnlog(line, LEVEL.PROGRESS);
+            lfLog(line, LEVEL.PROGRESS);
          }
          if (line.contains("<=>")) { // from pv // log(line, LEVEL.PROGRESS);
             Matcher m1=STD_MIN_.matcher(line);
             if (m1.find()) {
-               Owlog(line, LEVEL.PROGRESS);
+               crLog(line, LEVEL.PROGRESS);
                if (!m1.group().startsWith(std_min_)) {// Eine Minute abgelaufen
                   std_min_=m1.group();
-                  lnlog("", LEVEL.PROGRESS);
+                  lfLog("", LEVEL.PROGRESS);
                }
             } else {
-               lnlog("q:", LEVEL.PROGRESS);
-               lnlog("?: " + line, LEVEL.PROGRESS);
+               lfLog("q:", LEVEL.PROGRESS);
+               lfLog("?: " + line, LEVEL.PROGRESS);
             }
          } else {
-            lnlog(line, LEVEL.PROGRESS);
+            lfLog(line, LEVEL.PROGRESS);
          }
          show(line, bsGui);
       } catch (Exception e) {

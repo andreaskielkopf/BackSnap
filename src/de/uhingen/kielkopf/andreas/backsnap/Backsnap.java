@@ -1,7 +1,7 @@
 package de.uhingen.kielkopf.andreas.backsnap;
 
 import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
-import static de.uhingen.kielkopf.andreas.backsnap.config.Log.lnlog;
+import static de.uhingen.kielkopf.andreas.backsnap.config.Log.lfLog;
 
 import java.awt.Frame;
 import java.io.FileNotFoundException;
@@ -59,8 +59,8 @@ public class Backsnap {
    // static public final Flag TIMESHIFT =new Flag('t', "timeshift");
    // static final Flags.F ECLIPSE =flags.add('z', "eclipse");
    // static final Flags.F PEXEC =flags.add('p', "pexec"); // use pexec instead of sudo
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.11"   //
-            + " (2024/07/07)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.14"   //
+            + " (2024/07/27)";
    static public void main(String[] args) {
       flags.create('h', HELP) // show usage
                .create('c', COMPRESSED) // use protokoll 2
@@ -281,12 +281,12 @@ public class Backsnap {
       if (bsGui instanceof BacksnapGui gui)
          gui.setBackupInfo(srcSnapshot, parentSnapshot);
       if (srcSnapshot.isBackup()) {
-         lnlog("Ignore:" + srcSnapshot.dirName(), LEVEL.CONFIG);
+         lfLog("Ignore:" + srcSnapshot.dirName(), LEVEL.CONFIG);
          return false;
       }
       if (oneBackup.backupTree()[0].containsBackupOf(srcSnapshot)) {
          if (skipCount == 0)
-            lnlog("Skip:", LEVEL.SNAPSHOTS);
+            lfLog("Skip:", LEVEL.SNAPSHOTS);
          Log.log(" " + srcSnapshot.dirName(), LEVEL.SNAPSHOTS);
          skipCount++;
          parentSnapshot=srcSnapshot;
@@ -294,7 +294,7 @@ public class Backsnap {
       }
       if (skipCount > 0) {
          skipCount=0;
-         Log.logln("", LEVEL.SNAPSHOTS);
+//         Log.lfLog("", LEVEL.SNAPSHOTS);
       }
       Path bDir=Pc.TMP_BACKSNAP.resolve(oneBackup.backupLabel()).resolve(srcSnapshot.dirName());
       Path bSnapDir=oneBackup.backupTree()[0].getSnapPath(bDir);
@@ -351,7 +351,7 @@ public class Backsnap {
    static private void mkDirs(Path bdir) throws IOException {
       if (bdir.isAbsolute()) {
          String mkdirCmd=OneBackup.backupPc.getCmd(new StringBuilder("mkdir -pv ").append(bdir), true);
-         Log.log(mkdirCmd, LEVEL.BASIC);
+         Log.lfLog(mkdirCmd, LEVEL.BASIC);
          if (flags.get(DRYRUN))
             return;
          if (!OneBackup.isBackupExtern()) {
@@ -417,7 +417,7 @@ public class Backsnap {
     * @param t
     */
    static private final void ende(String t) {
-      Log.log("ende:", LEVEL.BASIC);
+      Log.lfLog("ende:", LEVEL.BASIC);
       if (task != null)
          try {
             task.get(30, TimeUnit.SECONDS);

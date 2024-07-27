@@ -4,18 +4,21 @@
 package de.uhingen.kielkopf.andreas.backsnap.config;
 
 import java.util.*;
-// import java.util.concurrent.locks.ReentrantLock;
 
+// import java.util.concurrent.locks.ReentrantLock;
+// mkdir
 /**
  * @author Andreas Kielkopf
  *
  */
 public class Log {
-   static private int             logPos   =0;
-   static private int             errPos   =0;
-   static public final int        logMAXLEN=120;
-   static public String           lastline ="1234567890";
-   static public ArrayList<LEVEL> logLevels=new ArrayList<>(List.of(LEVEL.PROGRESS));
+   public static boolean          withTimestamp=true;
+   final private static long      start        =System.currentTimeMillis();
+   static private int             logPos       =0;
+   static private int             errPos       =0;
+   static public final int        logMAXLEN    =120;
+   static public String           lastline     ="1234567890";
+   static public ArrayList<LEVEL> logLevels    =new ArrayList<>(List.of(LEVEL.PROGRESS));
    // static private ReentrantLock OUT =new ReentrantLock(true);
    static public enum LEVEL {
       NOTHING(0), // extra quiet
@@ -43,27 +46,29 @@ public class Log {
    static public void log(String text, LEVEL... levels) {
       boolean l=tryLock();
       if (needsPrinting(levels) && dedup(text) instanceof String s) {
+         StringBuilder sb=new StringBuilder(s);
          if (Log.logPos + s.length() > Log.logMAXLEN) {
-            System.out.print(System.lineSeparator());
+            lfLog(sb, false); // System.out.print(System.lineSeparator());
             Log.logPos=0;
-         }
-         System.out.print(s);
+         } else
+            log(sb, false); // System.out.print(s);
          Log.logPos+=s.length();
       }
       tryUnlock(l);
    }
-   static public void lnlog(String text, LEVEL... levels) {
+   static public void lfLog(String text, LEVEL... levels) {
       boolean l=tryLock();
       if (needsPrinting(levels) && dedup(text) instanceof String s) {
-         System.out.print(System.lineSeparator() + s);
+         StringBuilder sb=new StringBuilder(s); // System.out.print(System.lineSeparator() + s);
+         lfLog(sb, false);
          Log.logPos=s.length();
       }
       tryUnlock(l);
    }
-   static public void Owlog(String text, LEVEL... levels) {
+   static public void crLog(String text, LEVEL... levels) {
       boolean l=tryLock();
       if (needsPrinting(levels) && dedup(text) instanceof String s) {
-         System.out.print("\r" + s);
+         crLog(new StringBuilder(s), false);// System.out.print("\r" + s);
          Log.logPos=s.length();
       }
       tryUnlock(l);
@@ -71,9 +76,11 @@ public class Log {
    static public void logln(String text, LEVEL... levels) {
       boolean l=tryLock();
       if (needsPrinting(levels) && dedup(text) instanceof String s) {
+         StringBuilder sb=new StringBuilder(s).append(LF);
          if (Log.logPos + s.length() > Log.logMAXLEN)
-            System.out.print(System.lineSeparator());
-         System.out.print(s + System.lineSeparator());
+            lfLog(sb, false);// System.out.print(s + System.lineSeparator());
+         else
+            log(sb.insert(0, getTS()), false);// System.out.print(System.lineSeparator());
          Log.logPos=0;
       }
       tryUnlock(l);
@@ -83,9 +90,9 @@ public class Log {
       if (needsPrinting(levels)) {
          for (String line:texts)
             if (dedup(line) instanceof String s) {
-//               if (Log.logPos + s.length() > Log.logMAXLEN)
-//                  System.out.print(System.lineSeparator());
-               System.out.print(s + System.lineSeparator());
+               // if (Log.logPos + s.length() > Log.logMAXLEN)
+               // System.out.print(System.lineSeparator());
+               log(new StringBuilder(s).append(LF).insert(0, getTS()), false); // System.out.print(s + System.lineSeparator());
                Log.logPos=0;
             }
       }
@@ -94,10 +101,11 @@ public class Log {
    static public void logOw(String text, LEVEL... levels) {
       boolean l=tryLock();
       if (needsPrinting(levels) && dedup(text) instanceof String s) {
+         StringBuilder sb=new StringBuilder(s).append(CR);
          if (Log.logPos + s.length() > Log.logMAXLEN)
-            System.out.print("\r");
-         System.out.print(s);
-         System.out.print("\r");
+            crLog(sb, false);// System.out.print("\r");
+         else
+            log(sb.insert(0, getTS()), false);// System.out.print(s); System.out.print("\r");
          Log.logPos=0;
       }
       tryUnlock(l);
@@ -160,11 +168,42 @@ public class Log {
    public static void errln(String text, LEVEL levels) {
       boolean l=tryLock();
       if (needsPrinting(levels) && dedup(text) instanceof String s) {
+         StringBuilder sb=new StringBuilder(s).append(LF);
          if (Log.errPos + s.length() > Log.logMAXLEN)
-            System.err.print(System.lineSeparator());
-         System.err.print(s + System.lineSeparator());
+            lfLog(sb, false);// System.err.print(System.lineSeparator());
+         else
+            log(sb, false);// System.err.print(s + System.lineSeparator());
          Log.errPos=0;
       }
       tryUnlock(l);
+   }
+   static private String getTS() {
+      if (!withTimestamp)
+         return "";
+      // try { Thread.sleep(1000); } catch (InterruptedException e) {/* */ }
+      int ms=(int) (System.currentTimeMillis() - start);
+      int s=ms / 1000;
+      int m=s / 60;
+      int h=m / 60; // ms%=1000; s%=60; m%=60; h%=24;
+      return String.format("[%2d%2d%2d.%3d] ", h % 24, m % 60, s % 60, ms % 1000);
+   }
+   /* ----------------------------------------------------------------------------- */
+   final static private String CR="\r";
+   final static private String LF="\n";
+   static public void crLog(StringBuilder sb, boolean err) {
+      if (withTimestamp)
+         sb.insert(0, getTS());
+      log(sb.insert(0, CR), err);
+   }
+   static public void lfLog(StringBuilder sb, boolean err) {
+      if (withTimestamp)
+         sb.insert(0, getTS());
+      log(sb.insert(0, LF), err);
+   }
+   static public void log(StringBuilder sb, boolean err) {
+      if (err)
+         System.err.print(sb);
+      else
+         System.err.print(sb);
    }
 }
