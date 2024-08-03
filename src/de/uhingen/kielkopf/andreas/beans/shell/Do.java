@@ -6,6 +6,7 @@ package de.uhingen.kielkopf.andreas.beans.shell;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
  * Ausführen beliebiger Commands aus java heraus durch Benutzung der SHell ($SHELL)
@@ -47,7 +48,7 @@ public class Do implements Runnable {
     * @return
     */
    private static String doGetFirstOr(List<String> l, String or) {
-      List<String> tmp=doGetList(l);
+      ConcurrentLinkedDeque<String> tmp=doGetList(l);
       return (tmp.isEmpty()) ? or : tmp.getFirst();
    }
    /**
@@ -57,10 +58,10 @@ public class Do implements Runnable {
     * @return
     */
    private static void doCmd(List<String> l) {
-      new Do(l, Worker.stdInp, Worker.stdErr).executePlatform();
+      new Do(l, Worker.stdOut(), Worker.stdErr()).executePlatform();
    }
-   private static List<String> doGetList(List<String> l) {
-      ArrayList<String> tmp=new ArrayList<>();
+   private static ConcurrentLinkedDeque<String> doGetList(List<String> l) {
+      ConcurrentLinkedDeque<String> tmp=new ConcurrentLinkedDeque<>();
       return new Do(l, new Worker() {
          @Override
          public void processLine(String line) {
@@ -68,7 +69,7 @@ public class Do implements Runnable {
          }
       }) {
          @Override
-         public List<String> get() {
+         public ConcurrentLinkedDeque<String> get() {
             executePlatform();
             return tmp;
          }
@@ -82,16 +83,16 @@ public class Do implements Runnable {
    }
    // public Do(String... s) { this(Arrays.asList(s)); }
    public Do(String... list1) {
-      this(Worker.collectInp(), Worker.stdErr, list1);
+      this(Worker.collectInp(), Worker.stdErr(), list1);
    }
    public Do(Worker oWorker, String... list1) {
-      this(oWorker, Worker.stdErr, list1);
+      this(oWorker, Worker.stdErr(), list1);
    }
    public Do(List<String> list1) {
-      this(list1, Worker.collectInp(), Worker.stdErr);
+      this(list1, Worker.collectInp(), Worker.stdErr());
    }
    public Do(List<String> list1, Worker oWorker) {
-      this(list1, oWorker, Worker.stdErr);
+      this(list1, oWorker, Worker.stdErr());
    }
    Worker               inpWorker;
    Worker               errWorker;
@@ -175,7 +176,7 @@ public class Do implements Runnable {
    static public Do executePlatform(List<String> l) {
       return new Do(l).executePlatform();
    }
-   public List<String> get() {
+   public ConcurrentLinkedDeque<String> get() {
       executePlatform();
       if (inpWorker instanceof Worker w)
          return w.get();
@@ -197,7 +198,7 @@ public class Do implements Runnable {
       return new Do(l, Worker.collectInp(), Worker.collectErr());
    }
    static public Do toConsole(List<String> l) {
-      return new Do(l, Worker.stdInp, Worker.stdErr);
+      return new Do(l, Worker.stdOut(), Worker.stdErr());
    }
    public Do clean() {
       done=false;

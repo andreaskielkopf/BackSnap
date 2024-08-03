@@ -33,16 +33,18 @@ public class DoPiped implements Runnable {
       List<String> l1=List.of("ls", "-la");
       List<String> l3=List.of("grep", "-E", "^drwx");
       List<String> l2=List.of("sort", "-nk 5");
-      DoPiped.toWorker(l1,l2,l3);
+      // DoPiped.toWorker(l1,l2,l3);
+      System.err.println("Fehlerausgabe");
+      System.out.println("Standardausgabe");
    }
    /**
     * @param l1
     * @param l2
     * @param l3
     */
-   private static void toWorker(List<String> ... l ) {
-      List<String>[] n=l;
-   }
+//   private static void toWorker(List<String>... l) {
+//      List<String>[] n=l;
+//   }
    private List<Do>      pipedDos;
    List<ProcessBuilder>  builders=new ArrayList<>();
    private boolean       done    =false;
