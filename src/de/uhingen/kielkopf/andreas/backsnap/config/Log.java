@@ -4,9 +4,10 @@
 package de.uhingen.kielkopf.andreas.backsnap.config;
 
 import java.util.*;
+import java.util.Map.Entry;
 
 // import java.util.concurrent.locks.ReentrantLock;
-// mkdir
+// free(
 /**
  * @author Andreas Kielkopf
  *
@@ -15,7 +16,7 @@ public class Log {
    public static boolean          withTimestamp=true;
    final private static long      start        =System.currentTimeMillis();
    static private int             logPos       =0;
-   static private int             errPos       =0;
+   // static private int errPos =0;
    static public final int        logMAXLEN    =120;
    static public String           lastline     ="1234567890";
    static public ArrayList<LEVEL> logLevels    =new ArrayList<>(List.of(LEVEL.PROGRESS));
@@ -73,7 +74,8 @@ public class Log {
       }
       tryUnlock(l);
    }
-   static public void logln(String text, LEVEL... levels) {
+   @SuppressWarnings("unused")
+   static private void logln(String text, LEVEL... levels) {
       boolean l=tryLock();
       if (needsPrinting(levels) && dedup(text) instanceof String s) {
          StringBuilder sb=new StringBuilder(s).append(LF);
@@ -85,20 +87,21 @@ public class Log {
       }
       tryUnlock(l);
    }
-   static public void logln(Collection<String> texts, LEVEL... levels) {
+   static public void lfLog(Collection<String> texts, LEVEL... levels) {
       boolean l=tryLock();
       if (needsPrinting(levels)) {
          for (String line:texts)
             if (dedup(line) instanceof String s) {
                // if (Log.logPos + s.length() > Log.logMAXLEN)
                // System.out.print(System.lineSeparator());
-               log(new StringBuilder(s).append(LF).insert(0, getTS()), false); // System.out.print(s + System.lineSeparator());
+               lfLog(new StringBuilder(s), false); // System.out.print(s + System.lineSeparator());
                Log.logPos=0;
             }
       }
       tryUnlock(l);
    }
-   static public void logOw(String text, LEVEL... levels) {
+   @SuppressWarnings("unused")
+   static private void logOw(String text, LEVEL... levels) {
       boolean l=tryLock();
       if (needsPrinting(levels) && dedup(text) instanceof String s) {
          StringBuilder sb=new StringBuilder(s).append(CR);
@@ -165,15 +168,15 @@ public class Log {
     * @param string
     * @param errors
     */
-   public static void errln(String text, LEVEL levels) {
+   public static void lfErr(String text, LEVEL levels) {
       boolean l=tryLock();
       if (needsPrinting(levels) && dedup(text) instanceof String s) {
-         StringBuilder sb=new StringBuilder(s).append(LF);
-         if (Log.errPos + s.length() > Log.logMAXLEN)
-            lfLog(sb, false);// System.err.print(System.lineSeparator());
-         else
-            log(sb, false);// System.err.print(s + System.lineSeparator());
-         Log.errPos=0;
+         StringBuilder sb=new StringBuilder(s);
+         // if (Log.errPos + s.length() > Log.logMAXLEN)
+         // sb., true);// System.err.print(System.lineSeparator());
+         // else
+         log(sb, true);// System.err.print(s + System.lineSeparator());
+         // Log.errPos=0;
       }
       tryUnlock(l);
    }
@@ -202,8 +205,18 @@ public class Log {
    }
    static public void log(StringBuilder sb, boolean err) {
       if (err)
-         System.err.print(sb);
+         System.err.print(compress(sb));
       else
-         System.err.print(sb);
+         System.err.print(compress(sb));
+   }
+   static ArrayList<Map.Entry<String, String>> compressor=new ArrayList<>();
+   static public void tr(String from, String to) {
+      compressor.add(Map.entry(from, to));
+   }
+   static private String compress(StringBuilder sb) {
+      String erg=sb.toString();
+      for (Entry<String, String> e:compressor)
+         erg=erg.replaceAll(e.getKey(), e.getValue());
+      return erg;
    }
 }

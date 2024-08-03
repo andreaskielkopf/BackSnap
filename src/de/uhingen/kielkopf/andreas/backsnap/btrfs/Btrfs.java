@@ -93,13 +93,13 @@ public class Btrfs {
                         // removeSB.setLength(removeSB.length() - 1);// letztes Zeichen entfernen
                         removeSB.insert(0, "cd " + cd + ";" + SUBVOLUME_DELETE);// Befehl davorsetzen
                         String removeCmd=snap.mount().pc().getCmd(removeSB, true); // Befehl ssh oder sudo
-                        Log.logln(removeCmd, LEVEL.BTRFS);
+                        Log.lfLog(removeCmd, LEVEL.BTRFS);
                         BTRFS.writeLock().lock();
                         try (DirectCmdStreams removeStream=new DirectCmdStreams(removeCmd);
                                  BufferedCmdReader out=removeStream.out()) {
                            removeStream.print2Err();
                            out.lines().forEach(line -> {
-                              Log.logln(line, LEVEL.DELETE);
+                              Log.lfLog(line, LEVEL.DELETE);
                               if (gui != null)
                                  gui.lblPvSetText(line);
                            });
@@ -131,7 +131,7 @@ public class Btrfs {
    public static ConcurrentSkipListMap<String, Volume> show(Pc pc, boolean onlyMounted, boolean refresh) {
       ConcurrentSkipListMap<String, Volume> list=new ConcurrentSkipListMap<>();
       String volumeListCmd=pc.getCmd(new StringBuilder(FILESYSTEM_SHOW).append(onlyMounted ? " -m" : " -d"), true);
-      Log.logln(volumeListCmd, LEVEL.BTRFS);
+      Log.lfLog(volumeListCmd, LEVEL.BTRFS);
       if (refresh)
          CmdStreams.removeFromCache(volumeListCmd);
       BTRFS.readLock().lock();
@@ -315,7 +315,7 @@ public class Btrfs {
             btrfsSendSB.insert(0, "ssh " + oneBackup.extern() + " '");
       if (OneBackup.isBackupExtern())
          btrfsSendSB.append("'");
-      Log.logln(btrfsSendSB.toString(), LEVEL.BTRFS);
+      Log.lfLog(btrfsSendSB.toString(), LEVEL.BTRFS);
       if (!Backsnap.flags.get(Backsnap.DRYRUN)) {
          if (bsGui != null)
             bsGui.getPanelMaintenance().updateButtons();
@@ -336,10 +336,10 @@ public class Btrfs {
             BTRFS.writeLock().unlock();
             Runtime r=Runtime.getRuntime();
             long n=1024 * 1024;
-            System.err.println("free(" + r.freeMemory() / n + "),max(" + r.maxMemory() / n + "),total("
-                     + r.totalMemory() / n + ")");
+            Log.lfLog("free(" + r.freeMemory() / n + "),max(" + r.maxMemory() / n + "),total("
+                     + r.totalMemory() / n + ")",LEVEL.PROGRESS);
             System.gc();
-            lfLog("", LEVEL.PROGRESS);
+            log(" # ", LEVEL.PROGRESS);
          }
          if (bsGui != null)
             bsGui.getPanelMaintenance().updateButtons();

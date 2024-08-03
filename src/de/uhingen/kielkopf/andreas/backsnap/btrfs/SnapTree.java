@@ -40,13 +40,13 @@ public record SnapTree(Mount sMount, ConcurrentSkipListMap<String, Snapshot> sUu
       // mit -a bekommt man alle Snapshots für dieses Device
       StringBuilder svListCommand=new StringBuilder(Btrfs.SUBVOLUME_LIST_2).append(sMount.mountPath());
       String svListCmd=sMount.pc().getCmd(svListCommand, true);
-      Log.logln(svListCmd, LEVEL.BTRFS);
+      Log.lfLog(svListCmd, LEVEL.BTRFS);
       BTRFS.readLock().lock();
       try (CmdStreams svListStream=CmdStreams.getCachedStream(svListCmd, sMount.keyD())) {
          svListStream.outBGerr().forEachOrdered(line -> {
             try {
                if (line.contains("timeshift"))
-                  Log.logln(line, LEVEL.BTRFS_ANSWER);
+                  Log.lfLog(line, LEVEL.BTRFS_ANSWER);
                add(new Snapshot(sMount, line));
             } catch (Exception e) {
                System.err.println(" --> " + e);
@@ -101,11 +101,11 @@ public record SnapTree(Mount sMount, ConcurrentSkipListMap<String, Snapshot> sUu
       String deviceKey=mount2.keyD();
       if (!snapTreeCache.containsKey(deviceKey)) {
          snapTreeCache.put(deviceKey, new SnapTree(mount2).populate());
-         Log.logln("set " + deviceKey + " into treeCache", LEVEL.CACHE);
+         Log.lfLog("set " + deviceKey + " into treeCache", LEVEL.CACHE);
       } else {
          if (refresh)
             snapTreeCache.get(deviceKey).clear().populate();
-         Log.logln("take " + deviceKey + " from treeCache", LEVEL.CACHE);
+         Log.lfLog("take " + deviceKey + " from treeCache", LEVEL.CACHE);
       }
       return snapTreeCache.get(deviceKey);
    }

@@ -130,7 +130,7 @@ public class Computer extends JPanel {
    protected void updateSubvolumeInfo(ListSelectionEvent ev) {
       if (ev.getSource() instanceof JList<?> l)
          if (l.getSelectedValue() instanceof Mount mount) {
-            Log.logln(mount.toString(), LEVEL.BTRFS);
+            Log.lfLog(mount.toString(), LEVEL.BTRFS);
             getSubvol().setMount(mount);
          }
    }

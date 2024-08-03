@@ -147,11 +147,11 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       if (readonly[0] == null) { // dann müssen wir das erst mal ermitteln
          String getRoCmd=mount().pc()
                   .getCmd(new StringBuilder(Btrfs.PROPERTY_GET).append(getSnapshotMountPath()).append(" ro"), false);
-         Log.logln(getRoCmd, LEVEL.BTRFS);
+         Log.lfLog(getRoCmd, LEVEL.BTRFS);
          BTRFS.readLock().lock();
          readonly[0]=false; // Das schlimmste annehmen
          try (CmdStreams getRoStream=CmdStreams.getDirectStream(getRoCmd)) {
-            Optional<String> roFlag=getRoStream.outBGerr().peek(t -> Log.logln(t, LEVEL.BTRFS))
+            Optional<String> roFlag=getRoStream.outBGerr().peek(t -> Log.lfLog(t, LEVEL.BTRFS))
                      .filter(t -> t.startsWith("ro=")).findAny();
             if (getRoStream.errLines().anyMatch(line -> line.contains("No route to host")
                      || line.contains("Connection closed") || line.contains("connection unexpectedly closed")))
@@ -265,10 +265,10 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
       if (Backsnap.bsGui instanceof BacksnapGui gui)
          gui.getPanelMaintenance().updateButtons();
       String readonlyCmd=snapshot.mount().pc().getCmd(readonlySB, true);
-      Log.logln(readonlyCmd, LEVEL.BTRFS);
+      Log.lfLog(readonlyCmd, LEVEL.BTRFS);
       BTRFS.writeLock().lock();
       try (CmdStreams readonlyStream=CmdStreams.getDirectStream(readonlyCmd)) {
-         readonlyStream.outBGerr().forEach(t -> Log.logln(t, LEVEL.BTRFS));
+         readonlyStream.outBGerr().forEach(t -> Log.lfLog(t, LEVEL.BTRFS));
          if (readonlyStream.errLines().anyMatch(line -> line.contains("No route to host")
                   || line.contains("Connection closed") || line.contains("connection unexpectedly closed")))
             Backsnap.disconnectCount=10;

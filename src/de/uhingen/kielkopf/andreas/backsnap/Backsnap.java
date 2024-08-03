@@ -59,8 +59,8 @@ public class Backsnap {
    // static public final Flag TIMESHIFT =new Flag('t', "timeshift");
    // static final Flags.F ECLIPSE =flags.add('z', "eclipse");
    // static final Flags.F PEXEC =flags.add('p', "pexec"); // use pexec instead of sudo
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.14"   //
-            + " (2024/07/27)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.19"   //
+            + " (2024/08/03)";
    static public void main(String[] args) {
       flags.create('h', HELP) // show usage
                .create('c', COMPRESSED) // use protokoll 2
@@ -73,16 +73,27 @@ public class Backsnap {
                .create('i', INIT) // init /etc/backsnap.d/local.conf
                .create('o', DELETEOLD) // mark old snapshots for deletion
                .create('m', KEEPMINIMUM); // mark all but minimum snapshots
+      
       flags.setArgs(args, "");
+      Log.tr("/tmp/BackupRoot/@BackSnap/", "@");
+      Log.tr("/tmp/BackupRoot/@", "@");
+      Log.tr("/tmp/BackupRoot/", "");
+      Log.tr("/tmp/BackupRoot", "Backup");
+      
+      Log.tr("/tmp/BtrfsRoot/@snapshots/", "@snap/");
+      Log.tr("/tmp/BtrfsRoot/", "");
+      Log.tr("/snapshot", "/");      
+      Log.tr(".snapshots/", "/");
+      
       Log.setLoglevel(flags.f(VERBOSE).getParameterOrDefault(LEVEL.PROGRESS.l));
-      Log.logln(BS_VERSION, LEVEL.BASIC);
-      Log.logln("args > " + flags.getArgs(), LEVEL.BASIC);
-      Log.logln(Version.getJava().toString(), LEVEL.BASIC);
-      Log.logln(Version.getVxText(), LEVEL.BASIC);
+      Log.lfLog(BS_VERSION, LEVEL.BASIC);
+      Log.lfLog("args > " + flags.getArgs(), LEVEL.BASIC);
+      Log.lfLog(Version.getJava().toString(), LEVEL.BASIC);
+      Log.lfLog(Version.getVxText(), LEVEL.BASIC);
       if (flags.get(VERSION))
          System.exit(0);
       if (flags.get(DRYRUN))
-         Log.logln("Doing a dry run ! ", LEVEL.BASIC);
+         Log.lfLog("Doing a dry run ! ", LEVEL.BASIC);
       try { // Wenn notwendig initialisieren und configuration laden
          OneBackup.setConfig((flags.get(INIT) ? OnTheFly.prepare() : Etc.getConfig("backsnap")));
       } catch (IOException e) {
@@ -91,7 +102,7 @@ public class Backsnap {
       // Wenn Parameter da sind, dann zuerst die auswerten
       if (!flags.getParameter(0).isBlank())
          processParameters();
-      Log.logln(OneBackup.getConfigText(), LEVEL.CONFIG);
+      Log.lfLog(OneBackup.getConfigText(), LEVEL.CONFIG);
       OneBackup lastBackup=null;
       if (flags.get(HELP))
          System.exit(2);
@@ -118,7 +129,7 @@ public class Backsnap {
             // Start collecting information
             SnapConfig srcConfig=actualBackup.getSnapConfig();
             srcConfig.volumeMount().populate();
-            Log.logln("Backup snapshots from " + srcConfig.volumeMount().keyM(), LEVEL.SNAPSHOTS);
+            Log.lfLog("Backup snapshots from " + srcConfig.volumeMount().keyM(), LEVEL.SNAPSHOTS);
             Pc.mountBackupRoot(true);
             OneBackup.backupPc.getMountList(false); // eventuell unnötig
             Mount backupMount=Pc.getBackupMount(/* true */);
@@ -126,11 +137,11 @@ public class Backsnap {
                throw new RuntimeException(LF + "Backup is not possible onto the same device: "
                         + OneBackup.backupPc.getBackupLabel() + " <= " + actualBackup.srcPath() + LF
                         + "Please select another partition for the backup");
-            Log.logln("Try to use backupDir  " + backupMount.keyM(), LEVEL.SNAPSHOTS);
+            Log.lfLog("Try to use backupDir  " + backupMount.keyM(), LEVEL.SNAPSHOTS);
             usage=new Usage(backupMount, false);
             actualBackup.backupTree()[0]=SnapTree.getSnapTree(backupMount, false);
             if (disconnectCount > 0) {
-               Log.errln("no SSH Connection", LEVEL.ERRORS);
+               Log.lfErr("no SSH Connection", LEVEL.ERRORS);
                ende("X");
                System.exit(0);
             }
@@ -152,13 +163,13 @@ public class Backsnap {
             for (Snapshot sourceSnapshot:srcConfig.volumeMount().otimeKeyMap().values()) {
                counter++;
                if (cantFindParent != null) {
-                  Log.errln("Please remove " + Pc.TMP_BACKSNAP + "/" + OneBackup.backupPc.getBackupLabel() + "/"
+                  Log.lfErr("Please remove " + Pc.TMP_BACKSNAP + "/" + OneBackup.backupPc.getBackupLabel() + "/"
                            + cantFindParent + "/" + Snapshot.SNAPSHOT + " !", LEVEL.ERRORS);
                   ende("X");
                   System.exit(-9);
                } else
                   if (disconnectCount > 3) {
-                     Log.errln("SSH Connection lost !", LEVEL.ERRORS);
+                     Log.lfErr("SSH Connection lost !", LEVEL.ERRORS);
                      ende("X");
                      System.exit(-8);
                   }
@@ -179,11 +190,11 @@ public class Backsnap {
                   break;
                }
             }
-            Log.logln("", LEVEL.SNAPSHOTS);
+            Log.lfLog("", LEVEL.SNAPSHOTS);
          } catch (IOException e) {
             if ((e.getMessage().startsWith("ssh: connect to host"))
                      || (e.getMessage().startsWith("Could not find snapshot:")))
-               Log.errln(e.getMessage(), LEVEL.ERRORS);
+               Log.lfErr(e.getMessage(), LEVEL.ERRORS);
             else
                e.printStackTrace();
             if (OneBackup.size() <= 1) {
@@ -301,10 +312,10 @@ public class Backsnap {
       // sMount().btrfsPath().resolve(backupSnapTree.sMount().mountPath().relativize(bDir))
       // .resolve(Snapshot.SNAPSHOT);
       if (oneBackup.backupTree()[0].containsPath(bSnapDir)) {
-         Log.logln("Der Snapshot scheint schon da zu sein ????", LEVEL.SNAPSHOTS);
+         Log.lfLog("Der Snapshot scheint schon da zu sein ????", LEVEL.SNAPSHOTS);
          return true;
       }
-      Log.logln(oneBackup.backupLabel() + ": Backup of " + srcSnapshot.dirName()
+      Log.lfLog(oneBackup.backupLabel() + ": Backup of " + srcSnapshot.dirName()
                + (parentSnapshot instanceof Snapshot ps ? " based on " + ps.dirName() : ""), LEVEL.SNAPSHOTS);
       mkDirs(bDir);
       rsyncFiles(oneBackup, srcSnapshot.getSnapshotMountPath(), bDir);
@@ -333,9 +344,9 @@ public class Backsnap {
          else
             rsyncSB.insert(0, oneBackup.extern()); // nur sudo, kein quoting !
       String rsyncCmd=rsyncSB.toString();
-      Log.logln(rsyncCmd, LEVEL.RSYNC);// if (!DRYRUN.get())
+      Log.lfLog(rsyncCmd, LEVEL.RSYNC);// if (!DRYRUN.get())
       try (CmdStreams rsyncStream=CmdStreams.getDirectStream(rsyncCmd)) {
-         rsyncStream.outBGerr().forEach(t -> Log.logln(t, LEVEL.RSYNC));
+         rsyncStream.outBGerr().forEach(t -> Log.lfLog(t, LEVEL.RSYNC));
          if (rsyncStream.errLines().anyMatch(line -> (line.contains("No route to host")
                   || line.contains("Connection closed") || line.contains("connection unexpectedly closed")))) {
             Backsnap.disconnectCount=10;
@@ -361,7 +372,7 @@ public class Backsnap {
                return; // erst mit sudo, dann noch mal mit localhost probieren
          }
          try (CmdStreams mkdirStream=CmdStreams.getDirectStream(mkdirCmd)) {
-            if (mkdirStream.outBGerr().peek(t -> Log.logln(t, LEVEL.BASIC))
+            if (mkdirStream.outBGerr().peek(t -> Log.lfLog(t, LEVEL.BASIC))
                      .anyMatch(Pattern.compile("mkdir").asPredicate()))
                return;
             // if (mkdirStream.errBuffer().queue(). isEmpty())
@@ -477,10 +488,10 @@ public class Backsnap {
          }
          Log.log("it", LEVEL.BASIC);
          CmdStreams.cleanup();
-         Log.logln(" java", LEVEL.BASIC);
+         Log.lfLog(" java", LEVEL.BASIC);
          if (flags.get(AUTO))
             System.exit(0);
       }
-      // logln(4, "");
+      // lfLog(4, "");
    }
 }

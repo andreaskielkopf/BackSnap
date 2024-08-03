@@ -82,11 +82,11 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
       // boolean snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.isEmpty() : false;
       StringBuilder subvolumeShowSB=new StringBuilder(Btrfs.SUBVOLUME_SHOW).append(mountPath);
       String subvolumeSchowCmd=pc.getCmd(subvolumeShowSB, true);
-      Log.logln(subvolumeSchowCmd, LEVEL.BTRFS);
+      Log.lfLog(subvolumeSchowCmd, LEVEL.BTRFS);
       BTRFS.readLock().lock();
       try (CmdStreams snapshotStream=CmdStreams.getCachedStream(subvolumeSchowCmd, keyM())) {
          snapshotStream.outBGerr().forEach(line -> {
-            Log.logln(line, LEVEL.BTRFS_ANSWER);
+            Log.lfLog(line, LEVEL.BTRFS_ANSWER);
             Matcher mn=NAME.matcher(line);
             if (mn.find())
                name.add("/" + mn.group(1));// store Name: ...
@@ -98,7 +98,7 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
                      Snapshot snapshot=snapTree.getByPath(btrfsPath1);
                      if ((snapshot != null) && (snapshot.mount() != null)) {
                         if (!snapshot.mount().mountPath.startsWith(this.mountPath))
-                           Log.errln("Mount passt nicht für: " + this + " -> " + snapshot, LEVEL.ERRORS);
+                           Log.lfErr("Mount passt nicht für: " + this + " -> " + snapshot, LEVEL.ERRORS);
                         btrfsMap.put(btrfsPath1, snapshot);
                         otimeKeyMap.put(snapshot.keyO(), snapshot);
                      } else {
@@ -124,12 +124,12 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
       // boolean snapTreeVorhanden=(snapTree instanceof SnapTree st) ? !st.isEmpty() : false;
       StringBuilder subvolumeShowSB=new StringBuilder(Btrfs.SUBVOLUME_SHOW).append(mountPath);
       String subvolumeShowCmd=pc.getCmd(subvolumeShowSB, true);
-      Log.logln(subvolumeShowCmd, LEVEL.BTRFS);
+      Log.lfLog(subvolumeShowCmd, LEVEL.BTRFS);
       BTRFS.readLock().lock();
       try (CmdStreams snapshotStream=CmdStreams.getCachedStream(subvolumeShowCmd, keyM())) {
          snapshotStream.outBGerr().forEach(line -> {
             // if (!line.isEmpty()) {
-            Log.logln(line, LEVEL.BTRFS_ANSWER);
+            Log.lfLog(line, LEVEL.BTRFS_ANSWER);
             Matcher mn=NAME.matcher(line);
             if (mn.find())
                name.add("/" + mn.group(1));// store Name: ...
@@ -141,7 +141,7 @@ public record Mount(Pc pc, Path devicePath, Path mountPath, Path btrfsPath, Stri
                      Snapshot snapshot=snapTree.getByPath(btrfsPath1);
                      if ((snapshot != null) && (snapshot.mount() != null)) {
                         if (!snapshot.mount().mountPath.startsWith(this.mountPath))
-                           Log.errln("Mount passt nicht für: " + this + " -> " + snapshot, LEVEL.ERRORS);
+                           Log.lfErr("Mount passt nicht für: " + this + " -> " + snapshot, LEVEL.ERRORS);
                         btrfsMap.put(btrfsPath1, snapshot);
                         otimeKeyMap.put(snapshot.keyO(), snapshot);
                      } else {

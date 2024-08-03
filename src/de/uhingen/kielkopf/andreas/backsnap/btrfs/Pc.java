@@ -128,7 +128,7 @@ public record Pc(String extern, // Marker für diesen PC
       if (mountCache.isEmpty() || refresh) {
          ConcurrentSkipListMap<String, Mount> mountList2=new ConcurrentSkipListMap<>();
          String mountCmd=getCmd(new StringBuilder(MOUNT_BTRFS), false);
-         Log.logln(mountCmd, LEVEL.BTRFS);
+         Log.lfLog(mountCmd, LEVEL.BTRFS);
          BTRFS.readLock().lock();
          try (CmdStreams mountStream=CmdStreams.getDirectStream(mountCmd)) {
             mountStream.outBGerr().forEachOrdered(line -> {
@@ -143,7 +143,7 @@ public record Pc(String extern, // Marker für diesen PC
             if (x.isPresent())
                throw new IOException(x.get());
             mountCache.clear();
-            mountCache.putAll(mountList2);// Log.logln("", LEVEL.BTRFS);
+            mountCache.putAll(mountList2);// Log.lfLog("", LEVEL.BTRFS);
          } finally {
             BTRFS.readLock().unlock();
          }
@@ -159,7 +159,7 @@ public record Pc(String extern, // Marker für diesen PC
    public final Version getBtrfsVersion() throws IOException {
       if (btrfsVersion.get() == null) {
          String btrfsVersionCmd=getCmd(new StringBuilder(Btrfs.VERSION), false);
-         Log.logln(btrfsVersionCmd, LEVEL.COMMANDS);
+         Log.lfLog(btrfsVersionCmd, LEVEL.COMMANDS);
          BTRFS.readLock().lock();
          try (CmdStreams btrfsVersionStream=CmdStreams.getDirectStream(btrfsVersionCmd)) {
             btrfsVersionStream.outBGerr().forEach(line -> {
@@ -186,7 +186,7 @@ public record Pc(String extern, // Marker für diesen PC
    public final Version getKernelVersion() throws IOException {
       if (kernelVersion.get() == null) {
          String versionCmd=getCmd(new StringBuilder("uname -rs"), false);
-         Log.logln(versionCmd, LEVEL.COMMANDS);
+         Log.lfLog(versionCmd, LEVEL.COMMANDS);
          try (CmdStreams versionStream=CmdStreams.getDirectStream(versionCmd)) {
             versionStream.outBGerr().forEach(line -> {
                // if (!line.isEmpty())
@@ -219,7 +219,7 @@ public record Pc(String extern, // Marker für diesen PC
          if (o.isPresent())
             return o.get();
          OneBackup.backupPc.getMountList(false).values().stream()
-                  .forEach(m -> Log.errln(m.mountPath().toString(), LEVEL.ERRORS));
+                  .forEach(m -> Log.lfErr(m.mountPath().toString(), LEVEL.ERRORS));
          throw new RuntimeException(System.lineSeparator() + "Could not find the volume for backupDir: "
                   + Pc.TMP_BACKSNAP + "/" + OneBackup.backupPc.getBackupLabel() + System.lineSeparator()
                   + "Maybe it needs to be mounted first");
@@ -306,10 +306,10 @@ public record Pc(String extern, // Marker für diesen PC
          mountSB.append("umount -v ").append(mountPoint).append(";rmdir ").append(mountPoint);
       }
       String mountCmd=getCmd(mountSB, true);
-      Log.logln(mountCmd, LEVEL.MOUNT);
+      Log.lfLog(mountCmd, LEVEL.MOUNT);
       BTRFS.writeLock().lock();
       try (CmdStreams mountStream=CmdStreams.getDirectStream(mountCmd)) {
-         mountStream.outBGerr().forEach(t -> Log.logln(t, LEVEL.BTRFS_ANSWER));
+         mountStream.outBGerr().forEach(t -> Log.lfLog(t, LEVEL.BTRFS_ANSWER));
          if (mountStream.errLines().anyMatch(l -> (l.contains("No route to host") || l.contains("Connection closed")
                   || l.contains("connection unexpectedly closed"))))
             Backsnap.disconnectCount=10;

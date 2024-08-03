@@ -240,9 +240,9 @@ public class ConfigDialog extends JDialog {
       try {
          if (getBackupVolume(Pc.getPc(null)) instanceof Volume volume) {
             prepareBackupVolume(volume, false);
-            Log.logln(volume.uuid(),LEVEL.CONFIG);
+            Log.lfLog(volume.uuid(),LEVEL.CONFIG);
          } else
-            Log.logln("null",LEVEL.CONFIG);
+            Log.lfLog("null",LEVEL.CONFIG);
       } catch (Exception e) {
          e.printStackTrace();
       }

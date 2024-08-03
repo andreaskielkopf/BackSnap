@@ -70,7 +70,7 @@ public record Volume(Pc pc, ArrayList<String> lines, ConcurrentSkipListMap<Strin
    }
    public boolean isUSB() {
       String isUSBCmd=pc.getCmd(new StringBuilder(UDEVADM).append(devices().sequencedValues().getFirst()), false);
-      Log.logln(isUSBCmd, LEVEL.BTRFS);
+      Log.lfLog(isUSBCmd, LEVEL.BTRFS);
       boolean treffer=false;
       try (CmdStreams isUSBStream=CmdStreams.getCachedStream(isUSBCmd)) {
          treffer=isUSBStream.outBGerr().anyMatch(line -> line.contains("ID_BUS=usb"));

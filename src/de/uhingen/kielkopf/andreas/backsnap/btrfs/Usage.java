@@ -48,7 +48,7 @@ public record Usage(String size, String allocated, String unallcoated, String mi
    public Usage(Mount m, boolean b) throws IOException {
       this(getMString(m, b));
       if (needsBalance())
-         Log.errln("It seems urgently advisable to balance the backup volume", LEVEL.ERRORS);
+         Log.lfErr("It seems urgently advisable to balance the backup volume", LEVEL.ERRORS);
    }
    /**
     * @param m
@@ -60,7 +60,7 @@ public record Usage(String size, String allocated, String unallcoated, String mi
       String usageCmd=m.pc().getCmd(
                new StringBuilder(Btrfs.FILESYSTEM_USAGE).append(dir).append(";").append(Btrfs.DEVICE_USAGE).append(dir),
                false);// TODO This may be wrong, and sometimes sudo may be needed
-      Log.logln(usageCmd, LEVEL.BTRFS);
+      Log.lfLog(usageCmd, LEVEL.BTRFS);
       BTRFS.readLock().lock();
       try (CmdStreams usageStream=CmdStreams.getDirectStream(usageCmd)) {
          StringBuilder usageLine=new StringBuilder();
@@ -74,7 +74,7 @@ public record Usage(String size, String allocated, String unallcoated, String mi
             Backsnap.disconnectCount=10;
             throw new IOException(erg.get());
          }
-         Log.logln(usageLine.toString(), LEVEL.BTRFS_ANSWER);
+         Log.lfLog(usageLine.toString(), LEVEL.BTRFS_ANSWER);
          return usageLine.toString();
       } finally {
          BTRFS.readLock().unlock();

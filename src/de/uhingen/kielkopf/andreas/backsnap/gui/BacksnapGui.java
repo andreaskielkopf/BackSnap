@@ -160,7 +160,7 @@ public class BacksnapGui implements MouseListener {
                .setVolume(srcConfig.volumeMount().otimeKeyMap().values());
       for (Snapshot snap:neuList.values())
          Log.log(" " + snap.dirName(), LEVEL.SNAPSHOTS);
-//      Log.logln("", LEVEL.SNAPSHOTS);
+//      Log.lfLog("", LEVEL.SNAPSHOTS);
       abgleich();
       getPanelSrc().setInfo(srcConfig.volumeMount());
    }
@@ -316,7 +316,7 @@ public class BacksnapGui implements MouseListener {
             // virtual.execute(() -> {// jButton.setEnabled(false);
             // for (Snapshot snapshot:toRemove) {
             // if (!deleteUnterbrechen.get()) {
-            // Log.logln("to remove " + snapshot.dirName(), LEVEL.DELETE);
+            // Log.lfLog("to remove " + snapshot.dirName(), LEVEL.DELETE);
             // try {
             // Btrfs.removeSnapshot(snapshot); // BTRFS-Lock inside
             // Thread.sleep(100);
@@ -326,7 +326,7 @@ public class BacksnapGui implements MouseListener {
             // break;
             // }
             // }
-            // Log.logln("", LEVEL.DELETE);
+            // Log.lfLog("", LEVEL.DELETE);
             // // jButton.setEnabled(true);
             // });
          } catch (IOException ignore) { /* */ }
@@ -351,7 +351,7 @@ public class BacksnapGui implements MouseListener {
       Log.lfLog("Backup:", LEVEL.GUI);
       for (Snapshot snap:neuList.values())
          Log.log(" " + snap.dirName(), LEVEL.GUI);
-//      Log.logln("", LEVEL.GUI);
+//      Log.lfLog("", LEVEL.GUI);
       abgleich(); // läuft virtuell
       SnapshotPanel pb=getPanelBackup();
       SwingUtilities.invokeLater(() -> {
@@ -446,9 +446,9 @@ public class BacksnapGui implements MouseListener {
                      getPanelWork().repaint(50);
                      return;
                   }
-                  Log.errln("s3=" + s3.length + ":" + s1[0], LEVEL.ERRORS);
+                  Log.lfErr("s3=" + s3.length + ":" + s1[0], LEVEL.ERRORS);
                }
-               Log.errln("s1=" + s1.length + ":" + pvT, LEVEL.ERRORS);
+               Log.lfErr("s1=" + s1.length + ":" + pvT, LEVEL.ERRORS);
             }
             getTextPv().setText("");
             getTextPv().repaint(50);
@@ -787,7 +787,7 @@ public class BacksnapGui implements MouseListener {
    }
    @Deprecated
    public void setDeleteInfo(Snapshot toDelete) throws FileNotFoundException {
-      Log.logln(toDelete.getSnapshotMountPath().toString(), LEVEL.DELETE);
+      Log.lfLog(toDelete.getSnapshotMountPath().toString(), LEVEL.DELETE);
       SwingUtilities.invokeLater(() -> {
          getLblSnapshot().setText("remove backup of:");
          getTxtSnapshot().setText(toDelete.dirName());

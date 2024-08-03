@@ -94,10 +94,10 @@ public class OnTheFly extends JPanel {
       JCheckBox cb=getCb_1();
       if (cb.isEnabled() && cb.isSelected())
          try {
-            Log.logln(cb.getText(), LEVEL.CONFIG);
+            Log.lfLog(cb.getText(), LEVEL.CONFIG);
             Etc.createConfigDir("backsnap");
          } catch (IOException e) { /* */
-            Log.errln(e.getMessage(), LEVEL.ERRORS);
+            Log.lfErr(e.getMessage(), LEVEL.ERRORS);
          }
       return hasEtcBacksnap();
    }
@@ -106,7 +106,7 @@ public class OnTheFly extends JPanel {
       try {
          return showSelection(cb, (Etc.hasConfigDir("backsnap") != null)).isSelected();
       } catch (IOException e) { /* */
-         Log.errln(e.getMessage(), LEVEL.ERRORS);
+         Log.lfErr(e.getMessage(), LEVEL.ERRORS);
       }
       return cb.isSelected();
    }
@@ -128,12 +128,12 @@ public class OnTheFly extends JPanel {
       if (cb.isEnabled() && cb.isSelected())
          try {
             Path local=Path.of("/etc/backsnap.d/local.conf");
-            Log.logln("create " + local.toString(), LEVEL.CONFIG);
+            Log.lfLog("create " + local.toString(), LEVEL.CONFIG);
             Files.createFile(local);
             if (Etc.getConfig("backsnap") instanceof @SuppressWarnings("unused") Etc etc)
                etc=createLocalConf(local);
          } catch (IOException e) { /* */
-            Log.errln(e.getMessage(), LEVEL.ERRORS);
+            Log.lfErr(e.getMessage(), LEVEL.ERRORS);
          }
       return hasEtcBackSnapLocal();
    }
@@ -146,7 +146,7 @@ public class OnTheFly extends JPanel {
                               .isSelected();
          }
       } catch (IOException e) { /* */
-         Log.errln(e.getMessage(), LEVEL.ERRORS);
+         Log.lfErr(e.getMessage(), LEVEL.ERRORS);
       }
       return cb.isSelected();
    }
@@ -175,7 +175,7 @@ public class OnTheFly extends JPanel {
                      .filter(e -> e.getValue().stream().filter(l -> l.startsWith("backup_id")).findAny().isPresent())
                      .findFirst().isPresent()).isSelected();
       } catch (IOException e) { /* */
-         Log.errln(e.getMessage(), LEVEL.ERRORS);
+         Log.lfErr(e.getMessage(), LEVEL.ERRORS);
       }
       return cb.isSelected();
    }
@@ -229,7 +229,7 @@ public class OnTheFly extends JPanel {
       etc.save();
    }
    static Etc createLocalConf(Path local) throws IOException {
-      Log.logln("create " + local.toString(), LEVEL.CONFIG);
+      Log.lfLog("create " + local.toString(), LEVEL.CONFIG);
       Files.createFile(local);
       Etc etc=Etc.getConfig("backsnap"); // neu einlesen
       List<String> lines=etc.confFiles.get(local);

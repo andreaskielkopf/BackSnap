@@ -149,11 +149,11 @@ public record OneBackup(Path etcPath, Pc srcPc, Path srcPath, Path backupLabel, 
    public SnapConfig getSnapConfig() throws IOException {
       for (SnapConfig sc:srcPc().getSnapConfigs()) {
          if (sc.volumeMount().mountPath().equals(srcPath())) {
-            Log.logln(sc.toString(), LEVEL.BTRFS);
+            Log.lfLog(sc.toString(), LEVEL.BTRFS);
             return sc;
          }
          if (sc.snapshotMount().mountPath().equals(srcPath())) {
-            Log.errln("Treffer: snapshotMount " + srcPath(), LEVEL.ERRORS);
+            Log.lfErr("Treffer: snapshotMount " + srcPath(), LEVEL.ERRORS);
             return sc;
          }
       }

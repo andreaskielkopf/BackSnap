@@ -136,7 +136,7 @@ public class PanelSpace extends JPanel {
    }
    public void flagSpace() {
       boolean s=getChckSpace().isSelected();
-      Log.logln("--------------- getChckSpace() actionPerformed", LEVEL.DEBUG);
+      Log.lfLog("--------------- getChckSpace() actionPerformed", LEVEL.DEBUG);
       Backsnap.flags.f(Backsnap.DELETEOLD).set(s);
       getSliderSpace().setEnabled(s);
       getBtnSpace().setEnabled(PanelMeta.testLock(s));
