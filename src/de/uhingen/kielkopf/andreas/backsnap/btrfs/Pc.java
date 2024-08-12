@@ -163,8 +163,8 @@ public record Pc(String extern, // Marker für diesen PC
          BTRFS.readLock().lock();
          try (CmdStreams btrfsVersionStream=CmdStreams.getDirectStream(btrfsVersionCmd)) {
             btrfsVersionStream.outBGerr().forEach(line -> {
-               // if (!line.isEmpty())
-               btrfsVersion.set(new Version("btrfs", line));
+               if (line.startsWith("btrfs-progs"))
+                  btrfsVersion.set(new Version("btrfs", line));
             });
             Optional<String> x=btrfsVersionStream.errLines().filter(l -> (l.contains("No route to host")
                      || l.contains("Connection closed") || l.contains("connection unexpectedly closed"))).findAny();
@@ -317,5 +317,10 @@ public record Pc(String extern, // Marker für diesen PC
          BTRFS.writeLock().unlock();
       }
       getMountList(true); // Mountlist neu einlesen und Mounts gegen-prüfen
+   }
+   public static void main(String[] args) throws IOException {
+      Pc pc=getPc("sudo ");
+      System.out.println(pc.getKernelVersion());
+      System.out.println(pc.getBtrfsVersion());
    }
 }

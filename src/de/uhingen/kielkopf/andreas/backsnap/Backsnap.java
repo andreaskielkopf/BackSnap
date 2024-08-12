@@ -59,8 +59,8 @@ public class Backsnap {
    // static public final Flag TIMESHIFT =new Flag('t', "timeshift");
    // static final Flags.F ECLIPSE =flags.add('z', "eclipse");
    // static final Flags.F PEXEC =flags.add('p', "pexec"); // use pexec instead of sudo
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.19"   //
-            + " (2024/08/03)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.20"   //
+            + " (2024/08/12)";
    static public void main(String[] args) {
       flags.create('h', HELP) // show usage
                .create('c', COMPRESSED) // use protokoll 2
@@ -73,18 +73,15 @@ public class Backsnap {
                .create('i', INIT) // init /etc/backsnap.d/local.conf
                .create('o', DELETEOLD) // mark old snapshots for deletion
                .create('m', KEEPMINIMUM); // mark all but minimum snapshots
-      
       flags.setArgs(args, "");
       Log.tr("/tmp/BackupRoot/@BackSnap/", "@");
       Log.tr("/tmp/BackupRoot/@", "@");
       Log.tr("/tmp/BackupRoot/", "");
       Log.tr("/tmp/BackupRoot", "Backup");
-      
       Log.tr("/tmp/BtrfsRoot/@snapshots/", "@snap/");
       Log.tr("/tmp/BtrfsRoot/", "");
-      Log.tr("/snapshot", "/");      
+      Log.tr("/snapshot", "/");
       Log.tr(".snapshots/", "/");
-      
       Log.setLoglevel(flags.f(VERBOSE).getParameterOrDefault(LEVEL.PROGRESS.l));
       Log.lfLog(BS_VERSION, LEVEL.BASIC);
       Log.lfLog("args > " + flags.getArgs(), LEVEL.BASIC);
@@ -305,7 +302,7 @@ public class Backsnap {
       }
       if (skipCount > 0) {
          skipCount=0;
-//         Log.lfLog("", LEVEL.SNAPSHOTS);
+         // Log.lfLog("", LEVEL.SNAPSHOTS);
       }
       Path bDir=Pc.TMP_BACKSNAP.resolve(oneBackup.backupLabel()).resolve(srcSnapshot.dirName());
       Path bSnapDir=oneBackup.backupTree()[0].getSnapPath(bDir);
