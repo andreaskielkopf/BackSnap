@@ -17,8 +17,8 @@ public class PanelTab extends JPanel {
    private static final long serialVersionUID=1L;
    private PanelCleanup      panelCleanup;
    private JSplitPane        splitPane;
-   private SnapshotPanel2    panel_1;
-   private SnapshotPanel2    panel_2;
+   private SnapshotPanel0    panel_1;
+   private SnapshotPanel0    panel_2;
    private JPanel            panelBackup;
    /**
     * Create the panel.
@@ -30,8 +30,6 @@ public class PanelTab extends JPanel {
       setBackground(Color.CYAN);
       setLayout(new BorderLayout(0, 0));
       add(getPanelCleanup(), BorderLayout.NORTH);
-      // add(getPanel_2(), BorderLayout.WEST);
-      // add(getPanel_1(), BorderLayout.NORTH);
       try {
          add(getPanelBackup(), BorderLayout.CENTER);
       } catch (IOException e) {
@@ -48,28 +46,28 @@ public class PanelTab extends JPanel {
    }
    private JSplitPane getSplitPane() throws IOException {
       if (splitPane == null) {
-         splitPane=new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, getPanel_1(), getPanel_2());
+         splitPane=new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, (Component) getPanel_1(), (Component) getPanel_2());
          splitPane.setResizeWeight(0.4);
          splitPane.setOneTouchExpandable(true);
          splitPane.setDividerLocation(150);
       }
       return splitPane;
    }
-   private SnapshotPanel2 getPanel_1() throws IOException {
+   private SnapshotPanel0 getPanel_1() throws IOException {
       if (panel_1 == null) {
          panel_1=new SnapshotPanel2();
          panel_1.setMinimumSize(new Dimension(200, 200));
          panel_1.setTitle("Snapshots");
-         // panel_1.setLayout(new BorderLayout(0, 0));
+        
       }
       return panel_1;
    }
-   private SnapshotPanel2 getPanel_2() throws IOException {
+   private SnapshotPanel0 getPanel_2() throws IOException {
       if (panel_2 == null) {
          panel_2=new SnapshotPanel2();
          panel_2.setMinimumSize(new Dimension(300, 200));
          panel_2.setTitle("Backups");
-         // panel_2.setLayout(new BorderLayout(0, 0));
+        
       }
       return panel_2;
    }
@@ -77,7 +75,7 @@ public class PanelTab extends JPanel {
       if (panelBackup == null) {
          panelBackup=new JPanel();
          panelBackup.setBackground(Color.CYAN);
-//         panelBackup.setBorder(new TitledBorder(null, "Backup", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+         // panelBackup.setBorder(new TitledBorder(null, "Backup", TitledBorder.LEADING, TitledBorder.TOP, null, null));
          panelBackup.setLayout(new BorderLayout(0, 0));
          panelBackup.add(getSplitPane(), BorderLayout.CENTER);
       }

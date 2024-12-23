@@ -17,37 +17,38 @@ import de.uhingen.kielkopf.andreas.backsnap.btrfs.Mount;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.Snapshot;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
+import de.uhingen.kielkopf.andreas.backsnap.gui.gui2.SnapshotPanel0;
 
 /**
  * @author Andreas Kielkopf
  */
-public class SnapshotPanel extends JPanel implements ComponentListener, MouseListener {
-   static private final long                           serialVersionUID    =-3405881652038164771L;
-   static public final Font                            FONT_INFO           =new Font("Noto Sans", Font.PLAIN, 16);
-   static public final Font                            FONT_INFO_B         =new Font("Noto Sans", Font.BOLD, 16);
-   private JPanel                                      panelView;
-   private SnapshotDetail                              panelDetail;
-   private JPanel                                      panelSnapshots;
-   private JScrollPane                                 scrollPane;
-   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_UUID      =new ConcurrentSkipListMap<>();
-   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_R_UUID    =new ConcurrentSkipListMap<>();
-   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_ParentUuid=new ConcurrentSkipListMap<>();
-   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_KeyO      =new ConcurrentSkipListMap<>();
-   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_DirNameS  =new ConcurrentSkipListMap<>();
-   public ArrayList<SnapshotLabel>                     mixedList           =new ArrayList<>();
-   private TitledBorder                                tBorder             =new TitledBorder(null, "Snapshots of ...",
+public class SnapshotPanel1 extends JPanel implements SnapshotPanel0, ComponentListener, MouseListener {
+   static private final long                            serialVersionUID    =-3405881652038164771L;
+   // static public final Font FONT_INFO =new Font("Noto Sans", Font.PLAIN, 16);
+   // static public final Font FONT_INFO_B =new Font("Noto Sans", Font.BOLD, 16);
+   private JPanel                                       panelView;
+   private SnapshotDetail                               panelDetail;
+   private JPanel                                       panelSnapshots;
+   private JScrollPane                                  scrollPane;
+   private ConcurrentSkipListMap<String, SnapshotLabel> labelTree_UUID      =new ConcurrentSkipListMap<>();
+   private ConcurrentSkipListMap<String, SnapshotLabel> labelTree_R_UUID    =new ConcurrentSkipListMap<>();
+   private ConcurrentSkipListMap<String, SnapshotLabel> labelTree_ParentUuid=new ConcurrentSkipListMap<>();
+   private ConcurrentSkipListMap<String, SnapshotLabel> labelTree_KeyO      =new ConcurrentSkipListMap<>();
+   private ConcurrentSkipListMap<String, SnapshotLabel> labelTree_DirNameS  =new ConcurrentSkipListMap<>();
+   private ArrayList<SnapshotLabel>                     mixedList           =new ArrayList<>();
+   private TitledBorder                                 tBorder             =new TitledBorder(null, "Snapshots of ...",
             TitledBorder.LEADING, TitledBorder.TOP, null, null);
-   private JPanel                                      panelInfo;
-   private Lbl                                         lblPc;
-   private Lbl                                         lblVolume;
-   private Lbl                                         lblSubvolume;
-   private Lbl                                         lblMountPoint;
-   private TxtFeld                                     infoPc;
-   private TxtFeld                                     infoVolume;
-   private TxtFeld                                     infoSubvolume;
-   private TxtFeld                                     infoMountPoint;
-   private JSplitPane                                  splitPane;
-   public SnapshotPanel() throws IOException {
+   private JPanel                                       panelInfo;
+   private Lbl                                          lblPc;
+   private Lbl                                          lblVolume;
+   private Lbl                                          lblSubvolume;
+   private Lbl                                          lblMountPoint;
+   private TxtFeld                                      infoPc;
+   private TxtFeld                                      infoVolume;
+   private TxtFeld                                      infoSubvolume;
+   private TxtFeld                                      infoMountPoint;
+   private JSplitPane                                   splitPane;
+   public SnapshotPanel1() throws IOException {
       setBorder(tBorder);
       initialize();
    }
@@ -127,6 +128,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
     * @return
     * @throws IOException
     */
+   @Override
    public ConcurrentSkipListMap<String, Snapshot> setVolume(Collection<Snapshot> list) throws IOException {
       ConcurrentSkipListMap<String, Snapshot> neuList=new ConcurrentSkipListMap<>();
       for (Snapshot snap:list)
@@ -204,12 +206,6 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
          pv.revalidate();
       });
    }
-   /**
-    * @return
-    */
-   public ConcurrentSkipListMap<String, SnapshotLabel> getLabels() {
-      return labelTree_KeyO;
-   }
    @Override
    public void componentMoved(ComponentEvent e) { /* noop */ }
    @Override
@@ -241,6 +237,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    /**
     * @param string
     */
+   @Override
    public void setTitle(String string) {
       tBorder.setTitle(string);
    }
@@ -312,6 +309,7 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
    /**
     * @param srcConfig
     */
+   @Override
    public void setInfo(Mount mount) {
       SwingUtilities.invokeLater(() -> {
          getInfoPc().setText(mount.pc().extern());
@@ -331,5 +329,25 @@ public class SnapshotPanel extends JPanel implements ComponentListener, MouseLis
          splitPane.setDividerSize((splitPane.getDividerSize() * 3) / 2);
       }
       return splitPane;
+   }
+   @Override
+   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_DirNameS() {
+      return labelTree_DirNameS;
+   }
+   @Override
+   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_UUID() {
+      return labelTree_UUID;
+   }
+   @Override
+   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_KeyO() {
+      return labelTree_KeyO;
+   }
+   @Override
+   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_R_UUID() {
+      return labelTree_R_UUID;
+   }
+   @Override
+   public ArrayList<SnapshotLabel> mixedList() {
+      return mixedList;
    }
 }

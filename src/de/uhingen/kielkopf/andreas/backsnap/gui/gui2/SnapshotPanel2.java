@@ -13,27 +13,26 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
+import de.uhingen.kielkopf.andreas.backsnap.btrfs.Mount;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.Snapshot;
 import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotLabel;
 
 /**
- * @author Andreas Kielkopf
+ * @author Andreas Kielkopf 2024
  */
-public class SnapshotPanel2 extends JPanel implements ComponentListener, MouseListener {
-   static private final long                           serialVersionUID    =-3405881652038164771L;
-   static public final Font                            FONT_INFO           =new Font("Noto Sans", Font.PLAIN, 16);
-   static public final Font                            FONT_INFO_B         =new Font("Noto Sans", Font.BOLD, 16);
-   private JPanel                                      panelView;
+public class SnapshotPanel2 extends JPanel implements SnapshotPanel0, ComponentListener, MouseListener {
+   static private final long                            serialVersionUID    =-3405881652038164771L;
+   private JPanel                                       panelView;
    // private SnapshotDetail panelDetail;
-   private JPanel                                      panelSnapshots;
-   private JScrollPane                                 scrollPane;
-   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_UUID      =new ConcurrentSkipListMap<>();
-   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_R_UUID    =new ConcurrentSkipListMap<>();
-   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_ParentUuid=new ConcurrentSkipListMap<>();
-   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_KeyO      =new ConcurrentSkipListMap<>();
-   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_DirNameS  =new ConcurrentSkipListMap<>();
-   public ArrayList<SnapshotLabel>                     mixedList           =new ArrayList<>();
-   private TitledBorder                                tBorder             =new TitledBorder(null, "Snapshots of ...",
+   private JPanel                                       panelSnapshots;
+   private JScrollPane                                  scrollPane;
+   private ConcurrentSkipListMap<String, SnapshotLabel> labelTree_UUID      =new ConcurrentSkipListMap<>();
+   private ConcurrentSkipListMap<String, SnapshotLabel> labelTree_R_UUID    =new ConcurrentSkipListMap<>();
+   private ConcurrentSkipListMap<String, SnapshotLabel> labelTree_ParentUuid=new ConcurrentSkipListMap<>();
+   private ConcurrentSkipListMap<String, SnapshotLabel> labelTree_KeyO      =new ConcurrentSkipListMap<>();
+   private ConcurrentSkipListMap<String, SnapshotLabel> labelTree_DirNameS  =new ConcurrentSkipListMap<>();
+   private ArrayList<SnapshotLabel>                     mixedList           =new ArrayList<>();
+   private TitledBorder                                 tBorder             =new TitledBorder(null, "Snapshots of ...",
             TitledBorder.LEADING, TitledBorder.TOP, null, null);
    // private JPanel panelInfo;
    // private Lbl lblPc;
@@ -44,7 +43,7 @@ public class SnapshotPanel2 extends JPanel implements ComponentListener, MouseLi
    // private TxtFeld infoVolume;
    // private TxtFeld infoSubvolume;
    // private TxtFeld infoMountPoint;
-   private JSplitPane                                  splitPane;
+   private JSplitPane                                   splitPane;
    public SnapshotPanel2() throws IOException {
       setBorder(tBorder);
       initialize();
@@ -125,6 +124,7 @@ public class SnapshotPanel2 extends JPanel implements ComponentListener, MouseLi
     * @return
     * @throws IOException
     */
+   @Override
    public ConcurrentSkipListMap<String, Snapshot> setVolume(Collection<Snapshot> list) throws IOException {
       ConcurrentSkipListMap<String, Snapshot> neuList=new ConcurrentSkipListMap<>();
       for (Snapshot snap:list)
@@ -239,6 +239,7 @@ public class SnapshotPanel2 extends JPanel implements ComponentListener, MouseLi
    /**
     * @param string
     */
+   @Override
    public void setTitle(String string) {
       tBorder.setTitle(string);
    }
@@ -330,5 +331,34 @@ public class SnapshotPanel2 extends JPanel implements ComponentListener, MouseLi
          splitPane.setDividerSize((splitPane.getDividerSize() * 3) / 2);
       }
       return splitPane;
+   }
+   @Override
+   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_DirNameS() {
+      // TODO Auto-generated method stub
+      return null;
+   }
+   @Override
+   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_UUID() {
+      // TODO Auto-generated method stub
+      return null;
+   }
+   @Override
+   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_KeyO() {
+      // TODO Auto-generated method stub
+      return null;
+   }
+   @Override
+   public ConcurrentSkipListMap<String, SnapshotLabel> labelTree_R_UUID() {
+      // TODO Auto-generated method stub
+      return null;
+   }
+   @Override
+   public void setInfo(Mount volumeMount) {
+      // TODO Auto-generated method stub
+   }
+   @Override
+   public ArrayList<SnapshotLabel> mixedList() {
+      // TODO Auto-generated method stub
+      return null;
    }
 }

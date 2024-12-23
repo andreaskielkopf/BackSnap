@@ -27,6 +27,7 @@ import de.uhingen.kielkopf.andreas.backsnap.config.Log;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
+import de.uhingen.kielkopf.andreas.backsnap.gui.gui2.SnapshotPanel0;
 import de.uhingen.kielkopf.andreas.backsnap.gui.part.*;
 import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotLabel.STATUS;
 import de.uhingen.kielkopf.andreas.beans.Version;
@@ -45,8 +46,8 @@ public class BacksnapGui implements MouseListener {
    static private ExecutorService                      virtual     =Version.getVx();
    static private BacksnapGui                          backSnapGui;
    public JFrame                                       frame;
-   private SnapshotPanel                               panelSrc;
-   private SnapshotPanel                               panelBackup;
+   private SnapshotPanel0                              panelSrc;
+   private SnapshotPanel0                              panelBackup;
    private JSplitPane                                  splitPaneSnapshots;
    public ConcurrentSkipListMap<String, SnapshotLabel> manualDelete=new ConcurrentSkipListMap<>();
    private JPanel                                      panelProgress;
@@ -160,7 +161,7 @@ public class BacksnapGui implements MouseListener {
                .setVolume(srcConfig.volumeMount().otimeKeyMap().values());
       for (Snapshot snap:neuList.values())
          Log.log(" " + snap.dirName(), LEVEL.SNAPSHOTS);
-//      Log.lfLog("", LEVEL.SNAPSHOTS);
+      // Log.lfLog("", LEVEL.SNAPSHOTS);
       abgleich();
       getPanelSrc().setInfo(srcConfig.volumeMount());
    }
@@ -172,15 +173,15 @@ public class BacksnapGui implements MouseListener {
     * @throws IOException
     */
    public Future<?> abgleich() throws IOException {
-      ConcurrentSkipListMap<String, SnapshotLabel> snapshotLabels_Uuid=getPanelSrc().labelTree_UUID;
-      ConcurrentSkipListMap<String, SnapshotLabel> backupLabels_Uuid=getPanelBackup().labelTree_UUID;
-      ConcurrentSkipListMap<String, SnapshotLabel> backupLabels_KeyO=getPanelBackup().labelTree_KeyO;
-      ConcurrentSkipListMap<String, SnapshotLabel> backupLabels_DirName=getPanelBackup().labelTree_DirNameS;
+      ConcurrentSkipListMap<String, SnapshotLabel> snapshotLabels_Uuid=getPanelSrc().labelTree_UUID();
+      ConcurrentSkipListMap<String, SnapshotLabel> backupLabels_Uuid=getPanelBackup().labelTree_UUID();
+      ConcurrentSkipListMap<String, SnapshotLabel> backupLabels_KeyO=getPanelBackup().labelTree_KeyO();
+      ConcurrentSkipListMap<String, SnapshotLabel> backupLabels_DirName=getPanelBackup().labelTree_DirNameS();
       // SINGLESNAPSHOT make or delete only one(1) snapshot per call
       // for DELETEOLD get all old snapshots that are "o=999" older than the newest one
-      Entry<String, SnapshotLabel> srcLast=getPanelSrc().labelTree_DirNameS.lastEntry();
+      Entry<String, SnapshotLabel> srcLast=getPanelSrc().labelTree_DirNameS().lastEntry();
       // System.out.println("srcLast:"+srcLast.getKey());
-      ArrayList<SnapshotLabel> backupMixedList=getPanelBackup().mixedList;
+      ArrayList<SnapshotLabel> backupMixedList=getPanelBackup().mixedList();
       return virtual.submit(() -> {
          ConcurrentNavigableMap<String, SnapshotLabel> toDeleteOld=new ConcurrentSkipListMap<>();
          if (Backsnap.flags.get(Backsnap.DELETEOLD)) { // sollen alte Snapshots gelöscht werden ?
@@ -305,7 +306,7 @@ public class BacksnapGui implements MouseListener {
       deleteUnterbrechen.set(!jCheckBox.isSelected());
       if (!deleteUnterbrechen.get())
          try {
-            List<Snapshot> toRemove=getPanelBackup().labelTree_KeyO.values().stream()
+            List<Snapshot> toRemove=getPanelBackup().labelTree_KeyO().values().stream()
                      .filter(i -> (i instanceof SnapshotLabel sl && sl.getStatus() == status)).map(sl -> sl.snapshot)
                      .toList();
             if (toRemove.isEmpty())
@@ -346,14 +347,14 @@ public class BacksnapGui implements MouseListener {
          if (snapshot.getBackupMountPath() instanceof Path pfad && pfad.startsWith(rest))
             passendBackups.put(snapshot.keyB(), snapshot);
       ConcurrentSkipListMap<String, Snapshot> neuList=getPanelBackup().setVolume(passendBackups.values());
-      for (SnapshotLabel label:getPanelBackup().getLabels().values())
+      for (SnapshotLabel label:getPanelBackup().labelTree_KeyO().values())
          SwingUtilities.invokeLater(() -> label.addMouseListener(this));
       Log.lfLog("Backup:", LEVEL.GUI);
       for (Snapshot snap:neuList.values())
          Log.log(" " + snap.dirName(), LEVEL.GUI);
-//      Log.lfLog("", LEVEL.GUI);
+      // Log.lfLog("", LEVEL.GUI);
       abgleich(); // läuft virtuell
-      SnapshotPanel pb=getPanelBackup();
+      SnapshotPanel0 pb=getPanelBackup();
       SwingUtilities.invokeLater(() -> {
          pb.setTitle("Backup to Label " + Backsnap.actualBackup.backupLabel());
          pb.setInfo(backupTree.sMount());
@@ -361,7 +362,8 @@ public class BacksnapGui implements MouseListener {
    }
    public JSplitPane getSplitPaneSnapshots() throws IOException {
       if (splitPaneSnapshots == null) {
-         splitPaneSnapshots=new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, getPanelSrc(), getPanelBackup());
+         splitPaneSnapshots=new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, (Component) getPanelSrc(),
+                  (Component) getPanelBackup());
          splitPaneSnapshots.setDividerLocation(.4d);
          splitPaneSnapshots.setResizeWeight(.4d);
       }
@@ -410,7 +412,7 @@ public class BacksnapGui implements MouseListener {
          progressBar.setMaximum(1000);
          progressBar.setValue(1);
          progressBar.setStringPainted(true);
-         progressBar.setFont(SnapshotPanel.FONT_INFO);
+         progressBar.setFont(SnapshotPanel0.FONT_INFO);
       }
       return progressBar;
    }
@@ -422,7 +424,8 @@ public class BacksnapGui implements MouseListener {
          while (!queuePvText.isEmpty()) {
             pvT=queuePvText.poll(); // bis zur letzten Zeile holen
             PvInfo pv=new PvInfo(pvT);
-            if (!pv.progress().isEmpty()) { // System.err.print(" pv");
+            //System.out.println(" -> pv:" + pv);
+            if (!pv.progress().isEmpty()) {
                getTxtSize().setText(pv.size());
                getTxtTime().setText(pv.time());
                getTxtSpeed().setText(pv.speed());
@@ -467,9 +470,9 @@ public class BacksnapGui implements MouseListener {
     * @throws IOException
     */
    public void mark(String uuid, @NonNull STATUS st) throws IOException {
-      if (getPanelSrc().labelTree_UUID.get(uuid) instanceof SnapshotLabel sl_S)
+      if (getPanelSrc().labelTree_UUID().get(uuid) instanceof SnapshotLabel sl_S)
          sl_S.setStatus(st);
-      if (getPanelBackup().labelTree_R_UUID.get(uuid) instanceof SnapshotLabel sl_B)
+      if (getPanelBackup().labelTree_R_UUID().get(uuid) instanceof SnapshotLabel sl_B)
          sl_B.setStatus(st);
    }
    public MaintenancePanel getPanelMaintenance() {
@@ -596,15 +599,14 @@ public class BacksnapGui implements MouseListener {
       }
       return panelUnten;
    }
-   private SnapshotPanel getPanelSrc() throws IOException {
+   private SnapshotPanel0 getPanelSrc() throws IOException {
       if (panelSrc == null)
-         panelSrc=new SnapshotPanel();
+         panelSrc=new SnapshotPanel1();
       return panelSrc;
    }
-   public SnapshotPanel getPanelBackup() throws IOException {
-      if (panelBackup == null) {
-         panelBackup=new SnapshotPanel();
-      }
+   public SnapshotPanel0 getPanelBackup() throws IOException {
+      if (panelBackup == null)
+         panelBackup=new SnapshotPanel1();
       return panelBackup;
    }
    private JPanel getPanelProgress() {
@@ -693,7 +695,7 @@ public class BacksnapGui implements MouseListener {
                   super.setText(t);
             }
          };
-         txtWork.setFont(SnapshotPanel.FONT_INFO_B);
+         txtWork.setFont(SnapshotPanel0.FONT_INFO_B);
          txtWork.setOpaque(true);
          txtWork.setBackground(SnapshotLabel.STATUS.INPROGRESS.color);
       }

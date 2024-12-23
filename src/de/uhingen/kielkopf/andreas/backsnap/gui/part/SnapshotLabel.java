@@ -111,7 +111,7 @@ public class SnapshotLabel extends JLabel {
       status=s;
       SwingUtilities.invokeLater(() -> setBackground(status.color));
       // SwingUtilities.invokeLater(() -> {
-      // if (getParent() instanceof SnapshotPanel sp)
+      // if (getParent() instanceof SnapshotPanel1 sp)
       // sp.repaint(10);
       // });
    }

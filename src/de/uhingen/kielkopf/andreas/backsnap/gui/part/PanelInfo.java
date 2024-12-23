@@ -8,6 +8,7 @@ import javax.swing.SwingUtilities;
 import de.uhingen.kielkopf.andreas.backsnap.btrfs.Usage;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.Lbl;
 import de.uhingen.kielkopf.andreas.backsnap.gui.element.TxtFeld;
+import de.uhingen.kielkopf.andreas.backsnap.gui.gui2.SnapshotPanel0;
 
 /**
  * @author Andreas Kielkopf
@@ -114,7 +115,7 @@ public class PanelInfo extends JPanel {
       if (textWarning == null) {
          textWarning=new TxtFeld(" ");
          textWarning.setOpaque(true);
-         textWarning.setFont(SnapshotPanel.FONT_INFO_B);
+         textWarning.setFont(SnapshotPanel0.FONT_INFO_B);
       }
       return textWarning;
    }
