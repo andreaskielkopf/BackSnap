@@ -13,7 +13,7 @@ module backsnap {
    exports de.uhingen.kielkopf.andreas.beans.data;
    exports de.uhingen.kielkopf.andreas.beans.minijson;
    exports de.uhingen.kielkopf.andreas.beans.shell;
-   exports de.uhingen.kielkopf.andreas.beans;
+   exports de.uhingen.kielkopf.andreas.beans;   
    requires transitive java.desktop;
    requires transitive java.prefs;
    requires org.eclipse.jdt.annotation;
