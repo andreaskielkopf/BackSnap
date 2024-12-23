@@ -43,7 +43,10 @@ public record Pc(String extern, // Marker für diesen PC
    static public final String PKEXEC="pkexec";
    static public final String PKEXEC_="pkexec ";
    private static final Pattern ALLOW_EXTERN=Pattern.compile("[a-zA-Z_0-9]+@[a-zA-Z_0-9.]+|" + SUDO_ + "|" + PKEXEC_);
-   private static final String BACKUP_OPTIONS=",noatime,compress=zstd:9 ";
+   public static String BACKUP_OPTIONS=",noatime,compress=zstd:9 ";
+   public static void setCompression(String zstd) {
+      BACKUP_OPTIONS=",noatime,compress=" + "zstd:9 "+zstd+" ";
+   }
    private static final String MOUNT_BTRFS="mount -t btrfs ";
    /**
     * Sicherstellen, dass jeder Pc nur einmal erstellt wird
