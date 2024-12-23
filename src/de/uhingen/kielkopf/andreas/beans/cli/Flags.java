@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 /**
  * @author Andreas Kielkopf
  * 
- *         Vom statischen Objhekt zu einzelnen Objekten umbauen
+ *         Vom statischen Objekt zu einzelnen Objekten umbauen
  */
 public class Flags {
    public class F {
@@ -94,6 +94,7 @@ public class Flags {
       public String getParameter() {
          if (param == null) {
             if (kurz != null) {
+               // sucht: -a -a=hallo 
                final String findShort=" -" + kurz + "=([^- =]+)";
                final Matcher ma=Pattern.compile(findShort).matcher(args);
                if (ma.find())
@@ -208,6 +209,12 @@ public class Flags {
     */
    public Flags create(char c, String name) {
       F f=new F(c, name);
+      if (flagList.putIfAbsent(f.lang, f) != null)
+         throw new UnsupportedOperationException("Unable to create Flag(" + f.lang + ") twice");
+      return this;
+   }
+   public Flags create(char c, String name, String param) {
+      F f=new F(c, name, param);
       if (flagList.putIfAbsent(f.lang, f) != null)
          throw new UnsupportedOperationException("Unable to create Flag(" + f.lang + ") twice");
       return this;

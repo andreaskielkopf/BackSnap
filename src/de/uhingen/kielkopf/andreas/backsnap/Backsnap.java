@@ -47,8 +47,10 @@ public class Backsnap {
    static final String                 VERBOSE        ="verbose";
    public static final String          DRYRUN         ="dryrun";
    public static final String          COMPRESSED     ="compressed";
+   public static final String          ZSTD           ="zstd";
    static public final ExecutorService virtual        =Version.getVx();
    static public String                cantFindParent =null;
+   static public String                emptyStream    =null;
    static public int                   disconnectCount=0;
    static Future<?>                    task           =null;
    static public BacksnapGui           bsGui          =null;
@@ -63,6 +65,7 @@ public class Backsnap {
             + " (2024/08/12)";
    static public void main(String[] args) {
       flags.create('h', HELP) // show usage
+               .create('z', ZSTD, "9")// select compression 9=default
                .create('c', COMPRESSED) // use protokoll 2
                .create('d', DRYRUN) // do not do anythimg ;-)
                .create('v', VERBOSE)// controll loglevel
@@ -87,6 +90,9 @@ public class Backsnap {
       Log.lfLog("args > " + flags.getArgs(), LEVEL.BASIC);
       Log.lfLog(Version.getJava().toString(), LEVEL.BASIC);
       Log.lfLog(Version.getVxText(), LEVEL.BASIC);
+      if (flags.get(ZSTD)) {
+         Pc.setCompression(ZSTD + flags.f(ZSTD).getParameter());
+      }
       if (flags.get(VERSION))
          System.exit(0);
       if (flags.get(DRYRUN))

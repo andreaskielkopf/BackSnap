@@ -285,7 +285,7 @@ public class Btrfs {
     * @throws IOException
     */
    static public boolean send_pv_receive(OneBackup oneBackup, Snapshot s, Snapshot parent, Path bDir, //
-            BacksnapGui bsGui) throws IOException {
+            BacksnapGui bsGui) throws IOException {      
       if (bsGui instanceof BacksnapGui gui)
          gui.setBackupInfo(s, parent);
       StringBuilder btrfsSendSB=new StringBuilder(SEND);
@@ -302,7 +302,7 @@ public class Btrfs {
          else
             btrfsSendSB.insert(0, oneBackup.extern());
       if (usePv())
-         btrfsSendSB.append("|pv -pteabfW -i 0.2");
+         btrfsSendSB.append("|pv -pterbfW -i 0.2");
       btrfsSendSB.append("|");
       if (!oneBackup.isSameSsh())
          if (OneBackup.isBackupExtern())
@@ -336,8 +336,8 @@ public class Btrfs {
             BTRFS.writeLock().unlock();
             Runtime r=Runtime.getRuntime();
             long n=1024 * 1024;
-            Log.lfLog("free(" + r.freeMemory() / n + "),max(" + r.maxMemory() / n + "),total("
-                     + r.totalMemory() / n + ")",LEVEL.PROGRESS);
+            Log.lfLog("free(" + r.freeMemory() / n + "),max(" + r.maxMemory() / n + "),total(" + r.totalMemory() / n
+                     + ")", LEVEL.PROGRESS);
             System.gc();
             log(" # ", LEVEL.PROGRESS);
          }
@@ -346,7 +346,10 @@ public class Btrfs {
       }
       if (s.btrfsPath().toString().contains("timeshift-btrfs"))
          Snapshot.setReadonly(parent, s, false);
-      return true;
+      if (Backsnap.emptyStream == null)
+         return true; // ok
+      Backsnap.emptyStream=null;
+      return false; // Das war kein erfolgreicher Snappshot
    }
    /**
     * Teste ob pv da ist
@@ -379,6 +382,8 @@ public class Btrfs {
       try { // lfLog(line, LEVEL.PROGRESS);
          if (line.contains("ERROR: cannot find parent subvolume"))
             Backsnap.cantFindParent=line;
+         if (line.contains("ERROR: empty stream is not considered valid"))
+            Backsnap.emptyStream=line;
          if (line.contains("No route to host") || line.contains("Connection closed")
                   || line.contains("connection unexpectedly closed"))
             Backsnap.disconnectCount=10;
