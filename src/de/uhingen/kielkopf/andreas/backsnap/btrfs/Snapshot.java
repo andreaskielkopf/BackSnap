@@ -245,7 +245,7 @@ public record Snapshot(Mount mount, Integer id, Integer gen, Integer cgen, Integ
     * 
     * Das wird nur für Snapshots erlaubt die Timeshisft angelegt hat
     * 
-    * @param parentSnapshot2
+    * @param parent Snapshot2
     * @param s
     * @param b
     * @throws IOException
