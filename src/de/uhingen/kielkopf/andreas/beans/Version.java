@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
  * @author Andreas Kielkopf *
  */
 public record Version(String name, String version, String major, String minor, String patch) {
-   static final Pattern VERSION=Pattern.compile("[^0-9]*([-ea0-9.]+)");//+ early-access
+   static final Pattern VERSION=Pattern.compile("[^0-9]*([-ea0-9.]+)");// + early-access
    static final Pattern MAYOR=Pattern.compile("[^0-9]*([0-9]+)");
    static final Pattern MINOR=Pattern.compile("[^0-9]*[0-9]+[.]([0-9]+)");
    static final Pattern PATCH=Pattern.compile("[^0-9]*[0-9]+[.][0-9]+[.]([0-9]+)");
@@ -62,6 +62,15 @@ public record Version(String name, String version, String major, String minor, S
          return Float.parseFloat(Integer.toString(getMayor()) + "." + Integer.toString(getMinor()));
       }
    }
+   public String toShortString() {
+      StringBuilder builder=new StringBuilder();
+      if (name == null)
+         builder.append("Version ");
+      else
+         builder.append(name).append(" ");
+      builder.append(version);
+      return builder.toString();
+   }
    @Override
    public String toString() {
       StringBuilder builder=new StringBuilder();
@@ -70,9 +79,9 @@ public record Version(String name, String version, String major, String minor, S
       else
          builder.append(name).append(" [");
       builder.append("version=").append(version);
-      builder.append(", major=").append(major);
-      builder.append(", minor=").append(minor);
-      builder.append(", patch=").append(patch);
+      builder.append(", maj=").append(major);
+      builder.append(", min=").append(minor);
+      builder.append(", p=").append(patch);
       builder.append("]");
       return builder.toString();
    }
