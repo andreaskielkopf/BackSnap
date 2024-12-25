@@ -285,7 +285,7 @@ public class Btrfs {
     * @throws IOException
     */
    static public boolean send_pv_receive(OneBackup oneBackup, Snapshot s, Snapshot parent, Path bDir, //
-            BacksnapGui bsGui) throws IOException {      
+            BacksnapGui bsGui) throws IOException {
       if (bsGui instanceof BacksnapGui gui)
          gui.setBackupInfo(s, parent);
       StringBuilder btrfsSendSB=new StringBuilder(SEND);
@@ -337,9 +337,9 @@ public class Btrfs {
             Runtime r=Runtime.getRuntime();
             long n=1024 * 1024;
             Log.lfLog("free(" + r.freeMemory() / n + "),max(" + r.maxMemory() / n + "),total(" + r.totalMemory() / n
-                     + ")", LEVEL.PROGRESS);
+                     + ")", LEVEL.CACHE);
             System.gc();
-            log(" # ", LEVEL.PROGRESS);
+            log(" # ", LEVEL.CACHE);
          }
          if (bsGui != null)
             bsGui.getPanelMaintenance().updateButtons();
@@ -414,8 +414,10 @@ public class Btrfs {
     * @param line
     */
    private static final void show(String line, BacksnapGui bsGui) {
-      if (bsGui == null)
+      if (bsGui == null) {
+         new PvInfo(line).updatePart();
          return;
+      }
       line.replaceAll("[\n\r]?", " "); // if (line.equals("\n") || line.equals("\r")) return;
       if (!line.isBlank())
          bsGui.lblPvSetText(line);

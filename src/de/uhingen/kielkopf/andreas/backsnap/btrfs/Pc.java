@@ -45,7 +45,7 @@ public record Pc(String extern, // Marker für diesen PC
    private static final Pattern ALLOW_EXTERN=Pattern.compile("[a-zA-Z_0-9]+@[a-zA-Z_0-9.]+|" + SUDO_ + "|" + PKEXEC_);
    public static String BACKUP_OPTIONS=",noatime,compress=zstd:9 ";
    public static void setCompression(String zstd) {
-      BACKUP_OPTIONS=",noatime,compress=" + "zstd:9 "+zstd+" ";
+      BACKUP_OPTIONS=",noatime,compress=" + "zstd:9 " + zstd + " ";
    }
    private static final String MOUNT_BTRFS="mount -t btrfs ";
    /**
@@ -176,7 +176,7 @@ public record Pc(String extern, // Marker für diesen PC
          } finally {
             BTRFS.readLock().unlock();
          }
-         Log.lfLog(this + " " + btrfsVersion.get(), LEVEL.CONFIG);
+         Log.lfLog(this + " " + btrfsVersion.get().toShortString(), LEVEL.CONFIG);
       }
       return btrfsVersion.get();
    }
@@ -200,7 +200,7 @@ public record Pc(String extern, // Marker für diesen PC
             if (x.isPresent())
                throw new IOException(x.get());
          }
-         Log.lfLog(this + " " + kernelVersion.get(), LEVEL.CONFIG);
+         Log.log(" " + kernelVersion.get().toShortString(), LEVEL.CONFIG);
       }
       return kernelVersion.get();
    }
@@ -323,7 +323,6 @@ public record Pc(String extern, // Marker für diesen PC
    }
    public static void main(String[] args) throws IOException {
       Pc pc=getPc("sudo ");
-      System.out.println(pc.getKernelVersion());
-      System.out.println(pc.getBtrfsVersion());
+      System.out.println(pc.getKernelVersion().toShortString() + " " + pc.getBtrfsVersion().toShortString());
    }
 }

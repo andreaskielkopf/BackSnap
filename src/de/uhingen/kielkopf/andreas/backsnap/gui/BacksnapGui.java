@@ -424,7 +424,8 @@ public class BacksnapGui implements MouseListener {
          while (!queuePvText.isEmpty()) {
             pvT=queuePvText.poll(); // bis zur letzten Zeile holen
             PvInfo pv=new PvInfo(pvT);
-            //System.out.println(" -> pv:" + pv);
+            // System.out.println(" -> pv:" + pv);
+            pv.updatePart();
             if (!pv.progress().isEmpty()) {
                getTxtSize().setText(pv.size());
                getTxtTime().setText(pv.time());
@@ -604,7 +605,7 @@ public class BacksnapGui implements MouseListener {
          panelSrc=new SnapshotPanel1();
       return panelSrc;
    }
-   public SnapshotPanel0 getPanelBackup() throws IOException {
+   protected SnapshotPanel0 getPanelBackup() throws IOException {
       if (panelBackup == null)
          panelBackup=new SnapshotPanel1();
       return panelBackup;

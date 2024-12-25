@@ -11,7 +11,6 @@
         </sealing>
     </manifest>
     <selectedElements exportClassFiles="true" exportJavaFiles="true" exportOutputFolder="false">
-        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui{BacksnapGui.java"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.beans.shell{BufferedCmdReader.java"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.beans.shell{CmdBufferedReader.java"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.beans.shell{CmdStreams.java"/>
@@ -45,6 +44,7 @@
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.beans.shell{Streams.java"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui{Subvol.java"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap{Backsnap.java"/>
+        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui{BacksnapGui.java"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.btrfs"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.config"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui.dialog"/>
@@ -54,6 +54,7 @@
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.beans"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.beans.cli"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.beans.data"/>
+        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.beans.data.format"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.beans.gui"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.beans.minijson"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap{package-info.java"/>

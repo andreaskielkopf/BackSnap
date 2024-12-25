@@ -61,8 +61,8 @@ public class Backsnap {
    // static public final Flag TIMESHIFT =new Flag('t', "timeshift");
    // static final Flags.F ECLIPSE =flags.add('z', "eclipse");
    // static final Flags.F PEXEC =flags.add('p', "pexec"); // use pexec instead of sudo
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.20"   //
-            + " (2024/08/12)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.28"   //
+            + " (2024/12/25)";
    static public void main(String[] args) {
       flags.create('h', HELP) // show usage
                .create('z', ZSTD, "9")// select compression 9=default
@@ -88,8 +88,7 @@ public class Backsnap {
       Log.setLoglevel(flags.f(VERBOSE).getParameterOrDefault(LEVEL.PROGRESS.l));
       Log.lfLog(BS_VERSION, LEVEL.BASIC);
       Log.lfLog("args > " + flags.getArgs(), LEVEL.BASIC);
-      Log.lfLog(Version.getJava().toString(), LEVEL.BASIC);
-      Log.lfLog(Version.getVxText(), LEVEL.BASIC);
+      Log.lfLog(Version.getJava().toShortString() +" "+ Version.getVxText(), LEVEL.BASIC);
       if (flags.get(ZSTD)) {
          Pc.setCompression(ZSTD + flags.f(ZSTD).getParameter());
       }
@@ -165,6 +164,7 @@ public class Backsnap {
             int counter=0;
             for (Snapshot sourceSnapshot:srcConfig.volumeMount().otimeKeyMap().values()) {
                counter++;
+               
                if (cantFindParent != null) {
                   Log.lfErr("Please remove " + Pc.TMP_BACKSNAP + "/" + OneBackup.backupPc.getBackupLabel() + "/"
                            + cantFindParent + "/" + Snapshot.SNAPSHOT + " !", LEVEL.ERRORS);
@@ -183,6 +183,7 @@ public class Backsnap {
                   if (!backup(actualBackup, sourceSnapshot))
                      continue;
                   // -------------------------------------------------
+                  PvInfo.addPart();// bisherige backups aufsummieren
                   // Anzeige im Progressbar anpassen
                   if (bsGui instanceof BacksnapGui gui)
                      gui.refreshGUI();
