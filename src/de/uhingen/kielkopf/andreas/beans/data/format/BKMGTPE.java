@@ -6,13 +6,12 @@ package de.uhingen.kielkopf.andreas.beans.data.format;
 import java.text.DecimalFormat;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.DataFormatException;
 
 /**
  * @author Andreas Kielkopf Formatiert beliebige Zahlen nach folgenden Regeln: 1 -> 1B 10 -> 10B 100 -> .1K 1000 -> 1K 10000 -> 10K 100000 -> .1M 9 ->
  *         9B 99 -> 99B 949 -> .9K 9499 -> 9K 99499 -> 99K 949999 -> .9M
  */
-public class BKMGTE {
+public class BKMGTPE {
    static String        NAMES="KMGTPE";
    static Pattern       SIZE =Pattern.compile("([0-9.,]+)([KMGTPEi]*)( ?B)");
    static DecimalFormat df31 =new DecimalFormat("  0");
@@ -47,10 +46,10 @@ public class BKMGTE {
     * 
     * @throws DataFormatException
     */
-   public static String drei1024(long zahl) throws DataFormatException {
+   public static String drei1024(long zahl) {
       return drei(zahl, true);
    }
-   public static String drei1000(long zahl) throws DataFormatException {
+   public static String drei1000(long zahl) {
       return drei(zahl, false);
    }
    /**
@@ -60,7 +59,7 @@ public class BKMGTE {
     *           1024 oder 1000
     * @return
     */
-   public static String drei(long zahl, boolean k) throws DataFormatException {
+   public static String drei(long zahl, boolean k) {
       StringBuilder sb=new StringBuilder();
       Double z=(double) zahl;
       int p=0;
@@ -83,8 +82,8 @@ public class BKMGTE {
          default:
             yield df3a.format(z);
       });
-      if (sb.length() != 3)
-         throw new DataFormatException("Zu lang: " + zahl);
+      // if (sb.length() != 3)
+      // System.err.println("Zu lang: " + zahl);
       if (p == 0)
          sb.append(k ? "Byt" : "By");
       else
@@ -115,10 +114,10 @@ public class BKMGTE {
     * 
     * @throws DataFormatException
     */
-   public static String vier1024(long zahl) throws DataFormatException {
+   public static String vier1024(long zahl) {
       return vier(zahl, true);
    }
-   public static String vier1000(long zahl) throws DataFormatException {
+   public static String vier1000(long zahl) {
       return vier(zahl, false);
    }
    /**
@@ -128,7 +127,7 @@ public class BKMGTE {
     *           1024L oder 1000L
     * @return
     */
-   public static String vier(long zahl, boolean k) throws DataFormatException {
+   public static String vier(long zahl, boolean k) {
       StringBuilder sb=new StringBuilder();
       Double z=(double) zahl;
       int p=0;
@@ -155,18 +154,18 @@ public class BKMGTE {
          default:
             yield df44.format(z);
       });
-      if (sb.length() != 4)
-         throw new DataFormatException("Zu lang: " + zahl);
+      // if (sb.length() != 4)
+      // throw new DataFormatException("Zu lang: " + zahl);
       if (p == 0)
          sb.append(k ? "Byt" : "By");
       else
          sb.append(NAMES.charAt(p - 1)).append(k ? "iB" : "B");
       return sb.toString();
    }
-   public static long getSize(String text) throws DataFormatException {
-      try {
-         Matcher s=SIZE.matcher(text.replaceAll(",", "."));
-         if (s.find()) {
+   public static long getSize(String text) {
+      Matcher s=SIZE.matcher(text.replaceAll(",", "."));
+      if (s.find()) {
+         try {
             double f=switch (s.group(2)) {
                case "Ei":
                   yield 1024L * 1024L * 1024L * 1024L * 1024L * 1024L;
@@ -196,9 +195,9 @@ public class BKMGTE {
                   yield 1L;
             };
             return (long) (Double.parseDouble(s.group(1)) * f);
+         } catch (NumberFormatException e) {
+            e.printStackTrace(); // throw new DataFormatException(text);
          }
-      } catch (NumberFormatException e) {
-         throw new DataFormatException(text);
       }
       return 0;
    }

@@ -61,8 +61,8 @@ public class Backsnap {
    // static public final Flag TIMESHIFT =new Flag('t', "timeshift");
    // static final Flags.F ECLIPSE =flags.add('z', "eclipse");
    // static final Flags.F PEXEC =flags.add('p', "pexec"); // use pexec instead of sudo
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.28"   //
-            + " (2024/12/25)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.31"   //
+            + " (2024/12/26)";
    static public void main(String[] args) {
       flags.create('h', HELP) // show usage
                .create('z', ZSTD, "9")// select compression 9=default

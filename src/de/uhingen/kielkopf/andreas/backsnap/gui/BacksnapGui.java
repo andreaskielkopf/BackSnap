@@ -54,10 +54,6 @@ public class BacksnapGui implements MouseListener {
    private JPanel                                      panelEnde;
    private JProgressBar                                progressBar;
    private TxtFeld                                     textPv;
-   // static public final String BLUE ="<font size=+1 color=\"3333ff\">";
-   // static public final String NORMAL ="</font>";
-   // static public final String IGEL1 ="<=>";
-   // static public final String IGEL2 =BLUE + "=O=" + NORMAL;
    private MaintenancePanel                            panelMaintenance;
    private JSplitPane                                  splitPaneMaintenance;
    private JPanel                                      panelParameter;
@@ -417,24 +413,29 @@ public class BacksnapGui implements MouseListener {
       return progressBar;
    }
    ConcurrentLinkedQueue<String> queuePvText=new ConcurrentLinkedQueue<>();
+   // ConcurrentLinkedQueue<PvInfo> queuePvInfo=new ConcurrentLinkedQueue<>();
    public void lblPvSetText(String pvText) {
       queuePvText.offer(pvText);
+      // queuePvInfo.offer(new PvInfo(pvText));
       SwingUtilities.invokeLater(() -> {
          String pvT=null;
+         PvInfo pv=null;
          while (!queuePvText.isEmpty()) {
             pvT=queuePvText.poll(); // bis zur letzten Zeile holen
-            PvInfo pv=new PvInfo(pvT);
+            pv=new PvInfo(pvT);
             // System.out.println(" -> pv:" + pv);
             pv.updatePart();
-            if (!pv.progress().isEmpty()) {
-               getTxtSize().setText(pv.size());
-               getTxtTime().setText(pv.time());
-               getTxtSpeed().setText(pv.speed());
-               getTxtWork().setText(pv.progress());
-               getPanelWork().revalidate();
-               getTxtWork().repaint(50);
-               getPanelWork().repaint(50);
-            }
+         }
+         if (pv instanceof PvInfo pi && !pi.progress().isEmpty()) {
+            getTxtSize().setText(PvInfo.getGesSize());
+            getTxtTime().setText(PvInfo.getGesSec());
+            getTxtSpeed().setText(PvInfo.getGesSpeed());
+            getTxtWork().setText(pv.progress());
+            getPanelWork().revalidate();
+//            getTxtWork().repaint(50);
+//            getTxtSize().repaint(50);
+//            getTxtTime().repaint(50);
+            getPanelWork().repaint(50);
          }
          if (pvT != null) { // nur den letzten Fortschritt anzeigen
             if (pvText.contains("<")) {
@@ -442,9 +443,9 @@ public class BacksnapGui implements MouseListener {
                if (s1.length == 2) {
                   String[] s3=s1[0].replace(" B", "_B").replace(" _B", "_B").replace("[ ", "[_").split(" ");
                   if (s3.length == 3) {
-                     getTxtSize().setText(s3[0].replace('_', ' '));
-                     getTxtTime().setText(s3[1]);
-                     getTxtSpeed().setText(s3[2].replace("[", ""));
+                     // getTxtSize().setText(s3[0].replace('_', ' '));
+                     // getTxtTime().setText(s3[1]);
+                     // getTxtSpeed().setText(s3[2].replace("[", ""));
                      getTxtWork().setText(" " + s1[1].replace(' ', '.').replace("]", " "));
                      getPanelWork().revalidate();
                      getPanelWork().repaint(50);
@@ -630,12 +631,12 @@ public class BacksnapGui implements MouseListener {
          panelWork.add(getTxtParent());
          panelWork.add(getLblWork());
          panelWork.add(getTxtWork());
-         panelWork.add(getLblSpeed());
-         panelWork.add(getTxtSpeed());
-         panelWork.add(getLblTime());
-         panelWork.add(getTxtTime());
          panelWork.add(getLblSize());
          panelWork.add(getTxtSize());
+         panelWork.add(getLblTime());
+         panelWork.add(getTxtTime());
+         panelWork.add(getLblSpeed());
+         panelWork.add(getTxtSpeed());
       }
       return panelWork;
    }
@@ -679,8 +680,10 @@ public class BacksnapGui implements MouseListener {
             private static final long serialVersionUID=2364260885372289422L;
             @Override
             public void setText(String t) {
-               if (!t.equals(getText()))
+               if (!t.equals(getText())) {
                   super.setText(t);
+                  repaint(50);
+               }
             }
          };
       }
@@ -692,8 +695,10 @@ public class BacksnapGui implements MouseListener {
             private static final long serialVersionUID=5499434077533178894L;
             @Override
             public void setText(String t) {
-               if (!t.equals(getText()))
+               if (!t.equals(getText())) {
                   super.setText(t);
+                  repaint(50);
+               }
             }
          };
          txtWork.setFont(SnapshotPanel0.FONT_INFO_B);
@@ -728,8 +733,10 @@ public class BacksnapGui implements MouseListener {
             private static final long serialVersionUID=2631561528082373501L;
             @Override
             public void setText(String t) {
-               if (!t.equals(getText()))
+               if (!t.equals(getText())) {
                   super.setText(t);
+                  repaint(50);
+               }
             }
          };
       }
@@ -747,8 +754,10 @@ public class BacksnapGui implements MouseListener {
             private static final long serialVersionUID=-8814013736375818564L;
             @Override
             public void setText(String t) {
-               if (!t.equals(getText()))
+               if (!t.equals(getText())) {
                   super.setText(t);
+                  repaint(50);
+               }
             }
          };
       }
