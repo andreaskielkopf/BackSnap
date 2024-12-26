@@ -12,18 +12,18 @@ import java.util.regex.Pattern;
  *         9B 99 -> 99B 949 -> .9K 9499 -> 9K 99499 -> 99K 949999 -> .9M
  */
 public class BKMGTPE {
-   static String        NAMES="KMGTPE";
-   static Pattern       SIZE =Pattern.compile("([0-9.,]+)([KMGTPEi]*)( ?B)");
-   static DecimalFormat df31 =new DecimalFormat("  0");
-   static DecimalFormat df32 =new DecimalFormat(" 00");
-   static DecimalFormat df33 =new DecimalFormat("000");
-   static DecimalFormat df3a =new DecimalFormat("0.0");
-   static DecimalFormat df41 =new DecimalFormat("   0");
-   static DecimalFormat df42 =new DecimalFormat("  00");
-   static DecimalFormat df43 =new DecimalFormat(" 000");
-   static DecimalFormat df44 =new DecimalFormat("0000");
-   static DecimalFormat df4a =new DecimalFormat("0.00");
-   static DecimalFormat df4b =new DecimalFormat("00.0");
+   final static String        NAMES="KMGTPE";
+   final static Pattern       SIZE =Pattern.compile("([0-9.,]+)([KMGTPEi]*)( ?B)");
+   final static DecimalFormat df31 =new DecimalFormat("  0");
+   final static DecimalFormat df32 =new DecimalFormat(" 00");
+   final static DecimalFormat df33 =new DecimalFormat("000");
+   final static DecimalFormat df3a =new DecimalFormat("0.0");
+   final static DecimalFormat df41 =new DecimalFormat("   0");
+   final static DecimalFormat df42 =new DecimalFormat("  00");
+   final static DecimalFormat df43 =new DecimalFormat(" 000");
+   final static DecimalFormat df44 =new DecimalFormat("0000");
+   final static DecimalFormat df4a =new DecimalFormat("0.00");
+   final static DecimalFormat df4b =new DecimalFormat("00.0");
    /**
     * Formatiert beliebige Zahlen nach folgenden Regeln mit 3 Ziffern K=1024
     * 
@@ -163,40 +163,42 @@ public class BKMGTPE {
       return sb.toString();
    }
    public static long getSize(String text) {
-      Matcher s=SIZE.matcher(text.replaceAll(",", "."));
-      if (s.find()) {
-         try {
-            double f=switch (s.group(2)) {
-               case "Ei":
-                  yield 1024L * 1024L * 1024L * 1024L * 1024L * 1024L;
-               case "E":
-                  yield 1000L * 1000L * 1000L * 1000L * 1000L * 1000L;
-               case "Pi":
-                  yield 1024L * 1024L * 1024L * 1024L * 1024L;
-               case "P":
-                  yield 1000L * 1000L * 1000L * 1000L * 1000L;
-               case "Ti":
-                  yield 1024L * 1024L * 1024L * 1024L;
-               case "T":
-                  yield 1000L * 1000L * 1000L * 1000L;
-               case "Gi":
-                  yield 1024L * 1024L * 1024L;
-               case "G":
-                  yield 1000L * 1000L * 1000L;
-               case "Mi":
-                  yield 1024L * 1024L;
-               case "M":
-                  yield 1000L * 1000L;
-               case "Ki":
-                  yield 1024L;
-               case "K":
-                  yield 1000L;
-               default:
-                  yield 1L;
-            };
-            return (long) (Double.parseDouble(s.group(1)) * f);
-         } catch (NumberFormatException e) {
-            e.printStackTrace(); // throw new DataFormatException(text);
+      if (text instanceof String txt) {
+         Matcher s=SIZE.matcher(txt.replaceAll(",", "."));
+         if (s.find()) {
+            try {
+               double f=switch (s.group(2)) {
+                  case "Ei":
+                     yield 1024L * 1024L * 1024L * 1024L * 1024L * 1024L;
+                  case "E":
+                     yield 1000L * 1000L * 1000L * 1000L * 1000L * 1000L;
+                  case "Pi":
+                     yield 1024L * 1024L * 1024L * 1024L * 1024L;
+                  case "P":
+                     yield 1000L * 1000L * 1000L * 1000L * 1000L;
+                  case "Ti":
+                     yield 1024L * 1024L * 1024L * 1024L;
+                  case "T":
+                     yield 1000L * 1000L * 1000L * 1000L;
+                  case "Gi":
+                     yield 1024L * 1024L * 1024L;
+                  case "G":
+                     yield 1000L * 1000L * 1000L;
+                  case "Mi":
+                     yield 1024L * 1024L;
+                  case "M":
+                     yield 1000L * 1000L;
+                  case "Ki":
+                     yield 1024L;
+                  case "K":
+                     yield 1000L;
+                  default:
+                     yield 1L;
+               };
+               return (long) (Double.parseDouble(s.group(1)) * f);
+            } catch (NumberFormatException e) {
+               e.printStackTrace(); // throw new DataFormatException(text);
+            }
          }
       }
       return 0;

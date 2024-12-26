@@ -5,9 +5,9 @@ package de.uhingen.kielkopf.andreas.backsnap.btrfs;
 
 import static de.uhingen.kielkopf.andreas.beans.RecordParser.getString;
 
+import java.text.DecimalFormat;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.DataFormatException;
 
 import de.uhingen.kielkopf.andreas.backsnap.config.Log;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
@@ -19,7 +19,7 @@ import de.uhingen.kielkopf.andreas.beans.data.format.BKMGTPE;
  *         extract Infos from all pv-line
  *
  */
-public record PvInfo(String size, String time, String speed, String progress) {
+public record PvInfo(long sizeL, long secL, long speedL, String progress) {
    static final Pattern SIZE=Pattern.compile("([0-9.,KMGTPEi]+ ?B)");
    static final Pattern TIME=Pattern.compile(" ([0-9]+:[0-9:]+) ");
    static final Pattern SPEED=Pattern.compile("([0-9.,KMGTiB]+/s)");
@@ -27,42 +27,56 @@ public record PvInfo(String size, String time, String speed, String progress) {
    static final Pattern TIME2=Pattern.compile("([0-9]+):([0-9:]+):([0-9:]+)");
    static final Pattern SPEED2=Pattern.compile("([ 0-9,KMGTiB]+/s)");
    static final Pattern PROGRESS2=Pattern.compile(" (\\[[ <=>]+\\])");
+   final static DecimalFormat zwei=new DecimalFormat("00");
    public PvInfo(String pv) {
-      this(getString(SIZE.matcher(pv)), getString(TIME.matcher(pv)), getString(SPEED.matcher(pv)),
+      this(BKMGTPE.getSize(getString(SIZE.matcher(pv))), //
+               getSec(getString(TIME.matcher(pv))), //
+               BKMGTPE.getSize(getString(SPEED.matcher(pv))), //
                getString(PROGRESS.matcher(pv)));
       updatePart();
    }
-   public String size() {
-      return size != null ? size : "";
-   }
-   public long getSize() {
-      return BKMGTPE.getSize(size());
-   }
-   public String time() {
-      return time != null ? time : "";
-   }
-   public long getSec() {
-      // System.out.println(size()+"-"+time());
-      try {
-         Matcher t=TIME2.matcher(time());
+   // public String size() {
+   // return size != null ? size : "";
+   // }
+   // public long getSize() {
+   // return BKMGTPE.getSize(size());
+   // }
+   // public String time() {
+   // return time != null ? time : "";
+   // }
+   public static long getSec(String text) { // System.out.println(size()+"-"+time());
+      if (text instanceof String txt) {
+         Matcher t=TIME2.matcher(txt);
          if (t.find()) {
-            int h=Integer.parseInt(t.group(1));
-            int m=Integer.parseInt(t.group(2));
-            int s=Integer.parseInt(t.group(3));
-            s+=60 * m + 3600 * h;
-            return s;
+            try {
+               int h=Integer.parseInt(t.group(1));
+               int m=Integer.parseInt(t.group(2));
+               int s=Integer.parseInt(t.group(3));
+               s+=60 * m + 3600 * h;
+               return s;
+            } catch (NumberFormatException e) {
+               System.out.println(txt);
+               e.printStackTrace();
+            }
          }
-      } catch (NumberFormatException e) {
-         System.out.println(time());
-         e.printStackTrace();
       }
       return 0;
    }
-   public String speed() {
-      return speed != null ? speed : "";
+   public static String getTimeS(long sec) {
+      long s=sec % 60;
+      long m=(sec / 60) % 60;
+      long h=(sec / 3600) % 24;
+      StringBuilder sb=new StringBuilder();
+      sb.append(zwei.format(h)).append(":");
+      sb.append(zwei.format(m)).append(":");
+      sb.append(zwei.format(s));
+      return sb.toString();
    }
+   // public String speed() {
+   // return speed != null ? speed : "";
+   // }
    public String getSpeed() {
-      return getSpeed(getSize(), getSec());
+      return getSpeed(sizeL(), secL());
    }
    public static String getSpeed(long sizeL, long secL) {
       if (secL >= 1) {
@@ -75,25 +89,31 @@ public record PvInfo(String size, String time, String speed, String progress) {
    public String progress() {
       return progress != null ? progress : "";
    }
-   private volatile static long gesSize=1;
+   private volatile static long sumSize=0;
    private volatile static int count=0;
-   private volatile static long gesSec=1;
-   private volatile static long partSize=1;
+   private volatile static long sumSec=1;
+   private volatile static long partSize=0;
    private volatile static long partSec=1;
+   private volatile static long tmpSize=0;
+   private volatile static long tmpSec=1;
    /** mit jeder PV-Zeile die Werte aktualisieren */
    public void updatePart() {
-      if (getSize() > partSize)
-         partSize=getSize();// count++;
-      if (getSec() > partSec)
-         partSec=getSec();
+      if (sizeL() > partSize) {
+         partSize=sizeL();// count++;
+         tmpSize=sumSize + partSize;
+      }
+      if (secL() > partSec) {
+         partSec=secL();
+         tmpSec=sumSec + partSec;
+      }
    }
    /** Nach jedem Snapshot die Summen der übertragenen Bytes aktualisieren und anzeigen */
    public static void addPart() {
       count++;// count+=1000;
       Log.lfLog(getPartSpeed() + " (with " + getPartSize() + " in " + getPartSec() + ")", LEVEL.CACHE);
-      gesSize+=partSize;
+      sumSize+=partSize;
       partSize=0;
-      gesSec+=partSec;
+      sumSec+=partSec;
       partSec=0;
       Log.lfLog(getGesSpeed() + " (" + count + " backups with " + getGesSize() + " in " + getGesSec() + ")",
                LEVEL.BASIC);
@@ -108,20 +128,20 @@ public record PvInfo(String size, String time, String speed, String progress) {
       return partSec + "Sec";
    }
    public static String getGesSpeed() {
-      return getSpeed(gesSize, gesSec) + "/s";
+      return getSpeed(tmpSize, tmpSec) + "/s";
    }
    public static String getGesSize() {
-      return BKMGTPE.vier1024(gesSize);
+      return BKMGTPE.vier1024(tmpSize);
    }
    public static String getGesSec() {
-      return gesSec + "Sec";
+      return tmpSec + "Sec";
    }
    @Override
    public final String toString() {
       StringBuilder sb=new StringBuilder();
       sb.append(getSpeed()).append(":");
-      sb.append("Size=").append(size()).append("(").append(getSize()).append(")");
-      sb.append("Sec=").append(time()).append("(").append(getSec()).append(")");
+      sb.append("Size=").append(sizeL());
+      sb.append("Sec=").append(secL());
       return sb.toString();
    }
 }
