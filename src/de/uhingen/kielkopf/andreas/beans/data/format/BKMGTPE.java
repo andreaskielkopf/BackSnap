@@ -14,16 +14,16 @@ import java.util.regex.Pattern;
 public class BKMGTPE {
    final static String        NAMES="KMGTPE";
    final static Pattern       SIZE =Pattern.compile("([0-9.,]+)([KMGTPEi]*)( ?B)");
-   final static DecimalFormat df31 =new DecimalFormat("  0");
-   final static DecimalFormat df32 =new DecimalFormat(" 00");
-   final static DecimalFormat df33 =new DecimalFormat("000");
-   final static DecimalFormat df3a =new DecimalFormat("0.0");
-   final static DecimalFormat df41 =new DecimalFormat("   0");
-   final static DecimalFormat df42 =new DecimalFormat("  00");
-   final static DecimalFormat df43 =new DecimalFormat(" 000");
-   final static DecimalFormat df44 =new DecimalFormat("0000");
-   final static DecimalFormat df4a =new DecimalFormat("0.00");
-   final static DecimalFormat df4b =new DecimalFormat("00.0");
+   final static DecimalFormat df31 =new DecimalFormat("  0 ");
+   final static DecimalFormat df32 =new DecimalFormat(" 00 ");
+   final static DecimalFormat df33 =new DecimalFormat("000 ");
+   final static DecimalFormat df3a =new DecimalFormat("0.0 ");
+   final static DecimalFormat df41 =new DecimalFormat("   0 ");
+   final static DecimalFormat df42 =new DecimalFormat("  00 ");
+   final static DecimalFormat df43 =new DecimalFormat(" 000 ");
+   final static DecimalFormat df44 =new DecimalFormat("0000 ");
+   final static DecimalFormat df4a =new DecimalFormat("0.00 ");
+   final static DecimalFormat df4b =new DecimalFormat("00.0 ");
    /**
     * Formatiert beliebige Zahlen nach folgenden Regeln mit 3 Ziffern K=1024
     * 

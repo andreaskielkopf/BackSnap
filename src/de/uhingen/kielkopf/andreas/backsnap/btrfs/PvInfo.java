@@ -19,7 +19,7 @@ import de.uhingen.kielkopf.andreas.beans.data.format.BKMGTPE;
  *         extract Infos from all pv-line
  *
  */
-public record PvInfo(long sizeL, long secL, long speedL, String progress) {
+public record PvInfo(long sizeL, long secL, long speedL, String progress, String txt) {
    static final Pattern SIZE=Pattern.compile("([0-9.,KMGTPEi]+ ?B)");
    static final Pattern TIME=Pattern.compile(" ([0-9]+:[0-9:]+) ");
    static final Pattern SPEED=Pattern.compile("([0-9.,KMGTiB]+/s)");
@@ -32,18 +32,9 @@ public record PvInfo(long sizeL, long secL, long speedL, String progress) {
       this(BKMGTPE.getSize(getString(SIZE.matcher(pv))), //
                getSec(getString(TIME.matcher(pv))), //
                BKMGTPE.getSize(getString(SPEED.matcher(pv))), //
-               getString(PROGRESS.matcher(pv)));
+               getString(PROGRESS.matcher(pv)), pv);
       updatePart();
    }
-   // public String size() {
-   // return size != null ? size : "";
-   // }
-   // public long getSize() {
-   // return BKMGTPE.getSize(size());
-   // }
-   // public String time() {
-   // return time != null ? time : "";
-   // }
    public static long getSec(String text) { // System.out.println(size()+"-"+time());
       if (text instanceof String txt) {
          Matcher t=TIME2.matcher(txt);
@@ -72,19 +63,11 @@ public record PvInfo(long sizeL, long secL, long speedL, String progress) {
       sb.append(zwei.format(s));
       return sb.toString();
    }
-   // public String speed() {
-   // return speed != null ? speed : "";
-   // }
    public String getSpeed() {
       return getSpeed(sizeL(), secL());
    }
    public static String getSpeed(long sizeL, long secL) {
-      if (secL >= 1) {
-         double bs=sizeL;
-         bs/=secL;
-         return BKMGTPE.vier1024((long) bs);
-      }
-      return " --- ";
+      return (secL < 1) ? " --- " : BKMGTPE.vier1024((long) (sizeL / (double) secL));
    }
    public String progress() {
       return progress != null ? progress : "";
@@ -99,7 +82,7 @@ public record PvInfo(long sizeL, long secL, long speedL, String progress) {
    /** mit jeder PV-Zeile die Werte aktualisieren */
    public void updatePart() {
       if (sizeL() > partSize) {
-         partSize=sizeL();// count++;
+         partSize=sizeL();
          tmpSize=sumSize + partSize;
       }
       if (secL() > partSec) {
@@ -109,7 +92,7 @@ public record PvInfo(long sizeL, long secL, long speedL, String progress) {
    }
    /** Nach jedem Snapshot die Summen der übertragenen Bytes aktualisieren und anzeigen */
    public static void addPart() {
-      count++;// count+=1000;
+      count++;
       Log.lfLog(getPartSpeed() + " (with " + getPartSize() + " in " + getPartSec() + ")", LEVEL.CACHE);
       sumSize+=partSize;
       partSize=0;
@@ -118,13 +101,13 @@ public record PvInfo(long sizeL, long secL, long speedL, String progress) {
       Log.lfLog(getGesSpeed() + " (" + count + " backups with " + getGesSize() + " in " + getGesSec() + ")",
                LEVEL.BASIC);
    }
-   public static String getPartSpeed() {
+   private static String getPartSpeed() {
       return getSpeed(partSize, partSec) + "/s";
    }
-   public static String getPartSize() {
+   private static String getPartSize() {
       return BKMGTPE.vier1024(partSize);
    }
-   public static String getPartSec() {
+   private static String getPartSec() {
       return partSec + "Sec";
    }
    public static String getGesSpeed() {
@@ -134,7 +117,7 @@ public record PvInfo(long sizeL, long secL, long speedL, String progress) {
       return BKMGTPE.vier1024(tmpSize);
    }
    public static String getGesSec() {
-      return tmpSec + "Sec";
+      return tmpSec + " Sec";
    }
    @Override
    public final String toString() {

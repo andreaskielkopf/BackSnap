@@ -412,34 +412,24 @@ public class BacksnapGui implements MouseListener {
       }
       return progressBar;
    }
-   ConcurrentLinkedQueue<String> queuePvText=new ConcurrentLinkedQueue<>();
-   // ConcurrentLinkedQueue<PvInfo> queuePvInfo=new ConcurrentLinkedQueue<>();
+   // ConcurrentLinkedQueue<String> queuePvText=new ConcurrentLinkedQueue<>();
+   ConcurrentLinkedQueue<PvInfo> queuePvInfo=new ConcurrentLinkedQueue<>();
    public void lblPvSetText(String pvText) {
-      queuePvText.offer(pvText);
-      // queuePvInfo.offer(new PvInfo(pvText));
+      queuePvInfo.offer(new PvInfo(pvText));
       SwingUtilities.invokeLater(() -> {
-         String pvT=null;
-         PvInfo pv=null;
-         while (!queuePvText.isEmpty()) {
-            pvT=queuePvText.poll(); // bis zur letzten Zeile holen
-            pv=new PvInfo(pvT);
-            // System.out.println(" -> pv:" + pv);
-            pv.updatePart();
-         }
-         if (pv instanceof PvInfo pi && !pi.progress().isEmpty()) {
-            getTxtSize().setText(PvInfo.getGesSize());
-            getTxtTime().setText(PvInfo.getGesSec());
-            getTxtSpeed().setText(PvInfo.getGesSpeed());
-            getTxtWork().setText(pv.progress());
-            getPanelWork().revalidate();
-//            getTxtWork().repaint(50);
-//            getTxtSize().repaint(50);
-//            getTxtTime().repaint(50);
-            getPanelWork().repaint(50);
-         }
-         if (pvT != null) { // nur den letzten Fortschritt anzeigen
-            if (pvText.contains("<")) {
-               String[] s1=pvT.trim().split("\\] \\[");
+         PvInfo pvi=null;
+         while (!queuePvInfo.isEmpty())
+            pvi=queuePvInfo.poll(); // bis zur letzten Zeile holen
+         if (pvi instanceof PvInfo pi) {
+            if (!pi.progress().isEmpty()) {
+               getTxtSize().setText(PvInfo.getGesSize());
+               getTxtTime().setText(PvInfo.getGesSec());
+               getTxtSpeed().setText(PvInfo.getGesSpeed());
+               getTxtWork().setText(pi.progress());
+            }
+            // nur den allerletzten Fortschritt zeigen
+            if (pi.txt().contains("<")) {
+               String[] s1=pi.txt().trim().split("\\] \\[");
                if (s1.length == 2) {
                   String[] s3=s1[0].replace(" B", "_B").replace(" _B", "_B").replace("[ ", "[_").split(" ");
                   if (s3.length == 3) {
@@ -453,10 +443,12 @@ public class BacksnapGui implements MouseListener {
                   }
                   Log.lfErr("s3=" + s3.length + ":" + s1[0], LEVEL.ERRORS);
                }
-               Log.lfErr("s1=" + s1.length + ":" + pvT, LEVEL.ERRORS);
+               Log.lfErr("s1=" + s1.length + ":" + pi.txt(), LEVEL.ERRORS);
             }
             getTextPv().setText("");
             getTextPv().repaint(50);
+            getPanelWork().revalidate();
+            getPanelWork().repaint(50);
          }
       });
    }
@@ -709,7 +701,7 @@ public class BacksnapGui implements MouseListener {
    }
    private Lbl getLblSpeed() {
       if (lblSpeed == null) {
-         lblSpeed=new Lbl("speed:");
+         lblSpeed=new Lbl("with");
          lblSpeed.setVerticalAlignment(SwingConstants.BOTTOM);
       }
       return lblSpeed;
@@ -723,7 +715,7 @@ public class BacksnapGui implements MouseListener {
    }
    private Lbl getLblTime() {
       if (lblTime == null) {
-         lblTime=new Lbl("time:");
+         lblTime=new Lbl("in");
       }
       return lblTime;
    }
@@ -744,7 +736,7 @@ public class BacksnapGui implements MouseListener {
    }
    private Lbl getLblSize() {
       if (lblSize == null) {
-         lblSize=new Lbl("size:");
+         lblSize=new Lbl("full");
       }
       return lblSize;
    }
