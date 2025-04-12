@@ -4,8 +4,7 @@ import static de.uhingen.kielkopf.andreas.backsnap.btrfs.Btrfs.BTRFS;
 import static de.uhingen.kielkopf.andreas.backsnap.config.Log.lfLog;
 
 import java.awt.Frame;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -24,7 +23,7 @@ import de.uhingen.kielkopf.andreas.beans.Version;
 
 import de.uhingen.kielkopf.andreas.beans.cli.Flags;
 import de.uhingen.kielkopf.andreas.beans.minijson.Etc;
-import de.uhingen.kielkopf.andreas.beans.shell.CmdStreams;
+import de.uhingen.kielkopf.andreas.beans.shell.*;
 
 /**
  * License: 'GNU General Public License v3.0'
@@ -48,6 +47,8 @@ public class Backsnap {
    public static final String          DRYRUN         ="dryrun";
    public static final String          COMPRESSED     ="compressed";
    public static final String          ZSTD           ="zstd";
+   public static final String          SYNC           ="sync";
+   public static final String          DROPCACHE      ="dropcache";
    static public final ExecutorService virtual        =Version.getVx();
    static public String                cantFindParent =null;
    static public String                emptyStream    =null;
@@ -55,14 +56,15 @@ public class Backsnap {
    static Future<?>                    task           =null;
    static public BacksnapGui           bsGui          =null;
    static public OneBackup             actualBackup   =null;
+   static int                          syncCount      =0;
    static private int                  skipCount      =0;
    static public final String          LF             =System.lineSeparator();
    static public final Flags           flags          =new Flags();
    // static public final Flag TIMESHIFT =new Flag('t', "timeshift");
    // static final Flags.F ECLIPSE =flags.add('z', "eclipse");
    // static final Flags.F PEXEC =flags.add('p', "pexec"); // use pexec instead of sudo
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.7.37"   //
-            + " (2024/12/26)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.8.6"   //
+            + " (2025/04/12)";
    static public void main(String[] args) {
       flags.create('h', HELP) // show usage
                .create('z', ZSTD, "9")// select compression 9=default
@@ -75,7 +77,9 @@ public class Backsnap {
                .create('s', SINGLESNAPSHOT) // backup exactly one snapshot
                .create('i', INIT) // init /etc/backsnap.d/local.conf
                .create('o', DELETEOLD) // mark old snapshots for deletion
-               .create('m', KEEPMINIMUM); // mark all but minimum snapshots
+               .create('m', KEEPMINIMUM) // mark all but minimum snapshots
+               .create('y', SYNC, "5") // sync every 10 Snapshots
+               .create('p', DROPCACHE); // drop cache When switching PCs
       flags.setArgs(args, "");
       Log.tr("/tmp/BackupRoot/@BackSnap/", "@");
       Log.tr("/tmp/BackupRoot/@", "@");
@@ -88,7 +92,7 @@ public class Backsnap {
       Log.setLoglevel(flags.f(VERBOSE).getParameterOrDefault(LEVEL.PROGRESS.l));
       Log.lfLog(BS_VERSION, LEVEL.BASIC);
       Log.lfLog("args > " + flags.getArgs(), LEVEL.BASIC);
-      Log.lfLog(Version.getJava().toShortString() +" "+ Version.getVxText(), LEVEL.BASIC);
+      Log.lfLog(Version.getJava().toShortString() + " " + Version.getVxText(), LEVEL.BASIC);
       if (flags.get(ZSTD)) {
          Pc.setCompression(ZSTD + flags.f(ZSTD).getParameter());
       }
@@ -108,6 +112,10 @@ public class Backsnap {
       OneBackup lastBackup=null;
       if (flags.get(HELP))
          System.exit(2);
+      if (flags.get(DROPCACHE))
+         dropCaches();
+      else
+         syncCaches();
       for (OneBackup ob:OneBackup.getSortedBackups()) {
          actualBackup=ob;
          if (!actualBackup.srcPc().isReachable())
@@ -141,6 +149,10 @@ public class Backsnap {
                         + "Please select another partition for the backup");
             Log.lfLog("Try to use backupDir  " + backupMount.keyM(), LEVEL.SNAPSHOTS);
             usage=new Usage(backupMount, false);
+            if (flags.get(DROPCACHE))
+               dropCaches();
+            else
+               syncCaches();
             actualBackup.backupTree()[0]=SnapTree.getSnapTree(backupMount, false);
             if (disconnectCount > 0) {
                Log.lfErr("no SSH Connection", LEVEL.ERRORS);
@@ -164,7 +176,6 @@ public class Backsnap {
             int counter=0;
             for (Snapshot sourceSnapshot:srcConfig.volumeMount().otimeKeyMap().values()) {
                counter++;
-               
                if (cantFindParent != null) {
                   Log.lfErr("Please remove " + Pc.TMP_BACKSNAP + "/" + OneBackup.backupPc.getBackupLabel() + "/"
                            + cantFindParent + "/" + Snapshot.SNAPSHOT + " !", LEVEL.ERRORS);
@@ -182,6 +193,14 @@ public class Backsnap {
                   // -------------------------------------------------
                   if (!backup(actualBackup, sourceSnapshot))
                      continue;
+                  syncCount++;
+                  if (flags.get(SYNC)) {
+                     Object sm=flags.f(SYNC).getParameterOrDefault(5);
+                     if (sm instanceof Integer maxSync) {
+                        if (maxSync <= syncCount)
+                           syncCaches();
+                     }
+                  }
                   // -------------------------------------------------
                   PvInfo.addPart();// bisherige backups aufsummieren
                   // Anzeige im Progressbar anpassen
@@ -385,6 +404,43 @@ public class Backsnap {
          }
       }
       throw new FileNotFoundException("Could not create dir: " + bdir);
+   }
+   /**
+    * Schreib bisherige daten auf die disk und lass die caches säubern
+    */
+   static private void dropCaches() {
+      syncCaches();
+      String dropcacheCmd=OneBackup.backupPc.getCmd(new StringBuilder("bash -c 'echo 3 > /proc/sys/vm/drop_caches'"),
+               true);
+      Log.lfLog("drop caches " + dropcacheCmd, LEVEL.BASIC);
+      try (DirectCmdStreams dropcacheStream=new DirectCmdStreams(dropcacheCmd);
+               BufferedCmdReader out=dropcacheStream.out()) {
+         dropcacheStream.print2Err();
+         out.lines().forEach(line -> {
+            Log.lfLog(line, LEVEL.CACHE);
+         });
+      } catch (Exception e) {/// @bug wird das ausgeführt ?
+         System.err.println("dropCaches 2");
+         e.printStackTrace();
+      }
+   }
+   /**
+    * Schreib bisherige daten auf die disk
+    */
+   static private void syncCaches() {
+      String synccacheCmd=OneBackup.backupPc.getCmd(new StringBuilder("sync &"), true);
+      Log.lfLog("sync caches " + synccacheCmd, LEVEL.BASIC);
+      try (DirectCmdStreams synccacheStream=new DirectCmdStreams(synccacheCmd);
+               BufferedCmdReader out=synccacheStream.out()) {
+         synccacheStream.print2Err();
+         out.lines().forEach(line -> {
+            Log.lfLog(line, LEVEL.CACHE);
+         });
+         syncCount=0;
+      } catch (Exception e) {/// @bug wird das ausgeführt ?
+         System.err.println("syncCaches 2");
+         e.printStackTrace();
+      }
    }
    static private final void pause() {
       if (flags.get(GUI)) {

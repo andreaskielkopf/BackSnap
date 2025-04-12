@@ -4,6 +4,7 @@
 package de.uhingen.kielkopf.andreas.beans.shell;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.stream.Stream;
@@ -50,7 +51,7 @@ public class DirectCmdStreams extends Streams implements AutoCloseable {
    @Override
    public void close() throws IOException {
       System.out.print("¹");
-      try {         // process.waitFor();
+      try { // process.waitFor();
          while (process.isAlive()) {
             Thread.sleep(1);
             Thread.onSpinWait();
@@ -68,10 +69,22 @@ public class DirectCmdStreams extends Streams implements AutoCloseable {
    }
    public void print2Err() {
       final Stream<String> l=errReader.lines();
-      Thread.ofVirtual().start(() -> l.forEach(System.err::println));
+      Thread.ofVirtual().name("DirectStream.print2Err").start(() -> {
+         try {
+            l.forEach(System.err::println);
+         } catch (UncheckedIOException e) {
+            System.err.println(e);
+         }
+      });
    }
    public void print2Out() {
       final Stream<String> l=errReader.lines();
-      Thread.ofVirtual().start(() -> l.forEach(System.out::println));
+      Thread.ofVirtual().name("DirectStream.print2Out").start(() -> {
+         try {
+            l.forEach(System.err::println);
+         } catch (UncheckedIOException e) {
+            System.err.println(e);
+         }
+      });
    }
 }

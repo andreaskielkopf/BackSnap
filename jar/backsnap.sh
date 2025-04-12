@@ -2,7 +2,7 @@
 # ©2024 Andreas Kielkopf
 # License: `GNU General Public License v3.0`
 export SSH_ASKPASS_REQUIRE=prefer
-sudo -B -E -- java -Xms500m -jar "$0" "$@" 
+sudo -B -E -- java -jar "$0" "$@" 
 EC="$?"
 [ "$EC" = 0 ] && exit;
 echo -n "$EC ==>"
@@ -26,7 +26,9 @@ $0 [OPTIONS]
  -c --compressed     use protokoll version2 for send/receive (if possible)
  -i --init           init /etc/backsnap.d/local.conf (only with -g)
  -o --deleteold      mark old backups for deletion in gui (-o=500)
- -m --keepminimum    mark all but minimum backups for deletion in gui (-m=250)  
+ -m --keepminimum    mark all but minimum backups for deletion in gui (-m=250)
+ -p --dropcache      clean up cached pages in ram after every backup
+ -y --synccache      sync the filesystem (-y=5)
  
  -o,-m,        need  manual confirmation in the gui to delete marked snapshots
  -i            needs gui to confirm uuid of backup-medium
