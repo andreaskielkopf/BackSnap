@@ -57,7 +57,7 @@ public class Do implements Runnable {
     * @param l
     * @return
     */
-   private static void doCmd(List<String> l) {
+   static void doCmd(List<String> l) {
       new Do(l, Worker.stdOut(), Worker.stdErr()).executePlatform();
    }
    private static ConcurrentLinkedDeque<String> doGetList(List<String> l) {
@@ -76,10 +76,12 @@ public class Do implements Runnable {
       }.get();
    }
    public static void main(String[] args) {
-      System.out.println(doGetFirstOr(List.of("whoami", "5"), "Fehlertest ;-)"));
-      doGetFirstOr(List.of("whoami", "5"), "Nur den Fehlertext ausgeben");
-      doCmd(List.of("ls", "-lA")); // alles über stdout ausgeben
-      doCmd(List.of("ls", "-lA s")); // alles über sterr ausgeben
+      // System.out.println(doGetFirstOr(List.of("whoami", "5"), "Fehlertest ;-)"));
+      // doGetFirstOr(List.of("whoami", "5"), "Nur den Fehlertext ausgeben");
+      // doCmd(List.of("ls", "-lA")); // alles über stdout ausgeben
+      // doCmd(List.of("ls", "-lA s")); // alles über sterr ausgeben
+      doCmd(List.of("-c", "ls -lA|grep -E ^drwx|sort -nk 5"));
+      doCmd(List.of("-c", "time ~/bin/src|pv -pteabfW -i 1|~/bin/dst"));
    }
    // public Do(String... s) { this(Arrays.asList(s)); }
    public Do(String... list1) {
@@ -99,6 +101,7 @@ public class Do implements Runnable {
    final ProcessBuilder builder;
    Process              process;
    boolean              done=false;
+   String               name;
    ArrayList<String>    list;
    public Do(Worker iWorker, Worker eWorker, String... list1) {
       this(new ArrayList<String>(Arrays.asList(list1)), iWorker, eWorker);
@@ -125,7 +128,7 @@ public class Do implements Runnable {
             return;
          if (process == null)
             process=builder.start();
-         try (BufferedReader err=process.errorReader(); BufferedReader inp=process.inputReader();) {
+         try (BufferedReader err=process.errorReader(); BufferedReader inp=process.inputReader()) {
             while (process.isAlive())
                readAll(err, inp);
             readAll(err, inp);
@@ -134,6 +137,38 @@ public class Do implements Runnable {
                System.err.print(list);
                System.err.println(" exit with " + x);
             }
+         }
+      } catch (IOException e) {
+         e.printStackTrace();
+      } finally {
+         done=true;
+      }
+   }
+   public void runPiped() {
+      try {
+         if (done)
+            return;
+         // if (process == null)
+         // process=builder.start();
+         try (BufferedReader err=process.errorReader()) {
+            System.err.println("Pipe alive=" + process.isAlive());
+            System.err.println("BR=" + err.hashCode());
+            while (process.isAlive()) {
+               System.err.print(":");
+               while (err.readLine() instanceof String line) {
+                  System.err.print(".");
+                  errWorker.processLine(line);
+                  System.err.print(",");
+                  System.err.println(line);
+               }
+            }
+            // System.err.println("Pipe not alive");
+            // readAll(err, null);
+            // int x=process.exitValue();
+            // if (x != 0) {
+            // System.err.print(list);
+            // System.err.println(" exit with " + x);
+            // }
          }
       } catch (IOException e) {
          e.printStackTrace();
@@ -152,9 +187,19 @@ public class Do implements Runnable {
                errWorker.processLine(err.readLine());
       } catch (InterruptedException ignoree) { /* */ }
    }
+   void readVirtual(BufferedReader err, BufferedReader inp) throws IOException {
+      if (inpWorker instanceof Worker iw)
+         iw.withVirtual(inp);
+      if (errWorker instanceof Worker ew)
+         ew.withVirtual(err);
+   }
    /** Warte bis der Prozess zu ende ist, aber verschwende keine Leistung dabei */
    private void waitFor() {
       try {
+         if (inpWorker instanceof Worker iw)
+            iw.waitFor();
+         if (errWorker instanceof Worker ew)
+            ew.waitFor();
          while (done == false) {
             Thread.onSpinWait();
             Thread.sleep(1L);
@@ -186,9 +231,11 @@ public class Do implements Runnable {
       return toPipe(new ArrayList<String>(Arrays.asList(list)));
    }
    static public Do toPipe(List<String> l) {
-      return new Do(l, null, null) {
+      return new Do(l, null, Worker.stdErr()) {
          @Override
-         public void run() {/* wird automatisch an die Pipe angehängt */}
+         public void run() {
+            runPiped();
+            /* wird automatisch an die Pipe angehängt */}
       };
    }
    static public Do toWorker(String... list) {

@@ -3,7 +3,7 @@
  */
 package de.uhingen.kielkopf.andreas.beans.shell;
 
-import java.util.ArrayList;
+import java.io.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
@@ -11,18 +11,15 @@ import java.util.concurrent.ConcurrentLinkedDeque;
  * 
  *         Objekt um die Auswertung von stdout und stderr zu erleichtern
  */
-public class Worker {
+public abstract class Worker {
    /** Startzeit des Programms in ms */
-   final private static long  start     =System.currentTimeMillis();
-   /** Ein Worker der alles abholt und verwirft */
-   final public static Worker nullWorker=new Worker();
+   final private static long start=System.currentTimeMillis();
    /**
     * Verarbeite eine Zeile des Output
     * 
     * @param line
-    * 
     */
-   public void processLine(String line) {/* do nothing */}
+   abstract public void processLine(String line);
    /** Gib die ArrayList mit den Ergebnissen her */
    public ConcurrentLinkedDeque<String> get() {
       if (erg == null)
@@ -30,11 +27,60 @@ public class Worker {
       return erg;
    }
    public String getFirst() {
-      if (erg instanceof ConcurrentLinkedDeque<String> al && (!al.isEmpty()))
-         return al.getFirst();
-      return "";
+      return (erg instanceof ConcurrentLinkedDeque<String> al && (!al.isEmpty())) ? al.getFirst() : "";
+   }
+   public Worker withVirtual(BufferedReader br, String kennung) {
+      busy=true;
+      Thread.startVirtualThread(r(br, kennung));
+      return this;
+   }
+   public Worker withPlatform(BufferedReader br, String kennung) {
+      busy=true;
+      Thread.ofPlatform().start(r(br, kennung));
+      return this;
+   }
+   private Runnable r(BufferedReader br, String kennung) {
+      return () -> {
+         try {
+            if (kennung == null)
+               while (br.readLine() instanceof String line)
+                  processLine(line);
+            else
+               while (br.readLine() instanceof String line)
+                  processLine(kennung + line);
+         } catch (IOException e) {
+            System.err.println(e.getMessage());
+            e.printStackTrace();
+         } finally {
+            busy=false;
+         }
+      };
+   }
+   private boolean busy=false;
+   public Worker waitFor() {
+      try {
+         while (busy) {
+            Thread.onSpinWait();
+            Thread.sleep(1);
+         }
+      } catch (InterruptedException ignore) {/* */ }
+      return this;
    }
    private ConcurrentLinkedDeque<String> erg;
+   /** Ein Worker der alles abholt und verwirft (shared) */
+   final public static Worker nullWorker() {
+      if (sharedNullWorker == null)
+         sharedNullWorker=new Worker() {
+            @Override
+            public void processLine(String line) { /* ignore */ }
+            @Override
+            public String toString() {
+               return "null-Worker";
+            }
+         };
+      return sharedNullWorker;
+   }
+   private static Worker sharedNullWorker;
    /** Ein Worker der alles auf die Standardausgabe schreibt */
    final public static Worker stdOut() {
       if (sharedStdOut == null)
@@ -51,7 +97,7 @@ public class Worker {
       return sharedStdOut;
    }
    private static Worker sharedStdOut;
-   /** Ein Worker der alles auf die Errorausgabe schreibt (shared) */
+   /** Ein Worker der auf die Errorausgabe schreibt (shared) */
    final public static Worker stdErr() {
       if (sharedStdErr == null)
          sharedStdErr=new Worker() {
@@ -67,7 +113,7 @@ public class Worker {
       return sharedStdErr;
    }
    private static Worker sharedStdErr;
-   /** Sammle die Ausgaben des Programms um sie später als Arraylist zu erhalten */
+   /** Sammle die Ausgaben des Programms um sie später als Queue zu erhalten */
    final public static Worker collectInp() {
       return new Worker() {
          @Override
@@ -80,7 +126,7 @@ public class Worker {
          }
       };
    }
-   /** Sammle die Fehler des Programms um sie später als Arraylist zu erhalten */
+   /** Sammle die Fehler des Programms um sie später als Queue zu erhalten */
    final public static Worker collectErr() {
       return new Worker() {
          @Override

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<jardesc>
+    <jar path="backsnap/jar/toErr.jar"/>
+    <options buildIfNeeded="true" compress="true" descriptionLocation="/backsnap/jar/toErr.jardesc" exportErrors="false" exportWarnings="true" includeDirectoryEntries="false" overwrite="true" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
+    <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
+    <selectedProjects/>
+    <manifest generateManifest="true" mainClassHandleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.beans.shell{toErr.java[toErr" manifestLocation="" manifestVersion="1.0" reuseManifest="false" saveManifest="false" usesManifest="true">
+        <sealing sealJar="true">
+            <packagesToSeal/>
+            <packagesToUnSeal/>
+        </sealing>
+    </manifest>
+    <selectedElements exportClassFiles="true" exportJavaFiles="true" exportOutputFolder="false">
+        <folder path="/backsnap/modules"/>
+        <file path="/backsnap/LICENSE.txt"/>
+        <file path="/backsnap/SECURITY.md"/>
+        <file path="/backsnap/WieEsFunktioniert.md"/>
+        <file path="/backsnap/readme.md"/>
+        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.beans.shell{toErr.java"/>
+    </selectedElements>
+</jardesc>
