@@ -1,5 +1,5 @@
 # Installation
-BackSnap ist bewusst einfach zu installieren.
+BackSnap ist bewusst einfach zu installieren (und zu deinstallieren).
 
 ## 1. Installiere „JAVA 21“.
 Je nach verwendeter Distribution ist das ganz unterschiedlich. Bitte schau in der **Anleitung zu deiner Distribution** 
@@ -64,7 +64,7 @@ von **root** als auch im `$PATH` deines **users** erreichbar ist.
 echo $PATH
 ```
 
-### in `/usr/local/bin`
+### in `/usr/local/bin` (empfohlen)
 Wenn `/usr/local/bin` in deinem Pfad enthalten ist, ist es das einfachste `backsnap` dort zu installieren.
 ```
 sudo wget https://github.com/andreaskielkopf/BackSnap/raw/master/backsnap -O /usr/local/bin/backsnap
@@ -96,6 +96,26 @@ using ThreadPerTaskExecutor
 ```
 
 ### [weiter ->](device_de.md)
+----
+## Deinstallieren
+Du kannst java 21 so deinstallieren, wie es **bei deiner Distribution üblich** ist. 
+Mach das nur wenn du Java auch sonst nicht mehr brauchst. 
+#### Manjaro oder Arch:
+```
+pacman -R jdk-openjdk
+``` 
+#### Du kannst pv entfernen mit:
+```
+pacman -R pv
+```
+#### Du kannst backsnap entfernen indem du es einfach löschst
+```
+sudo rm /usr/local/bin/backsnap
+```
+oder
+```
+sudo rm /usr/bin/backsnap
+```
 ----
 
 Siehe auch [archlinux wiki java](https://wiki.archlinux.org/title/java) 

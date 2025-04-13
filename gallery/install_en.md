@@ -1,5 +1,5 @@
 # Installation
-BackSnap is easy to install.
+BackSnap is easy to install (and uninstall).
 
 ## 1. Install `JAVA 21`
 This varies greatly depending on the distribution used. Please refer to your **distribution guide** on how to 
@@ -91,7 +91,27 @@ args >  -x
 java [version=23-ea, major=23, minor=null, patch=null]
 using ThreadPerTaskExecutor
 ```
-
+----
+## Uninstall
+You can uninstall Java 21 **as usual for your distribution**.
+Only do this if you no longer need Java.
+#### Manjaro or Arch:
+```
+pacman -R jdk-openjdk
+```
+#### You can remove pv with:
+```
+pacman -R pv
+```
+#### You can remove backsnap by simply deleting it
+```
+sudo rm /usr/local/bin/backsnap
+```
+or
+```
+sudo rm /usr/bin/backsnap
+```
+----
 ### [next step ->](device_en.md)
 
 ----
