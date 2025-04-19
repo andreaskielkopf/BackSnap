@@ -8,7 +8,7 @@
 * This a Rework with somme **cached** commands
 * It works with **Snapper** and **Timeshift.**
 * It uses **btrfs compression** with send/receive 
-* It uses config in `/etc/backsnap/*.conf`.
+* It uses config in `/etc/backsnap.d/*.conf`.
 
 ![BackSnap in action](./gallery/timeshift.png  "BackSnap gui")
 With BackSnap, regular backups for btrfs are no longer a burden, but an easy task.
@@ -41,6 +41,7 @@ With BackSnap, regular backups for btrfs are no longer a burden, but an easy tas
 * BTRFS both on the computer (recommended as **RAID 1** with 2 devices) and on the backup medium ( **RAID 0** )
 * **snapper**-layout of the snapshots or **timeshift**-layout
 * Recommended: external backup medium e.g. USB3 hard drive with BTRFS
+* All subvolumes on the computer need to be part of the **same** btrfs-volume
 
 # BackSnap:
 The Java program BackSnap backs up ALL snapshots from a specified directory to another directory on a backup medium. 
