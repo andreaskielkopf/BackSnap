@@ -16,7 +16,6 @@
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.beans.shell{CmdBufferedReader.java"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.beans.shell{CmdStreams.java"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui{Computer.java"/>
-        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui{Config.java"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.beans.shell{DirectCmdStreams.java"/>
         <folder path="/backsnap/etc"/>
         <folder path="/backsnap/modules"/>
@@ -45,6 +44,7 @@
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.beans.shell{Streams.java"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui{Subvol.java"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap{Backsnap.java"/>
+        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui{Config.java"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.btrfs"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.config"/>
         <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui.dialog"/>
