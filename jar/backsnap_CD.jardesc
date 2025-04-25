@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<jardesc>
+    <jar path="backsnap/jar/backsnap_CD.jar"/>
+    <options buildIfNeeded="true" compress="true" descriptionLocation="/backsnap/jar/backsnap_CD.jardesc" exportErrors="false" exportWarnings="true" includeDirectoryEntries="false" overwrite="true" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
+    <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
+    <selectedProjects/>
+    <manifest generateManifest="true" mainClassHandleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui.dialog{ConfigDialog.java[ConfigDialog" manifestLocation="" manifestVersion="1.0" reuseManifest="false" saveManifest="false" usesManifest="true">
+        <sealing sealJar="true">
+            <packagesToSeal/>
+            <packagesToUnSeal/>
+        </sealing>
+    </manifest>
+    <selectedElements exportClassFiles="true" exportJavaFiles="true" exportOutputFolder="false">
+        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.beans.shell{CmdBufferedReader.java"/>
+        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.beans.shell{CmdStreams.java"/>
+        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.config{Log.java"/>
+        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.beans{RecordParser.java"/>
+        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.btrfs"/>
+        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.backsnap.gui.dialog"/>
+        <javaElement handleIdentifier="=backsnap/src&lt;de.uhingen.kielkopf.andreas.beans.data"/>
+    </selectedElements>
+</jardesc>
