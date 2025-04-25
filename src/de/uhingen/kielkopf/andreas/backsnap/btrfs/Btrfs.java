@@ -138,7 +138,6 @@ public class Btrfs {
       try (CmdStreams volumeListStream=CmdStreams.getCachedStream(volumeListCmd)) {
          ArrayList<String> tmpList=new ArrayList<>();
          volumeListStream.outBGerr().forEachOrdered(line -> {
-            // if (!line.isEmpty()) {
             if (!line.isBlank())
                tmpList.add(line);
             else
@@ -147,8 +146,12 @@ public class Btrfs {
                   list.put(v.uuid(), v);
                   tmpList.clear();
                }
-            // }
          });
+         if (!tmpList.isEmpty()) {
+            Volume v=Volume.getVolume(pc, tmpList);
+            list.put(v.uuid(), v);
+            tmpList.clear();
+         }
          volumeListStream.errPrintln();
       } catch (IOException e1) {
          e1.printStackTrace();

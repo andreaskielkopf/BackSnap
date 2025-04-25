@@ -19,11 +19,13 @@ import de.uhingen.kielkopf.andreas.backsnap.config.Log;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 
 /**
- * @author Andreas Kielkopf Ein ConfigDialog um das Volume für Backups festzulegen
+ * @author Andreas Kielkopf
+ * 
+ *         Ein ConfigDialog um das Volume für Backups festzulegen
+ *         
+ *         In einem Dropdown werden die verfügbaren btrfs-volumes angezeigt
  */
 public class ConfigDialog extends JDialog {
-  
-  
    private static final long           serialVersionUID=-993461584598902127L;
    /** Use a bigger Font for this Dialog */
    private static final @NonNull Font  FONT            =new Font("Monospaced", Font.PLAIN, 15);
@@ -240,9 +242,9 @@ public class ConfigDialog extends JDialog {
       try {
          if (getBackupVolume(Pc.getPc(null)) instanceof Volume volume) {
             prepareBackupVolume(volume, false);
-            Log.lfLog(volume.uuid(),LEVEL.CONFIG);
+            Log.lfLog(volume.uuid(), LEVEL.CONFIG);
          } else
-            Log.lfLog("null",LEVEL.CONFIG);
+            Log.lfLog("null", LEVEL.CONFIG);
       } catch (Exception e) {
          e.printStackTrace();
       }
@@ -262,4 +264,5 @@ public class ConfigDialog extends JDialog {
       }
       return panelTitel;
    }
+   
 }

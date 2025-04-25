@@ -20,7 +20,7 @@ import de.uhingen.kielkopf.andreas.backsnap.config.OnTheFly;
 import de.uhingen.kielkopf.andreas.backsnap.gui.BacksnapGui;
 import de.uhingen.kielkopf.andreas.backsnap.gui.part.SnapshotLabel.STATUS;
 import de.uhingen.kielkopf.andreas.beans.Version;
-import de.uhingen.kielkopf.andreas.beans.cli.Flag;
+import de.uhingen.kielkopf.andreas.beans.cli.Flags;
 import de.uhingen.kielkopf.andreas.beans.minijson.Etc;
 import de.uhingen.kielkopf.andreas.beans.shell.*;
 
@@ -62,8 +62,8 @@ public class Backsnap {
    // static public final Flag TIMESHIFT =new Flag('t', "timeshift");
    // static final Flags.F ECLIPSE =flags.add('z', "eclipse");
    // static final Flags.F PEXEC =flags.add('p', "pexec"); // use pexec instead of sudo
-   static public final String          BS_VERSION     ="BackSnap Version 0.6.8.7"   //
-            + " (2025/04/19)";
+   static public final String          BS_VERSION     ="BackSnap Version 0.6.8.8"   //
+            + " (2025/04/25)";
    static public void main(String[] args) {
       flags.create('h', HELP) // show usage
                .create('z', ZSTD, "9")// select compression 9=default
