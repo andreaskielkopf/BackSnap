@@ -73,12 +73,12 @@ public record Volume(Pc pc, ArrayList<String> lines, ConcurrentSkipListMap<Strin
       Log.lfLog(isUSBCmd, LEVEL.BTRFS);
       boolean treffer=false;
       try (CmdStreams isUSBStream=CmdStreams.getCachedStream(isUSBCmd)) {
-         treffer=isUSBStream.outBGerr().anyMatch(line -> line.contains("ID_BUS=usb"));
+         treffer=isUSBStream.outBGerr().anyMatch(line -> (line.contains("ID_BUS=usb") || line.contains("ID_USB_")));
       } catch (IOException e1) {
          e1.printStackTrace();
-               }
+      }
       return treffer;
-            }
+   }
    private double getFree(boolean inPercent) {
       double size=1;
       double used=1;
@@ -91,7 +91,7 @@ public record Volume(Pc pc, ArrayList<String> lines, ConcurrentSkipListMap<Strin
             size+=Usage.getZahl(s);
             used+=Usage.getZahl(u);
          }
-   }
+      }
       double free=size - used;
       return inPercent ? 100d * free / size : free;
    }
