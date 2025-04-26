@@ -19,7 +19,11 @@ import de.uhingen.kielkopf.andreas.backsnap.config.Log;
 import de.uhingen.kielkopf.andreas.backsnap.config.Log.LEVEL;
 
 /**
- * @author Andreas Kielkopf Ein ConfigDialog um das Volume für Backups festzulegen
+ * @author Andreas Kielkopf
+ * 
+ *         Ein ConfigDialog um das Volume für Backups festzulegen
+ *         
+ *         In einem Dropdown werden die verfügbaren btrfs-volumes angezeigt
  */
 public class ConfigDialog extends JDialog {
   

@@ -73,7 +73,7 @@ public record Volume(Pc pc, ArrayList<String> lines, ConcurrentSkipListMap<Strin
       Log.logln(isUSBCmd, LEVEL.BTRFS);
       boolean treffer=false;
       try (CmdStreams isUSBStream=CmdStreams.getCachedStream(isUSBCmd)) {
-         treffer=isUSBStream.outBGerr().anyMatch(line -> line.contains("ID_BUS=usb"));
+         treffer=isUSBStream.outBGerr().anyMatch(line -> (line.contains("ID_BUS=usb") || line.contains("ID_USB_")));
       } catch (IOException e1) {
          e1.printStackTrace();
                }
